@@ -81,7 +81,7 @@ export function getRequestBody(req: http.IncomingMessage, options: { timeout?: n
 }
 
 // serve static files (e.g., HTML, CSS, JS)
-export function serveStaticFile(res: http.ServerResponse, filePath: string): void {
+export function serveStatic(res: http.ServerResponse, filePath: string): void {
     const extname = path.extname(filePath).toLowerCase();
     const contentType = {
         '.html': 'text/html',

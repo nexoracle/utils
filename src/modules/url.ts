@@ -1,7 +1,7 @@
 import { URL } from "url";
 import querystring from "querystring";
 
-export const parseUrl = (urlString: string) => {
+export const pasrseURL = (urlString: string) => {
     const urlObj = new URL(urlString);
     return {
         protocol: urlObj.protocol,
