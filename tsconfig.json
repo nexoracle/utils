@@ -3,9 +3,9 @@
     "target": "ES2020",
     "module": "ESNext",
     "declaration": true,
-    "outDir": "dist",
+    "outDir": "dist", 
     "strict": true,
-    "esModuleInterop": true,
+    "esModuleInterop": true, 
     "moduleResolution": "Node",
     "allowJs": true,
     "skipLibCheck": true,
@@ -13,9 +13,9 @@
     "lib": ["ES2020", "DOM"],
     "types": ["node"],
     "incremental": true,
-    "tsBuildInfoFile": "./.tsbuildinfo"
+    "tsBuildInfoFile": "./.tsbuildinfo",
+    "resolveJsonModule": true 
   },
-
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
