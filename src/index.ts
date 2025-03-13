@@ -8,3 +8,4 @@ export * from "./modules/path";
 export * from "./modules/url";
 export * from "./modules/child_process";
 export * from "./modules/http"
+export * from "./modules/console"
