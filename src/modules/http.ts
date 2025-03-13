@@ -82,25 +82,55 @@ export function getRequestBody(req: http.IncomingMessage, options: { timeout?: n
 
 // serve static files (e.g., HTML, CSS, JS)
 export function serveStatic(res: http.ServerResponse, filePath: string): void {
-    const extname = path.extname(filePath).toLowerCase();
-    const contentType = {
-        '.html': 'text/html',
-        '.js': 'text/javascript',
-        '.css': 'text/css',
-        '.json': 'application/json',
-        '.png': 'image/png',
-        '.jpg': 'image/jpg',
-        '.jpeg': 'image/jpeg',
-        '.gif': 'image/gif',
-        '.svg': 'image/svg+xml',
-        '.txt': 'text/plain',
-    }[extname] || 'application/octet-stream';
-
-    fs.readFile(filePath, (err, data) => {
+    // Check if the filePath is a directory
+    fs.stat(filePath, (err, stats) => {
         if (err) {
+            // File or directory not found
             sendText(res, 404, 'File Not Found');
+            console.error('Error:', err);
+            return;
+        }
+
+        if (stats.isDirectory()) {
+            // If it's a directory, serve the default file (e.g., index.html)
+            const defaultFile = path.join(filePath, 'index.html');
+            fs.readFile(defaultFile, (err, data) => {
+                if (err) {
+                    // Default file not found
+                    sendText(res, 404, 'Directory index not found');
+                    console.error('Error:', err);
+                } else {
+                    // Serve the default file
+                    sendBuffer(res, 200, data, 'text/html');
+                }
+            });
+        } else if (stats.isFile()) {
+            // If it's a file, serve it
+            const extname = path.extname(filePath).toLowerCase();
+            const contentType = {
+                '.html': 'text/html',
+                '.js': 'text/javascript',
+                '.css': 'text/css',
+                '.json': 'application/json',
+                '.png': 'image/png',
+                '.jpg': 'image/jpg',
+                '.jpeg': 'image/jpeg',
+                '.gif': 'image/gif',
+                '.svg': 'image/svg+xml',
+                '.txt': 'text/plain',
+            }[extname] || 'application/octet-stream';
+
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    sendText(res, 404, 'File Not Found');
+                    console.error('Error:', err);
+                } else {
+                    sendBuffer(res, 200, data, contentType);
+                }
+            });
         } else {
-            sendBuffer(res, 200, data, contentType);
+            // Handle other cases (e.g., symbolic links)
+            sendText(res, 404, 'Not a file or directory');
         }
     });
 }

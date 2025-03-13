@@ -28,7 +28,7 @@ export const getFileExtension = (filePath: string, withDot = true): string => {
 /**
  * Join multiple paths dynamically
  */
-export const joinPaths = (...paths: string[]): string => path.join(...paths);
+export const joinPath = (...paths: string[]): string => path.join(...paths);
 
 /**
  * Get relative path from one location to another
