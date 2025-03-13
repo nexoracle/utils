@@ -301,7 +301,7 @@ var getFileExtension = (filePath, withDot = true) => {
   const ext = path.extname(filePath);
   return withDot ? ext : ext.replace(".", "");
 };
-var joinPaths = (...paths) => path.join(...paths);
+var joinPath = (...paths) => path.join(...paths);
 var getRelativePath = (from, to) => path.relative(from, to);
 
 // src/modules/url.ts
@@ -417,24 +417,46 @@ function getRequestBody(req, options = {}) {
   });
 }
 function serveStatic(res, filePath) {
-  const extname = path2.extname(filePath).toLowerCase();
-  const contentType = {
-    ".html": "text/html",
-    ".js": "text/javascript",
-    ".css": "text/css",
-    ".json": "application/json",
-    ".png": "image/png",
-    ".jpg": "image/jpg",
-    ".jpeg": "image/jpeg",
-    ".gif": "image/gif",
-    ".svg": "image/svg+xml",
-    ".txt": "text/plain"
-  }[extname] || "application/octet-stream";
-  fs3.readFile(filePath, (err, data) => {
+  fs3.stat(filePath, (err, stats) => {
     if (err) {
       sendText(res, 404, "File Not Found");
+      console.error("Error:", err);
+      return;
+    }
+    if (stats.isDirectory()) {
+      const defaultFile = path2.join(filePath, "index.html");
+      fs3.readFile(defaultFile, (err2, data) => {
+        if (err2) {
+          sendText(res, 404, "Directory index not found");
+          console.error("Error:", err2);
+        } else {
+          sendBuffer(res, 200, data, "text/html");
+        }
+      });
+    } else if (stats.isFile()) {
+      const extname = path2.extname(filePath).toLowerCase();
+      const contentType = {
+        ".html": "text/html",
+        ".js": "text/javascript",
+        ".css": "text/css",
+        ".json": "application/json",
+        ".png": "image/png",
+        ".jpg": "image/jpg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".svg": "image/svg+xml",
+        ".txt": "text/plain"
+      }[extname] || "application/octet-stream";
+      fs3.readFile(filePath, (err2, data) => {
+        if (err2) {
+          sendText(res, 404, "File Not Found");
+          console.error("Error:", err2);
+        } else {
+          sendBuffer(res, 200, data, contentType);
+        }
+      });
     } else {
-      sendBuffer(res, 200, data, contentType);
+      sendText(res, 404, "Not a file or directory");
     }
   });
 }
@@ -538,7 +560,7 @@ export {
   isEmail,
   isObject,
   isURL,
-  joinPaths,
+  joinPath,
   jsontoBuffer,
   log,
   normalizePath,

@@ -128,7 +128,7 @@ declare const getFileExtension: (filePath: string, withDot?: boolean) => string;
 /**
  * Join multiple paths dynamically
  */
-declare const joinPaths: (...paths: string[]) => string;
+declare const joinPath: (...paths: string[]) => string;
 /**
  * Get relative path from one location to another
  */
@@ -186,4 +186,4 @@ declare function debug(...args: any[]): void;
 declare function table(data: any, columns?: string[]): void;
 declare function clear(): void;
 
-export { FetchOptions, ReadMore, Router, appendToFile, bufferToFile, buffertoJson, buildUrl, clear, createServer, debug, decryptAES, deleteFile, deleteJson, deleteRequest, encryptAES, error, extractUrlFromString, fetchRequest, fileExists, formatBytes, formatNumber, generateUUID, getAbsolutePath, getBuffer, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getJson, getMethod, getNetworkInterfaces, getRandom, getRelativePath, getRequestBody, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, headRequest, info, isArray, isEmail, isObject, isURL, joinPaths, jsontoBuffer, log, normalizePath, parseUrl, pasrseURL, patchJson, postJson, putJson, randomBytes, randomElement, randomHexColor, randomInt, randomizeArray, readFile, runCommand, runCommandSync, runSpawn, sendBuffer, sendJson, sendText, serveStatic, sha256, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };
+export { FetchOptions, ReadMore, Router, appendToFile, bufferToFile, buffertoJson, buildUrl, clear, createServer, debug, decryptAES, deleteFile, deleteJson, deleteRequest, encryptAES, error, extractUrlFromString, fetchRequest, fileExists, formatBytes, formatNumber, generateUUID, getAbsolutePath, getBuffer, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getJson, getMethod, getNetworkInterfaces, getRandom, getRelativePath, getRequestBody, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, headRequest, info, isArray, isEmail, isObject, isURL, joinPath, jsontoBuffer, log, normalizePath, parseUrl, pasrseURL, patchJson, postJson, putJson, randomBytes, randomElement, randomHexColor, randomInt, randomizeArray, readFile, runCommand, runCommandSync, runSpawn, sendBuffer, sendJson, sendText, serveStatic, sha256, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };

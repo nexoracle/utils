@@ -74,7 +74,7 @@ __export(src_exports, {
   isEmail: () => isEmail,
   isObject: () => isObject,
   isURL: () => isURL,
-  joinPaths: () => joinPaths,
+  joinPath: () => joinPath,
   jsontoBuffer: () => jsontoBuffer,
   log: () => log,
   normalizePath: () => normalizePath,
@@ -414,7 +414,7 @@ var getFileExtension = (filePath, withDot = true) => {
   const ext = import_path.default.extname(filePath);
   return withDot ? ext : ext.replace(".", "");
 };
-var joinPaths = (...paths) => import_path.default.join(...paths);
+var joinPath = (...paths) => import_path.default.join(...paths);
 var getRelativePath = (from, to) => import_path.default.relative(from, to);
 
 // src/modules/url.ts
@@ -530,24 +530,46 @@ function getRequestBody(req, options = {}) {
   });
 }
 function serveStatic(res, filePath) {
-  const extname = import_path2.default.extname(filePath).toLowerCase();
-  const contentType = {
-    ".html": "text/html",
-    ".js": "text/javascript",
-    ".css": "text/css",
-    ".json": "application/json",
-    ".png": "image/png",
-    ".jpg": "image/jpg",
-    ".jpeg": "image/jpeg",
-    ".gif": "image/gif",
-    ".svg": "image/svg+xml",
-    ".txt": "text/plain"
-  }[extname] || "application/octet-stream";
-  import_fs3.default.readFile(filePath, (err, data) => {
+  import_fs3.default.stat(filePath, (err, stats) => {
     if (err) {
       sendText(res, 404, "File Not Found");
+      console.error("Error:", err);
+      return;
+    }
+    if (stats.isDirectory()) {
+      const defaultFile = import_path2.default.join(filePath, "index.html");
+      import_fs3.default.readFile(defaultFile, (err2, data) => {
+        if (err2) {
+          sendText(res, 404, "Directory index not found");
+          console.error("Error:", err2);
+        } else {
+          sendBuffer(res, 200, data, "text/html");
+        }
+      });
+    } else if (stats.isFile()) {
+      const extname = import_path2.default.extname(filePath).toLowerCase();
+      const contentType = {
+        ".html": "text/html",
+        ".js": "text/javascript",
+        ".css": "text/css",
+        ".json": "application/json",
+        ".png": "image/png",
+        ".jpg": "image/jpg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".svg": "image/svg+xml",
+        ".txt": "text/plain"
+      }[extname] || "application/octet-stream";
+      import_fs3.default.readFile(filePath, (err2, data) => {
+        if (err2) {
+          sendText(res, 404, "File Not Found");
+          console.error("Error:", err2);
+        } else {
+          sendBuffer(res, 200, data, contentType);
+        }
+      });
     } else {
-      sendBuffer(res, 200, data, contentType);
+      sendText(res, 404, "Not a file or directory");
     }
   });
 }
@@ -652,7 +674,7 @@ function clear() {
   isEmail,
   isObject,
   isURL,
-  joinPaths,
+  joinPath,
   jsontoBuffer,
   log,
   normalizePath,
