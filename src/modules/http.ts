@@ -81,8 +81,18 @@ export function getRequestBody(req: http.IncomingMessage, options: { timeout?: n
 }
 
 // serve static files (e.g., HTML, CSS, JS)
-export function serveStatic(res: http.ServerResponse, filePath: string): void {
-    // Check if the filePath is a directory
+export function serveStatic(res: http.ServerResponse, baseDir: string, requestedPath: string): void {
+    // Resolve the requested path relative to the base directory
+    const filePath = path.resolve(path.join(baseDir, requestedPath));
+
+    // Ensure the resolved path is within the base directory
+    if (!filePath.startsWith(path.resolve(baseDir))) {
+        sendText(res, 403, 'Forbidden: Access denied');
+        console.error('Error: Attempted to access restricted path:', filePath);
+        return;
+    }
+
+    // Check if the filePath exists and is accessible
     fs.stat(filePath, (err, stats) => {
         if (err) {
             // File or directory not found
@@ -109,15 +119,32 @@ export function serveStatic(res: http.ServerResponse, filePath: string): void {
             const extname = path.extname(filePath).toLowerCase();
             const contentType = {
                 '.html': 'text/html',
-                '.js': 'text/javascript',
                 '.css': 'text/css',
+                '.js': 'application/javascript',
                 '.json': 'application/json',
                 '.png': 'image/png',
-                '.jpg': 'image/jpg',
+                '.jpg': 'image/jpeg',
                 '.jpeg': 'image/jpeg',
                 '.gif': 'image/gif',
                 '.svg': 'image/svg+xml',
+                '.ico': 'image/x-icon',
                 '.txt': 'text/plain',
+                '.pdf': 'application/pdf',
+                '.zip': 'application/zip',
+                '.mp4': 'video/mp4',
+                '.mp3': 'audio/mpeg',
+                '.wav': 'audio/wav',
+                '.ogg': 'audio/ogg',
+                '.webp': 'image/webp',
+                '.avif': 'image/avif',
+                '.flac': 'audio/flac',
+                '.aac': 'audio/aac',
+                '.woff': 'font/woff',
+                '.woff2': 'font/woff2',
+                '.ttf': 'font/ttf',
+                '.eot': 'application/vnd.ms-fontobject',
+                '.xml': 'application/xml',
+                '.csv': 'text/csv'
             }[extname] || 'application/octet-stream';
 
             fs.readFile(filePath, (err, data) => {

@@ -169,7 +169,7 @@ declare function getRequestBody(req: http.IncomingMessage, options?: {
     timeout?: number;
     maxSize?: number;
 }): Promise<string>;
-declare function serveStatic(res: http.ServerResponse, filePath: string): void;
+declare function serveStatic(res: http.ServerResponse, baseDir: string, requestedPath: string): void;
 declare class Router {
     private routes;
     addRoute(path: string, method: string, handler: (req: http.IncomingMessage, res: http.ServerResponse) => void): void;

@@ -529,7 +529,13 @@ function getRequestBody(req, options = {}) {
     });
   });
 }
-function serveStatic(res, filePath) {
+function serveStatic(res, baseDir, requestedPath) {
+  const filePath = import_path2.default.resolve(import_path2.default.join(baseDir, requestedPath));
+  if (!filePath.startsWith(import_path2.default.resolve(baseDir))) {
+    sendText(res, 403, "Forbidden: Access denied");
+    console.error("Error: Attempted to access restricted path:", filePath);
+    return;
+  }
   import_fs3.default.stat(filePath, (err, stats) => {
     if (err) {
       sendText(res, 404, "File Not Found");
@@ -550,15 +556,32 @@ function serveStatic(res, filePath) {
       const extname = import_path2.default.extname(filePath).toLowerCase();
       const contentType = {
         ".html": "text/html",
-        ".js": "text/javascript",
         ".css": "text/css",
+        ".js": "application/javascript",
         ".json": "application/json",
         ".png": "image/png",
-        ".jpg": "image/jpg",
+        ".jpg": "image/jpeg",
         ".jpeg": "image/jpeg",
         ".gif": "image/gif",
         ".svg": "image/svg+xml",
-        ".txt": "text/plain"
+        ".ico": "image/x-icon",
+        ".txt": "text/plain",
+        ".pdf": "application/pdf",
+        ".zip": "application/zip",
+        ".mp4": "video/mp4",
+        ".mp3": "audio/mpeg",
+        ".wav": "audio/wav",
+        ".ogg": "audio/ogg",
+        ".webp": "image/webp",
+        ".avif": "image/avif",
+        ".flac": "audio/flac",
+        ".aac": "audio/aac",
+        ".woff": "font/woff",
+        ".woff2": "font/woff2",
+        ".ttf": "font/ttf",
+        ".eot": "application/vnd.ms-fontobject",
+        ".xml": "application/xml",
+        ".csv": "text/csv"
       }[extname] || "application/octet-stream";
       import_fs3.default.readFile(filePath, (err2, data) => {
         if (err2) {
@@ -588,12 +611,17 @@ var Router = class {
   handleRequest(req, res) {
     const { pathname } = parseUrl(req);
     const method = getMethod(req);
-    const route = this.routes[pathname];
-    if (route && route[method]) {
-      route[method](req, res);
-    } else {
-      this.notFoundHandler(req, res);
+    if (this.routes[pathname] && this.routes[pathname][method]) {
+      return this.routes[pathname][method](req, res);
     }
+    for (const route in this.routes) {
+      if (route.endsWith("/*") && pathname.startsWith(route.replace("/*", ""))) {
+        if (this.routes[route][method]) {
+          return this.routes[route][method](req, res);
+        }
+      }
+    }
+    this.notFoundHandler(req, res);
   }
   // Default 404 handler
   notFoundHandler(req, res) {
