@@ -151,14 +151,25 @@ export class Router {
     handleRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
         const { pathname } = parseUrl(req);
         const method = getMethod(req);
-
-        const route = this.routes[pathname];
-        if (route && route[method]) {
-            route[method](req, res);
-        } else {
-            this.notFoundHandler(req, res);
+    
+        // Check for exact match
+        if (this.routes[pathname] && this.routes[pathname][method]) {
+            return this.routes[pathname][method](req, res);
         }
+    
+        // Check for wildcard matches (e.g., "/static/*" should match "/static/style.css")
+        for (const route in this.routes) {
+            if (route.endsWith("/*") && pathname.startsWith(route.replace("/*", ""))) {
+                if (this.routes[route][method]) {
+                    return this.routes[route][method](req, res);
+                }
+            }
+        }
+    
+        // If no match found, send 404
+        this.notFoundHandler(req, res);
     }
+    
 
     // Default 404 handler
     private notFoundHandler(req: http.IncomingMessage, res: http.ServerResponse): void {
