@@ -147,19 +147,30 @@ export const formatBytes = (bytes: number, decimals = 2): string => {
 };
 
 export const getTime = (
-  date: Date = new Date(),
+  date?: Date | string | number | { utc?: boolean; timezone?: string; format12Hour?: boolean },
   options?: { utc?: boolean; timezone?: string; format12Hour?: boolean }
-): string => {
+): string | null => {
+  if (typeof date === "object" && !("getTime" in date)) {
+    options = date;
+    date = undefined;
+  }
+
   const { utc = false, timezone, format12Hour = true } = options || {};
+  
+  let dateObj: Date = date ? new Date(date) : new Date();
+  if (isNaN(dateObj.getTime())) return null;
+
   const formatOptions: Intl.DateTimeFormatOptions = {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: format12Hour,
-      timeZone: timezone || (utc ? "UTC" : undefined),
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: format12Hour,
+    timeZone: timezone || (utc ? "UTC" : undefined),
   };
-  return new Intl.DateTimeFormat("en-US", formatOptions).format(date);
+
+  return new Intl.DateTimeFormat("en-US", formatOptions).format(dateObj);
 };
+
 
 export const getDate = (date: Date = new Date(), options?: { format?: string; utc?: boolean; timezone?: string }): string => {
   const { format = "YYYY-MM-DD", utc = false, timezone } = options || {};
