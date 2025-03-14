@@ -464,6 +464,7 @@ var import_http = __toESM(require("http"), 1);
 var import_url2 = __toESM(require("url"), 1);
 var import_fs3 = __toESM(require("fs"), 1);
 var import_path2 = __toESM(require("path"), 1);
+var import_ejs = __toESM(require("ejs"), 1);
 var Router = class {
   constructor() {
     this.routes = {};
@@ -530,35 +531,11 @@ var Router = class {
   // Custom EJS template renderer
   // Custom EJS template renderer
   renderEjsTemplate(filePath, data, callback) {
-    import_fs3.default.readFile(filePath, "utf8", (err, template) => {
-      if (err)
-        return callback(err);
-      try {
-        const escapeHtml = (unsafe) => {
-          return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        };
-        let code = "`";
-        let cursor = 0;
-        const regex = /<%([=-]?)([\s\S]+?)%>/g;
-        let match;
-        while ((match = regex.exec(template)) !== null) {
-          code += template.slice(cursor, match.index).replace(/`/g, "\\`");
-          cursor = match.index + match[0].length;
-          const [fullMatch, type, content] = match;
-          if (type === "=") {
-            code += "${escapeHtml(String(" + content.trim() + "))}";
-          } else if (type === "-") {
-            code += "${String(" + content.trim() + ")}";
-          } else {
-            code += "`;\n" + content.trim() + "\noutput += `";
-          }
-        }
-        code += template.slice(cursor).replace(/`/g, "\\`") + "`;";
-        const renderFunc = new Function("data", "escapeHtml", `"use strict"; let output = ${code}; return output;`);
-        const html = renderFunc(data, escapeHtml);
-        callback(null, html);
-      } catch (e) {
-        callback(e instanceof Error ? e : new Error(String(e)));
+    import_ejs.default.renderFile(filePath, data, (err, rendered) => {
+      if (err) {
+        callback(err);
+      } else {
+        callback(null, rendered);
       }
     });
   }

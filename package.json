@@ -13,11 +13,11 @@
       "types": "./dist/index.d.ts"
     }
   },
-"scripts": {
-  "build": "tsup src/index.ts --format cjs,esm --dts --out-dir dist",
-  "dev": "tsup src/index.ts --format cjs,esm --dts --out-dir dist --watch",
-  "test": "node test.js"
-},
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --out-dir dist",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --out-dir dist --watch",
+    "test": "node test.js"
+  },
   "keywords": [
     "utils",
     "utilities",
@@ -27,8 +27,12 @@
   "author": "Maher Xubair",
   "license": "MIT",
   "devDependencies": {
+    "@types/ejs": "^3.1.5",
     "@types/node": "^22.13.10",
     "tsup": "^7.2.0",
     "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10"
   }
 }

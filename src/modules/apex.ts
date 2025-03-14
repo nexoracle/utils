@@ -2,6 +2,7 @@ import http from 'http';
 import url from 'url';
 import fs from 'fs';
 import path from 'path';
+import ejs from "ejs"
 import { IncomingMessage, ServerResponse } from 'http';
 
 // Middleware type
@@ -81,56 +82,15 @@ class Router {
     // Custom EJS template renderer
 // Custom EJS template renderer
 private renderEjsTemplate(filePath: string, data: { [key: string]: any }, callback: (err: Error | null, html?: string) => void): void {
-    fs.readFile(filePath, 'utf8', (err, template) => {
-        if (err) return callback(err);
-
-        try {
-            // Escape HTML function
-            const escapeHtml = (unsafe: string): string => {
-                return unsafe
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-            };
-
-            let code = "`"; // Use template literals
-            let cursor = 0;
-            const regex = /<%([=-]?)([\s\S]+?)%>/g;
-            let match;
-
-            while ((match = regex.exec(template)) !== null) {
-                code += template.slice(cursor, match.index).replace(/`/g, "\\`"); // Preserve static content
-                cursor = match.index + match[0].length;
-
-                const [fullMatch, type, content] = match;
-
-                if (type === "=") {
-                    // `<%= %>` → Escaped output
-                    code += "${escapeHtml(String(" + content.trim() + "))}";
-                } else if (type === "-") {
-                    // `<%- %>` → Unescaped output
-                    code += "${String(" + content.trim() + ")}";
-                } else {
-                    // `<% %>` → JavaScript block (if, loops, etc.)
-                    code += "`;\n" + content.trim() + "\noutput += `";
-                }
-            }
-
-            code += template.slice(cursor).replace(/`/g, "\\`") + "`;";
-
-            // Create function safely
-            const renderFunc = new Function("data", "escapeHtml", `"use strict"; let output = ${code}; return output;`);
-            const html = renderFunc(data, escapeHtml);
-
-            callback(null, html);
-        } catch (e) {
-            callback(e instanceof Error ? e : new Error(String(e)));
+    // Render the EJS template using the ejs package
+    ejs.renderFile(filePath, data, (err, rendered) => {
+        if (err) {
+            callback(err);
+        } else {
+            callback(null, rendered);
         }
     });
 }
-
 
 
     // Render a view
