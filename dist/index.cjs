@@ -691,7 +691,7 @@ var apex = {
       }
     };
   },
-  rateLimiter: (options = {}) => {
+  rateLimit: (options = {}) => {
     const {
       windowMs = 60 * 1e3,
       // 1 minute
@@ -705,6 +705,12 @@ var apex = {
       keyGenerator = (req) => req.ip || "global",
       // Default key generator (IP-based)
       handler = (req, res) => {
+        const key = keyGenerator(req);
+        const remainingTime = store[key] ? Math.ceil((store[key].resetTime - Date.now()) / 1e3) : 0;
+        res.setHeader("RateLimit-Limit", max);
+        res.setHeader("RateLimit-Remaining", 0);
+        res.setHeader("RateLimit-Reset", remainingTime);
+        res.setHeader("RateLimit-Policy", `${max};w=${windowMs / 1e3}`);
         res.status(statusCode).json({ message });
       }
     } = options;
@@ -731,13 +737,14 @@ var apex = {
       } else {
         store[key].count++;
       }
+      const remainingTime = Math.ceil((store[key].resetTime - now) / 1e3);
+      res.setHeader("RateLimit-Limit", max);
+      res.setHeader("RateLimit-Remaining", Math.max(0, max - store[key].count));
+      res.setHeader("RateLimit-Reset", remainingTime);
+      res.setHeader("RateLimit-Policy", `${max};w=${windowMs / 1e3}`);
       if (store[key].count > max) {
         return handler(req, res);
       }
-      res.setHeader("RateLimit-Limit", max);
-      res.setHeader("RateLimit-Remaining", Math.max(0, max - store[key].count));
-      res.setHeader("RateLimit-Reset", Math.ceil(store[key].resetTime / 1e3));
-      res.setHeader("RateLimit-Policy", `${max};w=${windowMs / 1e3}`);
       next();
     };
   }

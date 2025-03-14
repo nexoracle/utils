@@ -217,7 +217,7 @@ declare const apex: {
     sendFile(res: ServerResponse, filePath: string): void;
     static(staticPath: string): Middleware;
     favicon(iconPath: string): Middleware;
-    rateLimiter: (options?: RateLimiterOptions) => Middleware;
+    rateLimit: (options?: RateLimiterOptions) => Middleware;
 };
 
 declare function log(...args: any[]): void;
