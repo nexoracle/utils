@@ -63,13 +63,7 @@ class Router {
         console.log(`Setting ${key} to ${value}`); // Debugging
         if (key === 'view engine') {
             if (value === 'ejs') {
-                this.viewEngine = (filePath: string, data: { [key: string]: any }, callback: (err: Error | null, html?: string) => void) => {
-                    fs.readFile(filePath, 'utf8', (err, template) => {
-                        if (err) return callback(err);
-                        const rendered = template.replace(/<%=\s*(.*?)\s*%>/g, (_, key) => data[key] || '');
-                        callback(null, rendered);
-                    });
-                };
+                this.viewEngine = this.renderEjs; // Use the custom EJS renderer
             } else {
                 throw new Error(`Unsupported view engine: ${value}`);
             }
@@ -82,6 +76,70 @@ class Router {
     // Get configuration
     getSetting(key: string): any {
         return this.settings[key];
+    }
+
+    // Custom EJS renderer
+    private renderEjs(filePath: string, data: { [key: string]: any }, callback: (err: Error | null, html?: string) => void): void {
+        fs.readFile(filePath, 'utf8', (err, template) => {
+            if (err) return callback(err);
+
+            try {
+                // Replace `<% %>` (control flow)
+                template = template.replace(/<%([\s\S]*?)%>/g, (_, code) => {
+                    return `\n${code}\n`;
+                });
+
+                // Replace `<%= %>` (escaped output)
+                template = template.replace(/<%=\s*(.*?)\s*%>/g, (_, key) => {
+                    return `\n__output += this.escapeHtml(${key});\n`;
+                });
+
+                // Replace `<%- %>` (unescaped output)
+                template = template.replace(/<%-?\s*(.*?)\s*%>/g, (_, key) => {
+                    return `\n__output += ${key};\n`;
+                });
+
+                // Replace `<%# %>` (comments)
+                template = template.replace(/<%#([\s\S]*?)%>/g, '');
+
+                // Replace `<%%` and `%%>` (literal tags)
+                template = template.replace(/<%%/g, '<%').replace(/%%>/g, '%>');
+
+                // Replace `-%>` (newline-trim mode)
+                template = template.replace(/-\s*%>/g, '%>');
+
+                // Replace `<%_` and `_%>` (whitespace-trim mode)
+                template = template.replace(/<%_\s*/g, '<%').replace(/\s*_%>/g, '%>');
+
+                // Replace `include`
+                template = template.replace(/<%-\s*include\s*\(\s*['"](.*?)['"]\s*\)\s*%>/g, (_, partialPath) => {
+                    const partialFilePath = path.join(path.dirname(filePath), `${partialPath}.ejs`);
+                    return fs.readFileSync(partialFilePath, 'utf8');
+                });
+
+                // Generate the final function
+                const fn = new Function(
+                    ...Object.keys(data),
+                    `let __output = '';\n${template}\nreturn __output;`
+                );
+
+                // Execute the function and get the rendered HTML
+                const html = fn(...Object.values(data));
+                callback(null, html);
+            } catch (err) {
+                callback(err instanceof Error ? err : new Error(String(err))); // Fix the error
+            }
+        });
+    }
+
+    // Escape HTML to prevent XSS
+    private escapeHtml(unsafe: string): string {
+        return unsafe
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     // Render a view
