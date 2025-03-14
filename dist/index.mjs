@@ -422,9 +422,8 @@ var Router = class {
       }
     } else if (key === "views") {
       this.viewsDir = value;
-    } else {
-      this.settings[key] = value;
     }
+    this.settings[key] = value;
   }
   // Get configuration
   getSetting(key) {

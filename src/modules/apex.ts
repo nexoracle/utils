@@ -60,6 +60,7 @@ class Router {
 
     // Set configuration
     set(key: string, value: any): void {
+        console.log(`Setting ${key} to ${value}`); // Debugging
         if (key === 'view engine') {
             if (value === 'ejs') {
                 this.viewEngine = (filePath: string, data: { [key: string]: any }, callback: (err: Error | null, html?: string) => void) => {
@@ -74,9 +75,8 @@ class Router {
             }
         } else if (key === 'views') {
             this.viewsDir = value;
-        } else {
-            this.settings[key] = value;
         }
+        this.settings[key] = value; // Store the setting
     }
 
     // Get configuration
@@ -86,6 +86,7 @@ class Router {
 
     // Render a view
     render(res: ServerResponse, viewName: string, data: { [key: string]: any } = {}): void {
+        console.log(`Rendering view: ${viewName}`); // Debugging
         if (!this.viewEngine) {
             throw new Error('View engine not set. Use set("view engine", "ejs") to configure a view engine.');
         }
@@ -96,8 +97,11 @@ class Router {
         }
 
         const viewPath = path.join(this.viewsDir, `${viewName}.${viewExtension}`);
+        console.log(`View path: ${viewPath}`); // Debugging
+
         this.viewEngine(viewPath, data, (err, html) => {
             if (err) {
+                console.error(`Error rendering view: ${err.message}`); // Debugging
                 apex.text(res, 500, `Error rendering view: ${err.message}`);
             } else {
                 apex.html(res, 200, html || '');
