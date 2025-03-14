@@ -359,7 +359,6 @@ import http from "http";
 import url from "url";
 import fs3 from "fs";
 import path2 from "path";
-import ejs from "ejs";
 var Router = class {
   constructor() {
     this.routes = {};
@@ -407,10 +406,16 @@ var Router = class {
   }
   // Set configuration
   set(key, value) {
-    console.log(`Setting ${key} to ${value}`);
     if (key === "view engine") {
       if (value === "ejs") {
-        this.viewEngine = this.renderEjsTemplate;
+        this.viewEngine = (filePath, data, callback) => {
+          fs3.readFile(filePath, "utf8", (err, template) => {
+            if (err)
+              return callback(err);
+            const rendered = template.replace(/<%=\s*(.*?)\s*%>/g, (_, key2) => data[key2] || "");
+            callback(null, rendered);
+          });
+        };
       } else {
         throw new Error(`Unsupported view engine: ${value}`);
       }
@@ -423,20 +428,8 @@ var Router = class {
   getSetting(key) {
     return this.settings[key];
   }
-  // Custom EJS template renderer
-  // Custom EJS template renderer
-  renderEjsTemplate(filePath, data, callback) {
-    ejs.renderFile(filePath, data, (err, rendered) => {
-      if (err) {
-        callback(err);
-      } else {
-        callback(null, rendered);
-      }
-    });
-  }
   // Render a view
   render(res, viewName, data = {}) {
-    console.log(`Rendering view: ${viewName}`);
     if (!this.viewEngine) {
       throw new Error('View engine not set. Use set("view engine", "ejs") to configure a view engine.');
     }
@@ -445,7 +438,6 @@ var Router = class {
       throw new Error('View engine not set. Use set("view engine", "ejs") to configure a view engine.');
     }
     const viewPath = path2.join(this.viewsDir, `${viewName}.${viewExtension}`);
-    console.log(`View path: ${viewPath}`);
     this.viewEngine(viewPath, data, (err, html) => {
       if (err) {
         console.error(`Error rendering view: ${err.message}`);
@@ -457,23 +449,48 @@ var Router = class {
   }
   // Handle incoming requests
   handleRequest(req, res) {
-    const { pathname } = parseUrl(req);
-    const method = getMethod(req);
+    const enhancedReq = req;
+    const enhancedRes = res;
+    enhancedRes.status = function(code) {
+      this.statusCode = code;
+      return this;
+    };
+    enhancedRes.json = function(data) {
+      this.setHeader("Content-Type", "application/json");
+      this.end(JSON.stringify(data));
+    };
+    enhancedRes.send = function(data) {
+      if (typeof data === "object") {
+        this.json(data);
+      } else {
+        this.setHeader("Content-Type", "text/plain");
+        this.end(data);
+      }
+    };
+    enhancedRes.cookie = function(name, value, options) {
+      const cookie = `${name}=${value}; ${Object.entries(options || {}).map(([k, v]) => `${k}=${v}`).join("; ")}`;
+      this.setHeader("Set-Cookie", cookie);
+    };
+    enhancedRes.clearCookie = function(name, options) {
+      this.setHeader("Set-Cookie", `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
+    };
+    const { pathname, query } = parseUrl(enhancedReq);
+    enhancedReq.query = query;
     const executeMiddlewares = (index) => {
       if (index < this.middlewares.length) {
-        this.middlewares[index](req, res, () => executeMiddlewares(index + 1));
+        this.middlewares[index](enhancedReq, enhancedRes, () => executeMiddlewares(index + 1));
       } else {
-        if (this.routes[pathname] && this.routes[pathname][method]) {
-          return this.routes[pathname][method](req, res);
+        if (this.routes[pathname] && this.routes[pathname][req.method]) {
+          return this.routes[pathname][req.method](enhancedReq, enhancedRes);
         }
         for (const route in this.routes) {
           if (route.endsWith("/*") && pathname.startsWith(route.replace("/*", ""))) {
-            if (this.routes[route][method]) {
-              return this.routes[route][method](req, res);
+            if (this.routes[route][req.method]) {
+              return this.routes[route][req.method](enhancedReq, enhancedRes);
             }
           }
         }
-        this.notFoundHandler(req, res);
+        this.notFoundHandler(enhancedReq, enhancedRes);
       }
     };
     executeMiddlewares(0);
@@ -579,9 +596,6 @@ function parseUrl(req) {
     pathname: parsedUrl.pathname || "",
     query
   };
-}
-function getMethod(req) {
-  return req.method?.toUpperCase() || "GET";
 }
 
 // src/modules/console.ts

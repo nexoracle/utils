@@ -155,7 +155,24 @@ declare const runCommandSync: (command: string, cwd?: string) => string | null;
  */
 declare const runSpawn: (command: string, args: string[], cwd?: string) => Promise<string>;
 
-type Middleware = (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
+interface Request extends IncomingMessage {
+    body?: any;
+    cookies?: {
+        [key: string]: string;
+    };
+    session?: any;
+    query?: {
+        [key: string]: string | string[];
+    };
+}
+interface Response extends ServerResponse {
+    status: (code: number) => Response;
+    json: (data: any) => void;
+    send: (data: any) => void;
+    cookie: (name: string, value: string, options?: any) => void;
+    clearCookie: (name: string, options?: any) => void;
+}
+type Middleware = (req: Request, res: Response, next: () => void) => void;
 declare class Router {
     private routes;
     private middlewares;
@@ -163,14 +180,13 @@ declare class Router {
     private viewsDir;
     private viewEngine;
     use(path: string | Middleware, middleware?: Middleware): void;
-    get(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void;
-    post(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void;
-    put(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void;
-    delete(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void;
+    get(path: string, handler: (req: Request, res: Response) => void): void;
+    post(path: string, handler: (req: Request, res: Response) => void): void;
+    put(path: string, handler: (req: Request, res: Response) => void): void;
+    delete(path: string, handler: (req: Request, res: Response) => void): void;
     private addRoute;
     set(key: string, value: any): void;
     getSetting(key: string): any;
-    private renderEjsTemplate;
     render(res: ServerResponse, viewName: string, data?: {
         [key: string]: any;
     }): void;

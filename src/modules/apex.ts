@@ -2,15 +2,33 @@ import http from 'http';
 import url from 'url';
 import fs from 'fs';
 import path from 'path';
-import ejs from "ejs"
 import { IncomingMessage, ServerResponse } from 'http';
 
-// Middleware type
-type Middleware = (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
+// Enhanced Request type
+interface Request extends IncomingMessage {
+    body?: any;
+    cookies?: { [key: string]: string };
+    session?: any;
+    query?: { [key: string]: string | string[] };
+    params?: { [key: string]: string };
+    ip?: string;
+}
 
-// Router class to handle routes and methods
+// Enhanced Response type
+interface Response extends ServerResponse {
+    status: (code: number) => Response;
+    json: (data: any) => void;
+    send: (data: any) => void;
+    cookie: (name: string, value: string, options?: any) => void;
+    clearCookie: (name: string, options?: any) => void;
+    redirect: (url: string) => void;
+}
+
+// Middleware type
+type Middleware = (req: Request, res: Response, next: () => void) => void;
+
 class Router {
-    private routes: { [path: string]: { [method: string]: (req: IncomingMessage, res: ServerResponse) => void } } = {};
+    private routes: { [path: string]: { [method: string]: (req: Request, res: Response) => void } } = {};
     private middlewares: Middleware[] = [];
     private settings: { [key: string]: any } = {};
     private viewsDir: string = '';
@@ -32,27 +50,27 @@ class Router {
     }
 
     // Add GET route
-    get(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void {
+    get(path: string, handler: (req: Request, res: Response) => void): void {
         this.addRoute(path, 'GET', handler);
     }
 
     // Add POST route
-    post(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void {
+    post(path: string, handler: (req: Request, res: Response) => void): void {
         this.addRoute(path, 'POST', handler);
     }
 
     // Add PUT route
-    put(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void {
+    put(path: string, handler: (req: Request, res: Response) => void): void {
         this.addRoute(path, 'PUT', handler);
     }
 
     // Add DELETE route
-    delete(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void {
+    delete(path: string, handler: (req: Request, res: Response) => void): void {
         this.addRoute(path, 'DELETE', handler);
     }
 
     // Add a route with a handler for a specific HTTP method
-    private addRoute(path: string, method: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void {
+    private addRoute(path: string, method: string, handler: (req: Request, res: Response) => void): void {
         if (!this.routes[path]) {
             this.routes[path] = {};
         }
@@ -61,17 +79,22 @@ class Router {
 
     // Set configuration
     set(key: string, value: any): void {
-        console.log(`Setting ${key} to ${value}`); // Debugging
         if (key === 'view engine') {
             if (value === 'ejs') {
-                this.viewEngine = this.renderEjsTemplate; // Use custom EJS renderer
+                this.viewEngine = (filePath: string, data: { [key: string]: any }, callback: (err: Error | null, html?: string) => void) => {
+                    fs.readFile(filePath, 'utf8', (err, template) => {
+                        if (err) return callback(err);
+                        const rendered = template.replace(/<%=\s*(.*?)\s*%>/g, (_, key) => data[key] || '');
+                        callback(null, rendered);
+                    });
+                };
             } else {
                 throw new Error(`Unsupported view engine: ${value}`);
             }
         } else if (key === 'views') {
             this.viewsDir = value;
         }
-        this.settings[key] = value; // Store the setting
+        this.settings[key] = value;
     }
 
     // Get configuration
@@ -79,23 +102,8 @@ class Router {
         return this.settings[key];
     }
 
-    // Custom EJS template renderer
-// Custom EJS template renderer
-private renderEjsTemplate(filePath: string, data: { [key: string]: any }, callback: (err: Error | null, html?: string) => void): void {
-    // Render the EJS template using the ejs package
-    ejs.renderFile(filePath, data, (err, rendered) => {
-        if (err) {
-            callback(err);
-        } else {
-            callback(null, rendered);
-        }
-    });
-}
-
-
     // Render a view
     render(res: ServerResponse, viewName: string, data: { [key: string]: any } = {}): void {
-        console.log(`Rendering view: ${viewName}`); // Debugging
         if (!this.viewEngine) {
             throw new Error('View engine not set. Use set("view engine", "ejs") to configure a view engine.');
         }
@@ -106,7 +114,6 @@ private renderEjsTemplate(filePath: string, data: { [key: string]: any }, callba
         }
 
         const viewPath = path.join(this.viewsDir, `${viewName}.${viewExtension}`);
-        console.log(`View path: ${viewPath}`); // Debugging
 
         this.viewEngine(viewPath, data, (err, html) => {
             if (err) {
@@ -120,30 +127,63 @@ private renderEjsTemplate(filePath: string, data: { [key: string]: any }, callba
 
     // Handle incoming requests
     handleRequest(req: IncomingMessage, res: ServerResponse): void {
-        const { pathname } = parseUrl(req);
-        const method = getMethod(req);
+        const enhancedReq = req as Request;
+        const enhancedRes = res as Response;
+
+        // Enhance req object
+        enhancedReq.ip = req.socket.remoteAddress;
+        enhancedReq.query = parseUrl(req).query;
+
+        // Enhance res object
+        enhancedRes.status = function (code: number) {
+            this.statusCode = code;
+            return this;
+        };
+        enhancedRes.json = function (data: any) {
+            this.setHeader('Content-Type', 'application/json');
+            this.end(JSON.stringify(data));
+        };
+        enhancedRes.send = function (data: any) {
+            if (typeof data === 'object') {
+                this.json(data);
+            } else {
+                this.setHeader('Content-Type', 'text/plain');
+                this.end(data);
+            }
+        };
+        enhancedRes.cookie = function (name: string, value: string, options?: any) {
+            const cookie = `${name}=${value}; ${Object.entries(options || {}).map(([k, v]) => `${k}=${v}`).join('; ')}`;
+            this.setHeader('Set-Cookie', cookie);
+        };
+        enhancedRes.clearCookie = function (name: string, options?: any) {
+            this.setHeader('Set-Cookie', `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
+        };
+        enhancedRes.redirect = function (url: string) {
+            this.writeHead(302, { Location: url });
+            this.end();
+        };
 
         // Execute middlewares
         const executeMiddlewares = (index: number) => {
             if (index < this.middlewares.length) {
-                this.middlewares[index](req, res, () => executeMiddlewares(index + 1));
+                this.middlewares[index](enhancedReq, enhancedRes, () => executeMiddlewares(index + 1));
             } else {
                 // Check for exact match
-                if (this.routes[pathname] && this.routes[pathname][method]) {
-                    return this.routes[pathname][method](req, res);
+                if (this.routes[enhancedReq.url!] && this.routes[enhancedReq.url!][enhancedReq.method!]) {
+                    return this.routes[enhancedReq.url!][enhancedReq.method!](enhancedReq, enhancedRes);
                 }
 
                 // Check for wildcard matches (e.g., "/static/*" should match "/static/style.css")
                 for (const route in this.routes) {
-                    if (route.endsWith("/*") && pathname.startsWith(route.replace("/*", ""))) {
-                        if (this.routes[route][method]) {
-                            return this.routes[route][method](req, res);
+                    if (route.endsWith("/*") && enhancedReq.url!.startsWith(route.replace("/*", ""))) {
+                        if (this.routes[route][enhancedReq.method!]) {
+                            return this.routes[route][enhancedReq.method!](enhancedReq, enhancedRes);
                         }
                     }
                 }
 
                 // If no match found, send 404
-                this.notFoundHandler(req, res);
+                this.notFoundHandler(enhancedReq, enhancedRes);
             }
         };
 
@@ -151,7 +191,7 @@ private renderEjsTemplate(filePath: string, data: { [key: string]: any }, callba
     }
 
     // Default 404 handler
-    private notFoundHandler(req: IncomingMessage, res: ServerResponse): void {
+    private notFoundHandler(req: Request, res: Response): void {
         apex.text(res, 404, 'Not Found');
     }
 }
@@ -262,8 +302,5 @@ function parseUrl(req: IncomingMessage): { pathname: string; query: { [key: stri
     };
 }
 
-function getMethod(req: IncomingMessage): string {
-    return req.method?.toUpperCase() || 'GET';
-}
 
 export { apex };
