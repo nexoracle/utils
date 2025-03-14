@@ -471,6 +471,9 @@ var Router = class {
     this.settings = {};
     this.viewsDir = "";
     this.viewEngine = null;
+    this.trustProxy = false;
+    this.jsonSpaces = 0;
+    this.flashMessages = {};
   }
   // Add middleware
   use(path3, middleware) {
@@ -526,6 +529,10 @@ var Router = class {
       }
     } else if (key === "views") {
       this.viewsDir = value;
+    } else if (key === "trust proxy") {
+      this.setTrustProxy(value);
+    } else if (key === "json spaces") {
+      this.setJsonSpaces(value);
     }
     this.settings[key] = value;
   }
@@ -533,14 +540,58 @@ var Router = class {
   getSetting(key) {
     return this.settings[key];
   }
+  // Set trust proxy
+  setTrustProxy(value) {
+    this.trustProxy = value;
+  }
+  // Get client IP address considering trust proxy
+  getClientIp(req) {
+    if (!this.trustProxy) {
+      return req.socket.remoteAddress || "";
+    }
+    const forwardedFor = req.headers["x-forwarded-for"];
+    if (typeof forwardedFor === "string") {
+      const ips = forwardedFor.split(",");
+      if (this.trustProxy === true || this.trustProxy === "all") {
+        return ips[0].trim();
+      } else if (typeof this.trustProxy === "number") {
+        return ips[this.trustProxy - 1]?.trim() || req.socket.remoteAddress || "";
+      }
+    }
+    return req.socket.remoteAddress || "";
+  }
+  // Set JSON spaces
+  setJsonSpaces(spaces) {
+    if (typeof spaces !== "number" || spaces < 0) {
+      throw new Error("jsonSpaces must be a non-negative number");
+    }
+    this.jsonSpaces = spaces;
+  }
+  // Flash middleware
+  useFlash() {
+    return (req, res, next) => {
+      req.flash = (type, message) => {
+        if (!this.flashMessages[type]) {
+          this.flashMessages[type] = [];
+        }
+        if (message) {
+          this.flashMessages[type].push(message);
+        }
+        return this.flashMessages[type];
+      };
+      res.locals = res.locals || {};
+      res.locals.messages = this.flashMessages;
+      next();
+    };
+  }
   // Render a view
   render(res, viewName, data = {}) {
     if (!this.viewEngine) {
-      throw new Error('View engine not set. Use set("view engine", "ejs") to configure a view engine.');
+      throw new Error('View engine not set. Use router.set("view engine", "ejs") to configure a view engine.');
     }
     const viewExtension = this.getSetting("view engine");
     if (!viewExtension) {
-      throw new Error('View engine not set. Use set("view engine", "ejs") to configure a view engine.');
+      throw new Error('View engine not set. Use router.set("view engine", "ejs") to configure a view engine.');
     }
     const viewPath = import_path2.default.join(this.viewsDir, `${viewName}.${viewExtension}`);
     this.viewEngine(viewPath, data, (err, html) => {
@@ -556,15 +607,16 @@ var Router = class {
   handleRequest(req, res) {
     const reqMethod = req;
     const resMethod = res;
-    reqMethod.ip = req.socket.remoteAddress;
+    reqMethod.ip = this.getClientIp(reqMethod);
     reqMethod.query = parseUrl(req).query;
+    resMethod.jsonSpaces = this.jsonSpaces;
     resMethod.status = function(code) {
       this.statusCode = code;
       return this;
     };
-    resMethod.json = function(data) {
+    resMethod.json = function(data, spaces) {
       this.setHeader("Content-Type", "application/json");
-      this.end(JSON.stringify(data));
+      this.end(JSON.stringify(data, null, spaces ?? this.jsonSpaces ?? 0));
     };
     resMethod.send = function(data) {
       if (typeof data === "object") {
@@ -587,13 +639,18 @@ var Router = class {
     };
     const executeMiddlewares = (index) => {
       if (index < this.middlewares.length) {
-        this.middlewares[index](reqMethod, resMethod, () => executeMiddlewares(index + 1));
+        try {
+          this.middlewares[index](reqMethod, resMethod, () => executeMiddlewares(index + 1));
+        } catch (err) {
+          console.error("Middleware error:", err);
+          apex.text(resMethod, 500, "Internal Server Error");
+        }
       } else {
         if (this.routes[reqMethod.url] && this.routes[reqMethod.url][reqMethod.method]) {
           return this.routes[reqMethod.url][reqMethod.method](reqMethod, resMethod);
         }
         for (const route in this.routes) {
-          if (route.endsWith("/*") && reqMethod.url.startsWith(route.replace("/*", ""))) {
+          if (route.endsWith("/*") && reqMethod.url.startsWith(route.slice(0, -2))) {
             if (this.routes[route][reqMethod.method]) {
               return this.routes[route][reqMethod.method](reqMethod, resMethod);
             }
@@ -621,9 +678,9 @@ var apex = {
     res.writeHead(statusCode, { "Content-Type": "text/plain" });
     res.end(message);
   },
-  json(res, statusCode, data) {
+  json(res, statusCode, data, spaces) {
     res.writeHead(statusCode, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(data));
+    res.end(JSON.stringify(data, null, spaces || 0));
   },
   html(res, statusCode, html) {
     res.writeHead(statusCode, { "Content-Type": "text/html" });

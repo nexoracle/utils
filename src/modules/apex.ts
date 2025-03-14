@@ -11,15 +11,19 @@ interface Request extends IncomingMessage {
     query?: { [key: string]: string | string[] };
     params?: { [key: string]: string };
     ip?: string;
+    flash?: (type: string, message?: string) => string[] | void;
 }
 
 interface Response extends ServerResponse {
     status: (code: number) => Response;
-    json: (data: any) => void;
+    json: (data: any, spaces?: number) => void; // Add spaces parameter
     send: (data: any) => void;
     cookie: (name: string, value: string, options?: any) => void;
     clearCookie: (name: string, options?: any) => void;
     redirect: (url: string) => void;
+    locals?: { [key: string]: any };
+    jsonSpaces: number;
+    
 }
 
 interface RateLimiterOptions {
@@ -47,6 +51,9 @@ class Router {
     private settings: { [key: string]: any } = {};
     private viewsDir: string = '';
     private viewEngine: ((filePath: string, data: { [key: string]: any }, callback: (err: Error | null, html?: string) => void) => void) | null = null;
+    private trustProxy: boolean | string | string[] | number = false;
+    private jsonSpaces: number = 0;
+    private flashMessages: { [key: string]: string[] } = {};
 
     // Add middleware
     use(path: string | Middleware, middleware?: Middleware): void {
@@ -107,6 +114,10 @@ class Router {
             }
         } else if (key === 'views') {
             this.viewsDir = value;
+        } else if (key === 'trust proxy') {
+            this.setTrustProxy(value);
+        } else if (key === 'json spaces') {
+            this.setJsonSpaces(value);
         }
         this.settings[key] = value;
     }
@@ -116,15 +127,67 @@ class Router {
         return this.settings[key];
     }
 
+    // Set trust proxy
+    setTrustProxy(value: boolean | string | string[] | number): void {
+        this.trustProxy = value;
+    }
+
+    // Get client IP address considering trust proxy
+    getClientIp(req: Request): string {
+        if (!this.trustProxy) {
+            return req.socket.remoteAddress || '';
+        }
+
+        const forwardedFor = req.headers['x-forwarded-for'];
+        if (typeof forwardedFor === 'string') {
+            const ips = forwardedFor.split(',');
+            if (this.trustProxy === true || this.trustProxy === 'all') {
+                return ips[0].trim();
+            } else if (typeof this.trustProxy === 'number') {
+                return ips[this.trustProxy - 1]?.trim() || req.socket.remoteAddress || '';
+            }
+        }
+
+        return req.socket.remoteAddress || '';
+    }
+
+    // Set JSON spaces
+    setJsonSpaces(spaces: number): void {
+        if (typeof spaces !== 'number' || spaces < 0) {
+            throw new Error('jsonSpaces must be a non-negative number');
+        }
+        this.jsonSpaces = spaces;
+    }
+
+    // Flash middleware
+    useFlash(): Middleware {
+        return (req: Request, res: Response, next: () => void) => {
+            req.flash = (type: string, message?: string): string[] | void => {
+                if (!this.flashMessages[type]) {
+                    this.flashMessages[type] = [];
+                }
+                if (message) {
+                    this.flashMessages[type].push(message);
+                }
+                return this.flashMessages[type];
+            };
+
+            res.locals = res.locals || {};
+            res.locals.messages = this.flashMessages;
+
+            next();
+        };
+    }
+
     // Render a view
     render(res: ServerResponse, viewName: string, data: { [key: string]: any } = {}): void {
         if (!this.viewEngine) {
-            throw new Error('View engine not set. Use set("view engine", "ejs") to configure a view engine.');
+            throw new Error('View engine not set. Use router.set("view engine", "ejs") to configure a view engine.');
         }
 
         const viewExtension = this.getSetting('view engine'); // Get the view engine extension
         if (!viewExtension) {
-            throw new Error('View engine not set. Use set("view engine", "ejs") to configure a view engine.');
+            throw new Error('View engine not set. Use router.set("view engine", "ejs") to configure a view engine.');
         }
 
         const viewPath = path.join(this.viewsDir, `${viewName}.${viewExtension}`);
@@ -145,17 +208,18 @@ class Router {
         const resMethod = res as Response;
 
         // Enhance req object
-        reqMethod.ip = req.socket.remoteAddress;
+        reqMethod.ip = this.getClientIp(reqMethod);
         reqMethod.query = parseUrl(req).query;
 
         // Enhance res object
+        resMethod.jsonSpaces = this.jsonSpaces;
         resMethod.status = function (code: number) {
             this.statusCode = code;
             return this;
         };
-        resMethod.json = function (data: any) {
+        resMethod.json = function (data: any, spaces?: number) {
             this.setHeader('Content-Type', 'application/json');
-            this.end(JSON.stringify(data));
+            this.end(JSON.stringify(data, null, spaces ?? this.jsonSpaces ?? 0));
         };
         resMethod.send = function (data: any) {
             if (typeof data === 'object') {
@@ -180,7 +244,12 @@ class Router {
         // Execute middlewares
         const executeMiddlewares = (index: number) => {
             if (index < this.middlewares.length) {
-                this.middlewares[index](reqMethod, resMethod, () => executeMiddlewares(index + 1));
+                try {
+                    this.middlewares[index](reqMethod, resMethod, () => executeMiddlewares(index + 1));
+                } catch (err) {
+                    console.error('Middleware error:', err);
+                    apex.text(resMethod, 500, 'Internal Server Error');
+                }
             } else {
                 // Check for exact match
                 if (this.routes[reqMethod.url!] && this.routes[reqMethod.url!][reqMethod.method!]) {
@@ -189,7 +258,7 @@ class Router {
 
                 // Check for wildcard matches (e.g., "/static/*" should match "/static/style.css")
                 for (const route in this.routes) {
-                    if (route.endsWith("/*") && reqMethod.url!.startsWith(route.replace("/*", ""))) {
+                    if (route.endsWith("/*") && reqMethod.url!.startsWith(route.slice(0, -2))) {
                         if (this.routes[route][reqMethod.method!]) {
                             return this.routes[route][reqMethod.method!](reqMethod, resMethod);
                         }
@@ -225,9 +294,9 @@ const apex = {
         res.writeHead(statusCode, { 'Content-Type': 'text/plain' });
         res.end(message);
     },
-    json(res: ServerResponse, statusCode: number, data: object): void {
+    json(res: ServerResponse, statusCode: number, data: object, spaces?: number): void {
         res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(data));
+        res.end(JSON.stringify(data, null, spaces || 0));
     },
     html(res: ServerResponse, statusCode: number, html: string): void {
         res.writeHead(statusCode, { 'Content-Type': 'text/html' });
@@ -363,7 +432,6 @@ const apex = {
             next(); // Proceed to the next middleware/route
         };
     },
-
 };
 
 function parseUrl(req: IncomingMessage): { pathname: string; query: { [key: string]: string | string[] } } {
@@ -382,6 +450,5 @@ function parseUrl(req: IncomingMessage): { pathname: string; query: { [key: stri
         query,
     };
 }
-
 
 export { apex };

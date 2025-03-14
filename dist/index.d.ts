@@ -168,14 +168,19 @@ interface Request extends IncomingMessage {
         [key: string]: string;
     };
     ip?: string;
+    flash?: (type: string, message?: string) => string[] | void;
 }
 interface Response extends ServerResponse {
     status: (code: number) => Response;
-    json: (data: any) => void;
+    json: (data: any, spaces?: number) => void;
     send: (data: any) => void;
     cookie: (name: string, value: string, options?: any) => void;
     clearCookie: (name: string, options?: any) => void;
     redirect: (url: string) => void;
+    locals?: {
+        [key: string]: any;
+    };
+    jsonSpaces: number;
 }
 interface RateLimiterOptions {
     windowMs?: number;
@@ -193,6 +198,9 @@ declare class Router {
     private settings;
     private viewsDir;
     private viewEngine;
+    private trustProxy;
+    private jsonSpaces;
+    private flashMessages;
     use(path: string | Middleware, middleware?: Middleware): void;
     get(path: string, handler: (req: Request, res: Response) => void): void;
     post(path: string, handler: (req: Request, res: Response) => void): void;
@@ -201,6 +209,10 @@ declare class Router {
     private addRoute;
     set(key: string, value: any): void;
     getSetting(key: string): any;
+    setTrustProxy(value: boolean | string | string[] | number): void;
+    getClientIp(req: Request): string;
+    setJsonSpaces(spaces: number): void;
+    useFlash(): Middleware;
     render(res: ServerResponse, viewName: string, data?: {
         [key: string]: any;
     }): void;
@@ -212,7 +224,7 @@ declare const apex: {
     Router: typeof Router;
     createServer: typeof createServer;
     text(res: ServerResponse, statusCode: number, message: string): void;
-    json(res: ServerResponse, statusCode: number, data: object): void;
+    json(res: ServerResponse, statusCode: number, data: object, spaces?: number): void;
     html(res: ServerResponse, statusCode: number, html: string): void;
     sendFile(res: ServerResponse, filePath: string): void;
     static(staticPath: string): Middleware;
