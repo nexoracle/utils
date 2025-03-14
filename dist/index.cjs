@@ -554,17 +554,19 @@ var Router = class {
   }
   // Handle incoming requests
   handleRequest(req, res) {
-    const enhancedReq = req;
-    const enhancedRes = res;
-    enhancedRes.status = function(code) {
+    const reqMethod = req;
+    const resMethod = res;
+    reqMethod.ip = req.socket.remoteAddress;
+    reqMethod.query = parseUrl(req).query;
+    resMethod.status = function(code) {
       this.statusCode = code;
       return this;
     };
-    enhancedRes.json = function(data) {
+    resMethod.json = function(data) {
       this.setHeader("Content-Type", "application/json");
       this.end(JSON.stringify(data));
     };
-    enhancedRes.send = function(data) {
+    resMethod.send = function(data) {
       if (typeof data === "object") {
         this.json(data);
       } else {
@@ -572,30 +574,32 @@ var Router = class {
         this.end(data);
       }
     };
-    enhancedRes.cookie = function(name, value, options) {
+    resMethod.cookie = function(name, value, options) {
       const cookie = `${name}=${value}; ${Object.entries(options || {}).map(([k, v]) => `${k}=${v}`).join("; ")}`;
       this.setHeader("Set-Cookie", cookie);
     };
-    enhancedRes.clearCookie = function(name, options) {
+    resMethod.clearCookie = function(name, options) {
       this.setHeader("Set-Cookie", `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
     };
-    const { pathname, query } = parseUrl(enhancedReq);
-    enhancedReq.query = query;
+    resMethod.redirect = function(url2) {
+      this.writeHead(302, { Location: url2 });
+      this.end();
+    };
     const executeMiddlewares = (index) => {
       if (index < this.middlewares.length) {
-        this.middlewares[index](enhancedReq, enhancedRes, () => executeMiddlewares(index + 1));
+        this.middlewares[index](reqMethod, resMethod, () => executeMiddlewares(index + 1));
       } else {
-        if (this.routes[pathname] && this.routes[pathname][req.method]) {
-          return this.routes[pathname][req.method](enhancedReq, enhancedRes);
+        if (this.routes[reqMethod.url] && this.routes[reqMethod.url][reqMethod.method]) {
+          return this.routes[reqMethod.url][reqMethod.method](reqMethod, resMethod);
         }
         for (const route in this.routes) {
-          if (route.endsWith("/*") && pathname.startsWith(route.replace("/*", ""))) {
-            if (this.routes[route][req.method]) {
-              return this.routes[route][req.method](enhancedReq, enhancedRes);
+          if (route.endsWith("/*") && reqMethod.url.startsWith(route.replace("/*", ""))) {
+            if (this.routes[route][reqMethod.method]) {
+              return this.routes[route][reqMethod.method](reqMethod, resMethod);
             }
           }
         }
-        this.notFoundHandler(enhancedReq, enhancedRes);
+        this.notFoundHandler(reqMethod, resMethod);
       }
     };
     executeMiddlewares(0);
@@ -685,6 +689,56 @@ var apex = {
       } else {
         next();
       }
+    };
+  },
+  rateLimiter: (options = {}) => {
+    const {
+      windowMs = 60 * 1e3,
+      // 1 minute
+      max = 100,
+      // 100 requests per window
+      message = "Too many requests, please try again later.",
+      statusCode = 429,
+      // 429 Too Many Requests
+      skip = () => false,
+      // Skip rate limiting for certain requests
+      keyGenerator = (req) => req.ip || "global",
+      // Default key generator (IP-based)
+      handler = (req, res) => {
+        res.status(statusCode).json({ message });
+      }
+    } = options;
+    const store = {};
+    setInterval(() => {
+      const now = Date.now();
+      for (const key in store) {
+        if (store[key].resetTime <= now) {
+          delete store[key];
+        }
+      }
+    }, windowMs);
+    return (req, res, next) => {
+      if (skip(req)) {
+        return next();
+      }
+      const key = keyGenerator(req);
+      const now = Date.now();
+      if (!store[key]) {
+        store[key] = {
+          count: 1,
+          resetTime: now + windowMs
+        };
+      } else {
+        store[key].count++;
+      }
+      if (store[key].count > max) {
+        return handler(req, res);
+      }
+      res.setHeader("RateLimit-Limit", max);
+      res.setHeader("RateLimit-Remaining", Math.max(0, max - store[key].count));
+      res.setHeader("RateLimit-Reset", Math.ceil(store[key].resetTime / 1e3));
+      res.setHeader("RateLimit-Policy", `${max};w=${windowMs / 1e3}`);
+      next();
     };
   }
 };

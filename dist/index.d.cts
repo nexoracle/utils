@@ -164,6 +164,10 @@ interface Request extends IncomingMessage {
     query?: {
         [key: string]: string | string[];
     };
+    params?: {
+        [key: string]: string;
+    };
+    ip?: string;
 }
 interface Response extends ServerResponse {
     status: (code: number) => Response;
@@ -171,6 +175,16 @@ interface Response extends ServerResponse {
     send: (data: any) => void;
     cookie: (name: string, value: string, options?: any) => void;
     clearCookie: (name: string, options?: any) => void;
+    redirect: (url: string) => void;
+}
+interface RateLimiterOptions {
+    windowMs?: number;
+    max?: number;
+    message?: string;
+    statusCode?: number;
+    skip?: (req: Request) => boolean;
+    keyGenerator?: (req: Request) => string;
+    handler?: (req: Request, res: Response) => void;
 }
 type Middleware = (req: Request, res: Response, next: () => void) => void;
 declare class Router {
@@ -203,6 +217,7 @@ declare const apex: {
     sendFile(res: ServerResponse, filePath: string): void;
     static(staticPath: string): Middleware;
     favicon(iconPath: string): Middleware;
+    rateLimiter: (options?: RateLimiterOptions) => Middleware;
 };
 
 declare function log(...args: any[]): void;

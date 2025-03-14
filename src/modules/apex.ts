@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 import { IncomingMessage, ServerResponse } from 'http';
 
-// Enhanced Request type
 interface Request extends IncomingMessage {
     body?: any;
     cookies?: { [key: string]: string };
@@ -14,7 +13,6 @@ interface Request extends IncomingMessage {
     ip?: string;
 }
 
-// Enhanced Response type
 interface Response extends ServerResponse {
     status: (code: number) => Response;
     json: (data: any) => void;
@@ -24,7 +22,23 @@ interface Response extends ServerResponse {
     redirect: (url: string) => void;
 }
 
-// Middleware type
+interface RateLimiterOptions {
+    windowMs?: number; // Time window in milliseconds (default: 1 minute)
+    max?: number; // Maximum number of requests per window (default: 100)
+    message?: string; // Error message when limit is exceeded
+    statusCode?: number; // HTTP status code when limit is exceeded (default: 429)
+    skip?: (req: Request) => boolean; // Function to skip rate limiting for certain requests
+    keyGenerator?: (req: Request) => string; // Function to generate a unique key for each request (default: IP address)
+    handler?: (req: Request, res: Response) => void; // Custom handler when limit is exceeded
+}
+
+interface RateLimitStore {
+    [key: string]: {
+        count: number;
+        resetTime: number;
+    };
+}
+
 type Middleware = (req: Request, res: Response, next: () => void) => void;
 
 class Router {
@@ -127,23 +141,23 @@ class Router {
 
     // Handle incoming requests
     handleRequest(req: IncomingMessage, res: ServerResponse): void {
-        const enhancedReq = req as Request;
-        const enhancedRes = res as Response;
+        const reqMethod = req as Request;
+        const resMethod = res as Response;
 
         // Enhance req object
-        enhancedReq.ip = req.socket.remoteAddress;
-        enhancedReq.query = parseUrl(req).query;
+        reqMethod.ip = req.socket.remoteAddress;
+        reqMethod.query = parseUrl(req).query;
 
         // Enhance res object
-        enhancedRes.status = function (code: number) {
+        resMethod.status = function (code: number) {
             this.statusCode = code;
             return this;
         };
-        enhancedRes.json = function (data: any) {
+        resMethod.json = function (data: any) {
             this.setHeader('Content-Type', 'application/json');
             this.end(JSON.stringify(data));
         };
-        enhancedRes.send = function (data: any) {
+        resMethod.send = function (data: any) {
             if (typeof data === 'object') {
                 this.json(data);
             } else {
@@ -151,14 +165,14 @@ class Router {
                 this.end(data);
             }
         };
-        enhancedRes.cookie = function (name: string, value: string, options?: any) {
+        resMethod.cookie = function (name: string, value: string, options?: any) {
             const cookie = `${name}=${value}; ${Object.entries(options || {}).map(([k, v]) => `${k}=${v}`).join('; ')}`;
             this.setHeader('Set-Cookie', cookie);
         };
-        enhancedRes.clearCookie = function (name: string, options?: any) {
+        resMethod.clearCookie = function (name: string, options?: any) {
             this.setHeader('Set-Cookie', `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
         };
-        enhancedRes.redirect = function (url: string) {
+        resMethod.redirect = function (url: string) {
             this.writeHead(302, { Location: url });
             this.end();
         };
@@ -166,24 +180,24 @@ class Router {
         // Execute middlewares
         const executeMiddlewares = (index: number) => {
             if (index < this.middlewares.length) {
-                this.middlewares[index](enhancedReq, enhancedRes, () => executeMiddlewares(index + 1));
+                this.middlewares[index](reqMethod, resMethod, () => executeMiddlewares(index + 1));
             } else {
                 // Check for exact match
-                if (this.routes[enhancedReq.url!] && this.routes[enhancedReq.url!][enhancedReq.method!]) {
-                    return this.routes[enhancedReq.url!][enhancedReq.method!](enhancedReq, enhancedRes);
+                if (this.routes[reqMethod.url!] && this.routes[reqMethod.url!][reqMethod.method!]) {
+                    return this.routes[reqMethod.url!][reqMethod.method!](reqMethod, resMethod);
                 }
 
                 // Check for wildcard matches (e.g., "/static/*" should match "/static/style.css")
                 for (const route in this.routes) {
-                    if (route.endsWith("/*") && enhancedReq.url!.startsWith(route.replace("/*", ""))) {
-                        if (this.routes[route][enhancedReq.method!]) {
-                            return this.routes[route][enhancedReq.method!](enhancedReq, enhancedRes);
+                    if (route.endsWith("/*") && reqMethod.url!.startsWith(route.replace("/*", ""))) {
+                        if (this.routes[route][reqMethod.method!]) {
+                            return this.routes[route][reqMethod.method!](reqMethod, resMethod);
                         }
                     }
                 }
 
                 // If no match found, send 404
-                this.notFoundHandler(enhancedReq, enhancedRes);
+                this.notFoundHandler(reqMethod, resMethod);
             }
         };
 
@@ -282,7 +296,63 @@ const apex = {
                 next();
             }
         };
-    }
+    },
+    rateLimiter: (options: RateLimiterOptions = {}): Middleware => {
+        const {
+            windowMs = 60 * 1000, // 1 minute
+            max = 100, // 100 requests per window
+            message = 'Too many requests, please try again later.',
+            statusCode = 429, // 429 Too Many Requests
+            skip = () => false, // Skip rate limiting for certain requests
+            keyGenerator = (req) => req.ip || 'global', // Default key generator (IP-based)
+            handler = (req, res) => {
+                res.status(statusCode).json({ message });
+            },
+        } = options;
+
+        const store: RateLimitStore = {};
+
+        // Clear old entries from the store periodically
+        setInterval(() => {
+            const now = Date.now();
+            for (const key in store) {
+                if (store[key].resetTime <= now) {
+                    delete store[key];
+                }
+            }
+        }, windowMs);
+
+        return (req: Request, res: Response, next: () => void) => {
+            if (skip(req)) {
+                return next(); // Skip rate limiting for this request
+            }
+
+            const key = keyGenerator(req);
+            const now = Date.now();
+
+            if (!store[key]) {
+                store[key] = {
+                    count: 1,
+                    resetTime: now + windowMs,
+                };
+            } else {
+                store[key].count++;
+            }
+
+            if (store[key].count > max) {
+                return handler(req, res); // Limit exceeded
+            }
+
+            // Set standard rate limit headers
+            res.setHeader('RateLimit-Limit', max);
+            res.setHeader('RateLimit-Remaining', Math.max(0, max - store[key].count));
+            res.setHeader('RateLimit-Reset', Math.ceil(store[key].resetTime / 1000));
+            res.setHeader('RateLimit-Policy', `${max};w=${windowMs / 1000}`);
+
+            next(); // Proceed to the next middleware/route
+        };
+    },
+
 };
 
 function parseUrl(req: IncomingMessage): { pathname: string; query: { [key: string]: string | string[] } } {
