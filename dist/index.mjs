@@ -409,14 +409,7 @@ var Router = class {
     console.log(`Setting ${key} to ${value}`);
     if (key === "view engine") {
       if (value === "ejs") {
-        this.viewEngine = (filePath, data, callback) => {
-          fs3.readFile(filePath, "utf8", (err, template) => {
-            if (err)
-              return callback(err);
-            const rendered = template.replace(/<%=\s*(.*?)\s*%>/g, (_, key2) => data[key2] || "");
-            callback(null, rendered);
-          });
-        };
+        this.viewEngine = this.renderEjsTemplate;
       } else {
         throw new Error(`Unsupported view engine: ${value}`);
       }
@@ -428,6 +421,41 @@ var Router = class {
   // Get configuration
   getSetting(key) {
     return this.settings[key];
+  }
+  // Custom EJS template renderer
+  // Custom EJS template renderer
+  renderEjsTemplate(filePath, data, callback) {
+    fs3.readFile(filePath, "utf8", (err, template) => {
+      if (err)
+        return callback(err);
+      try {
+        const escapeHtml = (unsafe) => {
+          return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        };
+        let code = "`";
+        let cursor = 0;
+        const regex = /<%([=-]?)([\s\S]+?)%>/g;
+        let match;
+        while ((match = regex.exec(template)) !== null) {
+          code += template.slice(cursor, match.index).replace(/`/g, "\\`");
+          cursor = match.index + match[0].length;
+          const [fullMatch, type, content] = match;
+          if (type === "=") {
+            code += "${escapeHtml(String(" + content.trim() + "))}";
+          } else if (type === "-") {
+            code += "${String(" + content.trim() + ")}";
+          } else {
+            code += "`;\n" + content.trim() + "\noutput += `";
+          }
+        }
+        code += template.slice(cursor).replace(/`/g, "\\`") + "`;";
+        const renderFunc = new Function("data", "escapeHtml", `"use strict"; let output = ${code}; return output;`);
+        const html = renderFunc(data, escapeHtml);
+        callback(null, html);
+      } catch (e) {
+        callback(e instanceof Error ? e : new Error(String(e)));
+      }
+    });
   }
   // Render a view
   render(res, viewName, data = {}) {

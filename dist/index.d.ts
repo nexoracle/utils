@@ -170,6 +170,7 @@ declare class Router {
     private addRoute;
     set(key: string, value: any): void;
     getSetting(key: string): any;
+    private renderEjsTemplate;
     render(res: ServerResponse, viewName: string, data?: {
         [key: string]: any;
     }): void;
