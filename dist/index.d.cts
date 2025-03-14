@@ -1,7 +1,7 @@
 import { Readable } from 'stream';
 import os from 'os';
 import querystring from 'querystring';
-import http from 'http';
+import http, { ServerResponse, IncomingMessage } from 'http';
 
 declare function getRandom(options?: {
     Alphabets?: boolean;
@@ -155,28 +155,38 @@ declare const runCommandSync: (command: string, cwd?: string) => string | null;
  */
 declare const runSpawn: (command: string, args: string[], cwd?: string) => Promise<string>;
 
-declare function sendText(res: http.ServerResponse, statusCode: number, message: string): void;
-declare function sendJson(res: http.ServerResponse, statusCode: number, data: object): void;
-declare function sendBuffer(res: http.ServerResponse, statusCode: number, buffer: Buffer, contentType?: string): void;
-declare function parseUrl(req: http.IncomingMessage): {
-    pathname: string;
-    query: {
-        [key: string]: string | string[];
-    };
-};
-declare function getMethod(req: http.IncomingMessage): string;
-declare function getRequestBody(req: http.IncomingMessage, options?: {
-    timeout?: number;
-    maxSize?: number;
-}): Promise<string>;
-declare function serveStatic(res: http.ServerResponse, baseDir: string, requestedPath: string): void;
+type Middleware = (req: IncomingMessage, res: ServerResponse, next: () => void) => void;
 declare class Router {
     private routes;
-    addRoute(path: string, method: string, handler: (req: http.IncomingMessage, res: http.ServerResponse) => void): void;
-    handleRequest(req: http.IncomingMessage, res: http.ServerResponse): void;
+    private middlewares;
+    private settings;
+    private viewsDir;
+    private viewEngine;
+    use(path: string | Middleware, middleware?: Middleware): void;
+    get(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void;
+    post(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void;
+    put(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void;
+    delete(path: string, handler: (req: IncomingMessage, res: ServerResponse) => void): void;
+    private addRoute;
+    set(key: string, value: any): void;
+    getSetting(key: string): any;
+    render(res: ServerResponse, viewName: string, data?: {
+        [key: string]: any;
+    }): void;
+    handleRequest(req: IncomingMessage, res: ServerResponse): void;
     private notFoundHandler;
 }
 declare function createServer(router: Router): http.Server;
+declare const apex: {
+    Router: typeof Router;
+    createServer: typeof createServer;
+    text(res: ServerResponse, statusCode: number, message: string): void;
+    json(res: ServerResponse, statusCode: number, data: object): void;
+    html(res: ServerResponse, statusCode: number, html: string): void;
+    sendFile(res: ServerResponse, filePath: string): void;
+    static(staticPath: string): Middleware;
+    favicon(iconPath: string): Middleware;
+};
 
 declare function log(...args: any[]): void;
 declare function error(...args: any[]): void;
@@ -186,4 +196,4 @@ declare function debug(...args: any[]): void;
 declare function table(data: any, columns?: string[]): void;
 declare function clear(): void;
 
-export { FetchOptions, ReadMore, Router, appendToFile, bufferToFile, buffertoJson, buildUrl, clear, createServer, debug, decryptAES, deleteFile, deleteJson, deleteRequest, encryptAES, error, extractUrlFromString, fetchRequest, fileExists, formatBytes, formatNumber, generateUUID, getAbsolutePath, getBuffer, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getJson, getMethod, getNetworkInterfaces, getRandom, getRelativePath, getRequestBody, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, headRequest, info, isArray, isEmail, isObject, isURL, joinPath, jsontoBuffer, log, normalizePath, parseUrl, pasrseURL, patchJson, postJson, putJson, randomBytes, randomElement, randomHexColor, randomInt, randomizeArray, readFile, runCommand, runCommandSync, runSpawn, sendBuffer, sendJson, sendText, serveStatic, sha256, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };
+export { FetchOptions, ReadMore, apex, appendToFile, bufferToFile, buffertoJson, buildUrl, clear, debug, decryptAES, deleteFile, deleteJson, deleteRequest, encryptAES, error, extractUrlFromString, fetchRequest, fileExists, formatBytes, formatNumber, generateUUID, getAbsolutePath, getBuffer, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getJson, getNetworkInterfaces, getRandom, getRelativePath, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, headRequest, info, isArray, isEmail, isObject, isURL, joinPath, jsontoBuffer, log, normalizePath, pasrseURL, patchJson, postJson, putJson, randomBytes, randomElement, randomHexColor, randomInt, randomizeArray, readFile, runCommand, runCommandSync, runSpawn, sha256, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };

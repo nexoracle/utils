@@ -354,23 +354,210 @@ var runSpawn = (command, args, cwd) => {
   });
 };
 
-// src/modules/http.ts
+// src/modules/apex.ts
 import http from "http";
 import url from "url";
 import fs3 from "fs";
 import path2 from "path";
-function sendText(res, statusCode, message) {
-  res.writeHead(statusCode, { "Content-Type": "text/plain" });
-  res.end(message);
+var Router = class {
+  constructor() {
+    this.routes = {};
+    this.middlewares = [];
+    this.settings = {};
+    this.viewsDir = "";
+    this.viewEngine = null;
+  }
+  // Add middleware
+  use(path3, middleware) {
+    if (typeof path3 === "string" && middleware) {
+      this.middlewares.push((req, res, next) => {
+        if (req.url?.startsWith(path3)) {
+          middleware(req, res, next);
+        } else {
+          next();
+        }
+      });
+    } else if (typeof path3 === "function") {
+      this.middlewares.push(path3);
+    }
+  }
+  // Add GET route
+  get(path3, handler) {
+    this.addRoute(path3, "GET", handler);
+  }
+  // Add POST route
+  post(path3, handler) {
+    this.addRoute(path3, "POST", handler);
+  }
+  // Add PUT route
+  put(path3, handler) {
+    this.addRoute(path3, "PUT", handler);
+  }
+  // Add DELETE route
+  delete(path3, handler) {
+    this.addRoute(path3, "DELETE", handler);
+  }
+  // Add a route with a handler for a specific HTTP method
+  addRoute(path3, method, handler) {
+    if (!this.routes[path3]) {
+      this.routes[path3] = {};
+    }
+    this.routes[path3][method.toUpperCase()] = handler;
+  }
+  // Set configuration
+  set(key, value) {
+    if (key === "view engine") {
+      if (value === "ejs") {
+        this.viewEngine = (filePath, data, callback) => {
+          fs3.readFile(filePath, "utf8", (err, template) => {
+            if (err)
+              return callback(err);
+            const rendered = template.replace(/<%=\s*(.*?)\s*%>/g, (_, key2) => data[key2] || "");
+            callback(null, rendered);
+          });
+        };
+      } else {
+        throw new Error(`Unsupported view engine: ${value}`);
+      }
+    } else if (key === "views") {
+      this.viewsDir = value;
+    } else {
+      this.settings[key] = value;
+    }
+  }
+  // Get configuration
+  getSetting(key) {
+    return this.settings[key];
+  }
+  // Render a view
+  render(res, viewName, data = {}) {
+    if (!this.viewEngine) {
+      throw new Error('View engine not set. Use set("view engine", "ejs") to configure a view engine.');
+    }
+    const viewExtension = this.getSetting("view engine");
+    if (!viewExtension) {
+      throw new Error('View engine not set. Use set("view engine", "ejs") to configure a view engine.');
+    }
+    const viewPath = path2.join(this.viewsDir, `${viewName}.${viewExtension}`);
+    this.viewEngine(viewPath, data, (err, html) => {
+      if (err) {
+        apex.text(res, 500, `Error rendering view: ${err.message}`);
+      } else {
+        apex.html(res, 200, html || "");
+      }
+    });
+  }
+  // Handle incoming requests
+  handleRequest(req, res) {
+    const { pathname } = parseUrl(req);
+    const method = getMethod(req);
+    const executeMiddlewares = (index) => {
+      if (index < this.middlewares.length) {
+        this.middlewares[index](req, res, () => executeMiddlewares(index + 1));
+      } else {
+        if (this.routes[pathname] && this.routes[pathname][method]) {
+          return this.routes[pathname][method](req, res);
+        }
+        for (const route in this.routes) {
+          if (route.endsWith("/*") && pathname.startsWith(route.replace("/*", ""))) {
+            if (this.routes[route][method]) {
+              return this.routes[route][method](req, res);
+            }
+          }
+        }
+        this.notFoundHandler(req, res);
+      }
+    };
+    executeMiddlewares(0);
+  }
+  // Default 404 handler
+  notFoundHandler(req, res) {
+    apex.text(res, 404, "Not Found");
+  }
+};
+function createServer(router) {
+  return http.createServer((req, res) => {
+    router.handleRequest(req, res);
+  });
 }
-function sendJson(res, statusCode, data) {
-  res.writeHead(statusCode, { "Content-Type": "application/json" });
-  res.end(JSON.stringify(data));
-}
-function sendBuffer(res, statusCode, buffer, contentType = "application/octet-stream") {
-  res.writeHead(statusCode, { "Content-Type": contentType });
-  res.end(buffer);
-}
+var apex = {
+  Router,
+  createServer,
+  text(res, statusCode, message) {
+    res.writeHead(statusCode, { "Content-Type": "text/plain" });
+    res.end(message);
+  },
+  json(res, statusCode, data) {
+    res.writeHead(statusCode, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(data));
+  },
+  html(res, statusCode, html) {
+    res.writeHead(statusCode, { "Content-Type": "text/html" });
+    res.end(html);
+  },
+  sendFile(res, filePath) {
+    const extname = path2.extname(filePath).toLowerCase();
+    const contentType = {
+      ".html": "text/html",
+      ".css": "text/css",
+      ".js": "application/javascript",
+      ".json": "application/json",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".gif": "image/gif",
+      ".svg": "image/svg+xml",
+      ".ico": "image/x-icon",
+      ".txt": "text/plain",
+      ".pdf": "application/pdf",
+      ".zip": "application/zip",
+      ".mp4": "video/mp4",
+      ".mp3": "audio/mpeg",
+      ".wav": "audio/wav",
+      ".ogg": "audio/ogg",
+      ".webp": "image/webp",
+      ".avif": "image/avif",
+      ".flac": "audio/flac",
+      ".aac": "audio/aac",
+      ".woff": "font/woff",
+      ".woff2": "font/woff2",
+      ".ttf": "font/ttf",
+      ".eot": "application/vnd.ms-fontobject",
+      ".xml": "application/xml",
+      ".csv": "text/csv"
+    }[extname] || "application/octet-stream";
+    fs3.readFile(filePath, (err, data) => {
+      if (err) {
+        apex.text(res, 404, "File Not Found");
+      } else {
+        res.writeHead(200, { "Content-Type": contentType });
+        res.end(data);
+      }
+    });
+  },
+  static(staticPath) {
+    return (req, res, next) => {
+      const { pathname } = parseUrl(req);
+      const filePath = path2.join(staticPath, pathname);
+      fs3.stat(filePath, (err, stats) => {
+        if (err || !stats.isFile()) {
+          next();
+        } else {
+          apex.sendFile(res, filePath);
+        }
+      });
+    };
+  },
+  favicon(iconPath) {
+    return (req, res, next) => {
+      if (req.url === "/favicon.ico") {
+        apex.sendFile(res, iconPath);
+      } else {
+        next();
+      }
+    };
+  }
+};
 function parseUrl(req) {
   const parsedUrl = url.parse(req.url || "", true);
   const query = {};
@@ -387,138 +574,6 @@ function parseUrl(req) {
 }
 function getMethod(req) {
   return req.method?.toUpperCase() || "GET";
-}
-function getRequestBody(req, options = {}) {
-  const { timeout = 1e4, maxSize = 1024 * 1024 } = options;
-  return new Promise((resolve, reject) => {
-    let body = "";
-    let size = 0;
-    const timeoutId = setTimeout(() => {
-      req.destroy();
-      reject(new Error("Request timeout"));
-    }, timeout);
-    req.on("data", (chunk) => {
-      size += chunk.length;
-      if (size > maxSize) {
-        req.destroy();
-        clearTimeout(timeoutId);
-        reject(new Error("Request body too large"));
-      }
-      body += chunk.toString();
-    });
-    req.on("end", () => {
-      clearTimeout(timeoutId);
-      resolve(body);
-    });
-    req.on("error", (err) => {
-      clearTimeout(timeoutId);
-      reject(err);
-    });
-  });
-}
-function serveStatic(res, baseDir, requestedPath) {
-  const filePath = path2.resolve(path2.join(baseDir, requestedPath));
-  if (!filePath.startsWith(path2.resolve(baseDir))) {
-    sendText(res, 403, "Forbidden: Access denied");
-    console.error("Error: Attempted to access restricted path:", filePath);
-    return;
-  }
-  fs3.stat(filePath, (err, stats) => {
-    if (err) {
-      sendText(res, 404, "File Not Found");
-      console.error("Error:", err);
-      return;
-    }
-    if (stats.isDirectory()) {
-      const defaultFile = path2.join(filePath, "index.html");
-      fs3.readFile(defaultFile, (err2, data) => {
-        if (err2) {
-          sendText(res, 404, "Directory index not found");
-          console.error("Error:", err2);
-        } else {
-          sendBuffer(res, 200, data, "text/html");
-        }
-      });
-    } else if (stats.isFile()) {
-      const extname = path2.extname(filePath).toLowerCase();
-      const contentType = {
-        ".html": "text/html",
-        ".css": "text/css",
-        ".js": "application/javascript",
-        ".json": "application/json",
-        ".png": "image/png",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".gif": "image/gif",
-        ".svg": "image/svg+xml",
-        ".ico": "image/x-icon",
-        ".txt": "text/plain",
-        ".pdf": "application/pdf",
-        ".zip": "application/zip",
-        ".mp4": "video/mp4",
-        ".mp3": "audio/mpeg",
-        ".wav": "audio/wav",
-        ".ogg": "audio/ogg",
-        ".webp": "image/webp",
-        ".avif": "image/avif",
-        ".flac": "audio/flac",
-        ".aac": "audio/aac",
-        ".woff": "font/woff",
-        ".woff2": "font/woff2",
-        ".ttf": "font/ttf",
-        ".eot": "application/vnd.ms-fontobject",
-        ".xml": "application/xml",
-        ".csv": "text/csv"
-      }[extname] || "application/octet-stream";
-      fs3.readFile(filePath, (err2, data) => {
-        if (err2) {
-          sendText(res, 404, "File Not Found");
-          console.error("Error:", err2);
-        } else {
-          sendBuffer(res, 200, data, contentType);
-        }
-      });
-    } else {
-      sendText(res, 404, "Not a file or directory");
-    }
-  });
-}
-var Router = class {
-  constructor() {
-    this.routes = {};
-  }
-  // Add a route with a handler for a specific HTTP method
-  addRoute(path3, method, handler) {
-    if (!this.routes[path3]) {
-      this.routes[path3] = {};
-    }
-    this.routes[path3][method.toUpperCase()] = handler;
-  }
-  // Handle incoming requests
-  handleRequest(req, res) {
-    const { pathname } = parseUrl(req);
-    const method = getMethod(req);
-    if (this.routes[pathname] && this.routes[pathname][method]) {
-      return this.routes[pathname][method](req, res);
-    }
-    for (const route in this.routes) {
-      if (route.endsWith("/*") && pathname.startsWith(route.replace("/*", ""))) {
-        if (this.routes[route][method]) {
-          return this.routes[route][method](req, res);
-        }
-      }
-    }
-    this.notFoundHandler(req, res);
-  }
-  // Default 404 handler
-  notFoundHandler(req, res) {
-    sendText(res, 404, "Not Found");
-  }
-};
-function createServer(router) {
-  return http.createServer((req, res) => {
-    router.handleRequest(req, res);
-  });
 }
 
 // src/modules/console.ts
@@ -545,13 +600,12 @@ function clear() {
 }
 export {
   ReadMore,
-  Router,
+  apex,
   appendToFile,
   bufferToFile,
   buffertoJson,
   buildUrl,
   clear,
-  createServer,
   debug,
   decryptAES,
   deleteFile,
@@ -573,11 +627,9 @@ export {
   getFileExtension,
   getFileName,
   getJson,
-  getMethod,
   getNetworkInterfaces,
   getRandom,
   getRelativePath,
-  getRequestBody,
   getStreamFromBuffer,
   getSystemInfo,
   getTime,
@@ -592,7 +644,6 @@ export {
   jsontoBuffer,
   log,
   normalizePath,
-  parseUrl,
   pasrseURL,
   patchJson,
   postJson,
@@ -606,10 +657,6 @@ export {
   runCommand,
   runCommandSync,
   runSpawn,
-  sendBuffer,
-  sendJson,
-  sendText,
-  serveStatic,
   sha256,
   sleep,
   table,
