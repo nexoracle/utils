@@ -58,8 +58,17 @@ interface FetchOptions extends RequestInit {
     retryDelay?: number;
     timeout?: number;
     params?: Record<string, string | number | boolean>;
+    onDownloadProgress?: (progress: ProgressEvent) => void;
+    onUploadProgress?: (progress: ProgressEvent) => void;
+    signal?: AbortSignal;
 }
 type Interceptor<T> = (value: T) => T | Promise<T>;
+declare class ProgressEvent {
+    loaded: number;
+    total: number;
+    constructor(loaded: number, total: number);
+    get percent(): number;
+}
 declare class Axium {
     private requestInterceptors;
     private responseInterceptors;

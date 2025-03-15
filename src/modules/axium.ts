@@ -3,7 +3,10 @@ export interface FetchOptions extends RequestInit {
   retries?: number;
   retryDelay?: number;
   timeout?: number;
-  params?: Record<string, string | number | boolean>; // Add params support
+  params?: Record<string, string | number | boolean>;
+  onDownloadProgress?: (progress: ProgressEvent) => void;
+  onUploadProgress?: (progress: ProgressEvent) => void;
+  signal?: AbortSignal;
 }
 
 // Define Interceptor type
@@ -11,13 +14,18 @@ type Interceptor<T> = (value: T) => T | Promise<T>;
 
 // Custom error class
 class FetchError extends Error {
-  constructor(
-    public message: string,
-    public status?: number,
-    public response?: any
-  ) {
+  constructor(public message: string, public status?: number, public response?: any) {
     super(message);
-    this.name = 'FetchError';
+    this.name = "FetchError";
+  }
+}
+
+// ProgressEvent class for tracking progress
+class ProgressEvent {
+  constructor(public loaded: number, public total: number) {}
+
+  get percent(): number {
+    return this.total > 0 ? (this.loaded / this.total) * 100 : 0;
   }
 }
 
@@ -27,7 +35,7 @@ class Axium {
   private responseInterceptors: Interceptor<Response>[] = [];
   private globalDefaults: FetchOptions = {
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   };
 
@@ -77,98 +85,159 @@ class Axium {
 
   // Core fetch request
   async request(url: string, options: FetchOptions = {}): Promise<any> {
-    const {
-      retries = 3,
-      retryDelay = 1000,
-      timeout = 10000,
-      params,
-      ...fetchOptions
-    } = await this.applyInterceptors(this.requestInterceptors, { ...this.globalDefaults, ...options });
+    const { retries = 0, retryDelay = 0, timeout, params, onDownloadProgress, onUploadProgress, signal: externalSignal, ...fetchOptions } = await this.applyInterceptors(this.requestInterceptors, { ...this.globalDefaults, ...options });
 
     const finalUrl = this.buildUrl(url, params);
 
-    for (let attempt = 0; attempt < retries; attempt++) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
+
+      // Use external signal if provided, otherwise use the controller's signal
+      const signal = externalSignal || controller.signal;
 
       try {
         const response = await fetch(finalUrl, {
           ...fetchOptions,
-          signal: controller.signal,
+          signal,
           headers: {
-            'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36',
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36",
             ...fetchOptions.headers,
           },
         });
 
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new FetchError(`HTTP error! Status: ${response.status}`, response.status, response);
         }
 
-        const interceptedResponse = await this.applyInterceptors(this.responseInterceptors, response);
+        // Track download progress if onDownloadProgress is provided
+        if (onDownloadProgress && response.body) {
+          const reader = response.body.getReader();
+          const contentLength = Number(response.headers.get("content-length")) || 0;
+          let loaded = 0;
 
-        // Handle different response types
-        const contentType = interceptedResponse.headers.get('content-type');
-        let data;
-        if (contentType?.includes('application/json')) {
-          data = await interceptedResponse.json();
-        } else if (contentType?.includes('text')) {
-          data = await interceptedResponse.text();
+          const stream = new ReadableStream({
+            async start(controller) {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                loaded += value.length;
+                onDownloadProgress(new ProgressEvent(loaded, contentLength));
+                controller.enqueue(value);
+              }
+              controller.close();
+            },
+          });
+
+          const newResponse = new Response(stream, {
+            headers: response.headers,
+            status: response.status,
+            statusText: response.statusText,
+          });
+
+          const interceptedResponse = await this.applyInterceptors(this.responseInterceptors, newResponse);
+
+          // Handle different response types
+          const contentType = interceptedResponse.headers.get("content-type");
+          let data;
+
+          if (contentType?.includes("application/json")) {
+            data = await interceptedResponse.json();
+          } else if (contentType?.includes("text")) {
+            data = await interceptedResponse.text();
+          } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
+            data = await interceptedResponse.text();
+          } else if (contentType?.includes("application/pdf")) {
+            data = await interceptedResponse.blob();
+          } else if (contentType?.includes("image/")) {
+            data = await interceptedResponse.blob();
+          } else if (contentType?.includes("application/octet-stream")) {
+            data = await interceptedResponse.arrayBuffer();
+          } else {
+            data = await interceptedResponse.arrayBuffer();
+          }
+          return {
+            data,
+            status: interceptedResponse.status,
+            statusText: interceptedResponse.statusText,
+            headers: interceptedResponse.headers,
+            config: options,
+          };
         } else {
-          data = await interceptedResponse.arrayBuffer(); // Binary data (for files, images, etc.)
-        }
+          const interceptedResponse = await this.applyInterceptors(this.responseInterceptors, response);
 
-        // Return full Axios-like response
-        return {
-          data, // The response body
-          status: interceptedResponse.status, // HTTP status code
-          statusText: interceptedResponse.statusText, // HTTP status text
-          headers: interceptedResponse.headers, // Response headers
-          config: options, // Request configuration
-        };
+          // Handle different response types
+          const contentType = interceptedResponse.headers.get("content-type");
+          let data;
+
+          if (contentType?.includes("application/json")) {
+            data = await interceptedResponse.json();
+          } else if (contentType?.includes("text")) {
+            data = await interceptedResponse.text();
+          } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
+            data = await interceptedResponse.text();
+          } else if (contentType?.includes("application/pdf")) {
+            data = await interceptedResponse.blob();
+          } else if (contentType?.includes("image/")) {
+            data = await interceptedResponse.blob();
+          } else if (contentType?.includes("application/octet-stream")) {
+            data = await interceptedResponse.arrayBuffer();
+          } else {
+            data = await interceptedResponse.arrayBuffer();
+          }
+
+          return {
+            data,
+            status: interceptedResponse.status,
+            statusText: interceptedResponse.statusText,
+            headers: interceptedResponse.headers,
+            config: options,
+          };
+        }
       } catch (error) {
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
 
-        if (attempt === retries - 1) {
-          console.error(`Fetch failed after ${retries} attempts:`, (error as Error).message);
-          throw new FetchError((error as Error).message || 'Request failed');
+        if (attempt === retries) {
+          console.error(`Fetch failed after ${retries + 1} attempts:`, (error as Error).message);
+          throw new FetchError((error as Error).message || "Request failed");
         }
 
-        console.warn(`Retrying... (${attempt + 1}/${retries})`);
-        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        if (retryDelay > 0) {
+          console.warn(`Retrying... (${attempt + 1}/${retries + 1})`);
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        }
       }
     }
   }
 
   // Helper methods
   get(url: string, options: FetchOptions = {}) {
-    return this.request(url, { ...options, method: 'GET' });
+    return this.request(url, { ...options, method: "GET" });
   }
 
   post(url: string, data: any, options: FetchOptions = {}) {
-    return this.request(url, { ...options, method: 'POST', body: JSON.stringify(data) });
+    return this.request(url, { ...options, method: "POST", body: JSON.stringify(data) });
   }
 
   put(url: string, data: any, options: FetchOptions = {}) {
-    return this.request(url, { ...options, method: 'PUT', body: JSON.stringify(data) });
+    return this.request(url, { ...options, method: "PUT", body: JSON.stringify(data) });
   }
 
   patch(url: string, data: any, options: FetchOptions = {}) {
-    return this.request(url, { ...options, method: 'PATCH', body: JSON.stringify(data) });
+    return this.request(url, { ...options, method: "PATCH", body: JSON.stringify(data) });
   }
 
   delete(url: string, options: FetchOptions = {}) {
-    return this.request(url, { ...options, method: 'DELETE' });
+    return this.request(url, { ...options, method: "DELETE" });
   }
 
   // Multipart form data
   postFormData(url: string, data: FormData, options: FetchOptions = {}) {
     return this.request(url, {
       ...options,
-      method: 'POST',
+      method: "POST",
       body: data,
       headers: {
         ...options.headers,
@@ -181,10 +250,10 @@ class Axium {
     const encodedData = new URLSearchParams(data).toString();
     return this.request(url, {
       ...options,
-      method: 'POST',
+      method: "POST",
       body: encodedData,
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        "Content-Type": "application/x-www-form-urlencoded",
         ...options.headers,
       },
     });
@@ -197,12 +266,12 @@ class Axium {
 
   // Get buffer
   getBuffer(url: string, options: FetchOptions = {}) {
-    return this.request(url, { ...options, method: 'GET' });
+    return this.request(url, { ...options, method: "GET" });
   }
 
   // Head request
   head(url: string, options: FetchOptions = {}) {
-    return this.request(url, { ...options, method: 'HEAD' });
+    return this.request(url, { ...options, method: "HEAD" });
   }
 }
 

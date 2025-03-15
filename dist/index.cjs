@@ -276,6 +276,15 @@ var FetchError = class extends Error {
     this.name = "FetchError";
   }
 };
+var ProgressEvent = class {
+  constructor(loaded, total) {
+    this.loaded = loaded;
+    this.total = total;
+  }
+  get percent() {
+    return this.total > 0 ? this.loaded / this.total * 100 : 0;
+  }
+};
 var Axium = class {
   constructor(defaults) {
     this.requestInterceptors = [];
@@ -323,60 +332,111 @@ var Axium = class {
   }
   // Core fetch request
   async request(url2, options = {}) {
-    const {
-      retries = 3,
-      retryDelay = 1e3,
-      timeout = 1e4,
-      params,
-      ...fetchOptions
-    } = await this.applyInterceptors(this.requestInterceptors, { ...this.globalDefaults, ...options });
+    const { retries = 0, retryDelay = 0, timeout, params, onDownloadProgress, onUploadProgress, signal: externalSignal, ...fetchOptions } = await this.applyInterceptors(this.requestInterceptors, { ...this.globalDefaults, ...options });
     const finalUrl = this.buildUrl(url2, params);
-    for (let attempt = 0; attempt < retries; attempt++) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
+      const signal = externalSignal || controller.signal;
       try {
         const response = await fetch(finalUrl, {
           ...fetchOptions,
-          signal: controller.signal,
+          signal,
           headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36",
             ...fetchOptions.headers
           }
         });
-        clearTimeout(timeoutId);
+        if (timeoutId)
+          clearTimeout(timeoutId);
         if (!response.ok) {
           throw new FetchError(`HTTP error! Status: ${response.status}`, response.status, response);
         }
-        const interceptedResponse = await this.applyInterceptors(this.responseInterceptors, response);
-        const contentType = interceptedResponse.headers.get("content-type");
-        let data;
-        if (contentType?.includes("application/json")) {
-          data = await interceptedResponse.json();
-        } else if (contentType?.includes("text")) {
-          data = await interceptedResponse.text();
+        if (onDownloadProgress && response.body) {
+          const reader = response.body.getReader();
+          const contentLength = Number(response.headers.get("content-length")) || 0;
+          let loaded = 0;
+          const stream = new ReadableStream({
+            async start(controller2) {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done)
+                  break;
+                loaded += value.length;
+                onDownloadProgress(new ProgressEvent(loaded, contentLength));
+                controller2.enqueue(value);
+              }
+              controller2.close();
+            }
+          });
+          const newResponse = new Response(stream, {
+            headers: response.headers,
+            status: response.status,
+            statusText: response.statusText
+          });
+          const interceptedResponse = await this.applyInterceptors(this.responseInterceptors, newResponse);
+          const contentType = interceptedResponse.headers.get("content-type");
+          let data;
+          if (contentType?.includes("application/json")) {
+            data = await interceptedResponse.json();
+          } else if (contentType?.includes("text")) {
+            data = await interceptedResponse.text();
+          } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
+            data = await interceptedResponse.text();
+          } else if (contentType?.includes("application/pdf")) {
+            data = await interceptedResponse.blob();
+          } else if (contentType?.includes("image/")) {
+            data = await interceptedResponse.blob();
+          } else if (contentType?.includes("application/octet-stream")) {
+            data = await interceptedResponse.arrayBuffer();
+          } else {
+            data = await interceptedResponse.arrayBuffer();
+          }
+          return {
+            data,
+            status: interceptedResponse.status,
+            statusText: interceptedResponse.statusText,
+            headers: interceptedResponse.headers,
+            config: options
+          };
         } else {
-          data = await interceptedResponse.arrayBuffer();
+          const interceptedResponse = await this.applyInterceptors(this.responseInterceptors, response);
+          const contentType = interceptedResponse.headers.get("content-type");
+          let data;
+          if (contentType?.includes("application/json")) {
+            data = await interceptedResponse.json();
+          } else if (contentType?.includes("text")) {
+            data = await interceptedResponse.text();
+          } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
+            data = await interceptedResponse.text();
+          } else if (contentType?.includes("application/pdf")) {
+            data = await interceptedResponse.blob();
+          } else if (contentType?.includes("image/")) {
+            data = await interceptedResponse.blob();
+          } else if (contentType?.includes("application/octet-stream")) {
+            data = await interceptedResponse.arrayBuffer();
+          } else {
+            data = await interceptedResponse.arrayBuffer();
+          }
+          return {
+            data,
+            status: interceptedResponse.status,
+            statusText: interceptedResponse.statusText,
+            headers: interceptedResponse.headers,
+            config: options
+          };
         }
-        return {
-          data,
-          // The response body
-          status: interceptedResponse.status,
-          // HTTP status code
-          statusText: interceptedResponse.statusText,
-          // HTTP status text
-          headers: interceptedResponse.headers,
-          // Response headers
-          config: options
-          // Request configuration
-        };
       } catch (error2) {
-        clearTimeout(timeoutId);
-        if (attempt === retries - 1) {
-          console.error(`Fetch failed after ${retries} attempts:`, error2.message);
+        if (timeoutId)
+          clearTimeout(timeoutId);
+        if (attempt === retries) {
+          console.error(`Fetch failed after ${retries + 1} attempts:`, error2.message);
           throw new FetchError(error2.message || "Request failed");
         }
-        console.warn(`Retrying... (${attempt + 1}/${retries})`);
-        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        if (retryDelay > 0) {
+          console.warn(`Retrying... (${attempt + 1}/${retries + 1})`);
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        }
       }
     }
   }
