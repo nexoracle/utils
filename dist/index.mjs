@@ -1,8 +1,8 @@
-// src/utils/tools.ts
+// src/functions/tools.ts
 import { promises as fs } from "fs";
 import { Readable } from "stream";
 
-// src/utils/validation.ts
+// src/functions/validation.ts
 function isURL(url2) {
   const urlRegex = /^(https?:\/\/)?(www\.)?([\da-z.-]+)(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
   const ipv4Regex = /^(https?:\/\/)?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
@@ -20,7 +20,7 @@ function isArray(input) {
   return Array.isArray(input);
 }
 
-// src/utils/tools.ts
+// src/functions/tools.ts
 function getRandom(options = {}) {
   const { Alphabets = true, Numbers = true, Symbols = false, DateNow = false, length = 20, fileExtension = ".png", attachFileExtension = false } = options;
   let characters = "";
@@ -401,6 +401,7 @@ var axium = new Axium();
 // src/modules/crypto.ts
 import * as Crypto from "crypto";
 var crypto = {
+  // Hashing functions
   sha256: (data) => Crypto.createHash("sha256").update(data).digest("hex"),
   sha512: (data) => Crypto.createHash("sha512").update(data).digest("hex"),
   md5: (data) => Crypto.createHash("md5").update(data).digest("hex"),

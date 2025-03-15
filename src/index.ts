@@ -1,5 +1,5 @@
-export * from "./utils/tools";
-export * from "./utils/validation";
+export * from "./functions/tools";
+export * from "./functions/validation";
 export * from "./modules/axium";
 export * from "./modules/crypto";
 export * from "./modules/fs";

@@ -1,6 +1,7 @@
 import * as Crypto from "crypto";
 
 export const crypto = {
+    // Hashing functions
   sha256: (data: string): string => 
     Crypto.createHash("sha256").update(data).digest("hex"),
 
