@@ -57,16 +57,32 @@ interface FetchOptions extends RequestInit {
     retries?: number;
     retryDelay?: number;
     timeout?: number;
+    params?: Record<string, string | number | boolean>;
 }
-declare function fetchRequest(url: string, options?: FetchOptions): Promise<any>;
-declare const getJson: (url: string, options?: FetchOptions) => Promise<any>;
-declare const postJson: (url: string, data: any, options?: FetchOptions) => Promise<any>;
-declare const putJson: (url: string, data: any, options?: FetchOptions) => Promise<any>;
-declare const patchJson: (url: string, data: any, options?: FetchOptions) => Promise<any>;
-declare const deleteRequest: (url: string, options?: FetchOptions) => Promise<any>;
-declare const deleteJson: (url: string, data: any, options?: FetchOptions) => Promise<any>;
-declare const headRequest: (url: string, options?: FetchOptions) => Promise<any>;
-declare const getBuffer: (url: string, options?: FetchOptions) => Promise<any>;
+type Interceptor<T> = (value: T) => T | Promise<T>;
+declare class Axium {
+    private requestInterceptors;
+    private responseInterceptors;
+    private globalDefaults;
+    constructor(defaults?: FetchOptions);
+    addRequestInterceptor(interceptor: Interceptor<FetchOptions>): void;
+    addResponseInterceptor(interceptor: Interceptor<Response>): void;
+    setGlobalDefaults(defaults: FetchOptions): void;
+    private applyInterceptors;
+    private buildUrl;
+    request(url: string, options?: FetchOptions): Promise<any>;
+    get(url: string, options?: FetchOptions): Promise<any>;
+    post(url: string, data: any, options?: FetchOptions): Promise<any>;
+    put(url: string, data: any, options?: FetchOptions): Promise<any>;
+    patch(url: string, data: any, options?: FetchOptions): Promise<any>;
+    delete(url: string, options?: FetchOptions): Promise<any>;
+    postFormData(url: string, data: FormData, options?: FetchOptions): Promise<any>;
+    postUrlEncoded(url: string, data: Record<string, string>, options?: FetchOptions): Promise<any>;
+    all(requests: Promise<any>[]): Promise<any[]>;
+    getBuffer(url: string, options?: FetchOptions): Promise<any>;
+    head(url: string, options?: FetchOptions): Promise<any>;
+}
+declare const axium: Axium;
 
 declare const sha256: (data: string) => string;
 declare const randomBytes: (length?: number) => string;
@@ -170,8 +186,8 @@ interface Request extends IncomingMessage {
     ip?: string;
     flash?: (type: string, message?: string) => string[] | void;
 }
-interface Response extends ServerResponse {
-    status: (code: number) => Response;
+interface Response$1 extends ServerResponse {
+    status: (code: number) => Response$1;
     json: (data: any, spaces?: number) => void;
     send: (data: any) => void;
     cookie: (name: string, value: string, options?: any) => void;
@@ -189,9 +205,9 @@ interface RateLimiterOptions {
     statusCode?: number;
     skip?: (req: Request) => boolean;
     keyGenerator?: (req: Request) => string;
-    handler?: (req: Request, res: Response) => void;
+    handler?: (req: Request, res: Response$1) => void;
 }
-type Middleware = (req: Request, res: Response, next: () => void) => void;
+type Middleware = (req: Request, res: Response$1, next: () => void) => void;
 declare class Router {
     private routes;
     private middlewares;
@@ -202,10 +218,10 @@ declare class Router {
     private jsonSpaces;
     private flashMessages;
     use(path: string | Middleware, middleware?: Middleware): void;
-    get(path: string, handler: (req: Request, res: Response) => void): void;
-    post(path: string, handler: (req: Request, res: Response) => void): void;
-    put(path: string, handler: (req: Request, res: Response) => void): void;
-    delete(path: string, handler: (req: Request, res: Response) => void): void;
+    get(path: string, handler: (req: Request, res: Response$1) => void): void;
+    post(path: string, handler: (req: Request, res: Response$1) => void): void;
+    put(path: string, handler: (req: Request, res: Response$1) => void): void;
+    delete(path: string, handler: (req: Request, res: Response$1) => void): void;
     private addRoute;
     set(key: string, value: any): void;
     getSetting(key: string): any;
@@ -240,4 +256,4 @@ declare function debug(...args: any[]): void;
 declare function table(data: any, columns?: string[]): void;
 declare function clear(): void;
 
-export { FetchOptions, ReadMore, apex, appendToFile, bufferToFile, buffertoJson, buildUrl, clear, debug, decryptAES, deleteFile, deleteJson, deleteRequest, encryptAES, error, extractUrlFromString, fetchRequest, fileExists, formatBytes, formatNumber, generateUUID, getAbsolutePath, getBuffer, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getJson, getNetworkInterfaces, getRandom, getRelativePath, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, headRequest, info, isArray, isEmail, isObject, isURL, joinPath, jsontoBuffer, log, normalizePath, pasrseURL, patchJson, postJson, putJson, randomBytes, randomElement, randomHexColor, randomInt, randomizeArray, readFile, runCommand, runCommandSync, runSpawn, sha256, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, clear, debug, decryptAES, deleteFile, encryptAES, error, extractUrlFromString, fileExists, formatBytes, formatNumber, generateUUID, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isEmail, isObject, isURL, joinPath, jsontoBuffer, log, normalizePath, pasrseURL, randomBytes, randomElement, randomHexColor, randomInt, randomizeArray, readFile, runCommand, runCommandSync, runSpawn, sha256, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };

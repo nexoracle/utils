@@ -1,6 +1,6 @@
 export * from "./utils/tools";
 export * from "./utils/validation";
-export * from "./modules/fetch";
+export * from "./modules/axium";
 export * from "./modules/crypto";
 export * from "./modules/fs";
 export * from "./modules/os";

@@ -169,58 +169,174 @@ var getDate = (date = /* @__PURE__ */ new Date(), options) => {
   }
 };
 
-// src/modules/fetch.ts
-async function fetchRequest(url2, options = {}) {
-  const {
-    retries = 3,
-    retryDelay = 1e3,
-    timeout = 1e4,
-    // 10 seconds
-    ...fetchOptions
-  } = options;
-  for (let attempt = 0; attempt < retries; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    try {
-      const response = await fetch(url2, {
-        ...fetchOptions,
-        signal: controller.signal,
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36",
-          ...fetchOptions.headers
-        }
-      });
-      clearTimeout(timeoutId);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+// src/modules/axium.ts
+var FetchError = class extends Error {
+  constructor(message, status, response) {
+    super(message);
+    this.message = message;
+    this.status = status;
+    this.response = response;
+    this.name = "FetchError";
+  }
+};
+var Axium = class {
+  constructor(defaults) {
+    this.requestInterceptors = [];
+    this.responseInterceptors = [];
+    this.globalDefaults = {
+      headers: {
+        "Content-Type": "application/json"
       }
-      const contentType = response.headers.get("content-type");
-      if (contentType?.includes("application/json")) {
-        return await response.json();
-      } else if (contentType?.includes("text")) {
-        return await response.text();
-      } else {
-        return await response.arrayBuffer();
-      }
-    } catch (error2) {
-      clearTimeout(timeoutId);
-      if (attempt === retries - 1) {
-        console.error(`Fetch failed after ${retries} attempts:`, error2.message);
-        return { error: error2.message || "Request failed" };
-      }
-      console.warn(`Retrying... (${attempt + 1}/${retries})`);
-      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    };
+    if (defaults) {
+      this.globalDefaults = { ...this.globalDefaults, ...defaults };
     }
   }
-}
-var getJson = (url2, options = {}) => fetchRequest(url2, { ...options, method: "GET" });
-var postJson = (url2, data, options = {}) => fetchRequest(url2, { ...options, method: "POST", body: JSON.stringify(data), headers: { "Content-Type": "application/json" } });
-var putJson = (url2, data, options = {}) => fetchRequest(url2, { ...options, method: "PUT", body: JSON.stringify(data), headers: { "Content-Type": "application/json" } });
-var patchJson = (url2, data, options = {}) => fetchRequest(url2, { ...options, method: "PATCH", body: JSON.stringify(data), headers: { "Content-Type": "application/json" } });
-var deleteRequest = (url2, options = {}) => fetchRequest(url2, { ...options, method: "DELETE" });
-var deleteJson = (url2, data, options = {}) => fetchRequest(url2, { ...options, method: "DELETE", body: JSON.stringify(data), headers: { "Content-Type": "application/json" } });
-var headRequest = (url2, options = {}) => fetchRequest(url2, { ...options, method: "HEAD" });
-var getBuffer = (url2, options = {}) => fetchRequest(url2, { ...options, method: "GET" });
+  // Add request interceptor
+  addRequestInterceptor(interceptor) {
+    this.requestInterceptors.push(interceptor);
+  }
+  // Add response interceptor
+  addResponseInterceptor(interceptor) {
+    this.responseInterceptors.push(interceptor);
+  }
+  // Set global defaults
+  setGlobalDefaults(defaults) {
+    this.globalDefaults = { ...this.globalDefaults, ...defaults };
+  }
+  // Apply interceptors
+  async applyInterceptors(interceptors, value) {
+    let result = value;
+    for (const interceptor of interceptors) {
+      result = await interceptor(result);
+    }
+    return result;
+  }
+  // Build URL with query parameters
+  buildUrl(url2, params) {
+    if (!params)
+      return url2;
+    const urlObj = new URL(url2);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== void 0 && value !== null) {
+        urlObj.searchParams.append(key, String(value));
+      }
+    });
+    return urlObj.toString();
+  }
+  // Core fetch request
+  async request(url2, options = {}) {
+    const {
+      retries = 3,
+      retryDelay = 1e3,
+      timeout = 1e4,
+      params,
+      ...fetchOptions
+    } = await this.applyInterceptors(this.requestInterceptors, { ...this.globalDefaults, ...options });
+    const finalUrl = this.buildUrl(url2, params);
+    for (let attempt = 0; attempt < retries; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      try {
+        const response = await fetch(finalUrl, {
+          ...fetchOptions,
+          signal: controller.signal,
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36",
+            ...fetchOptions.headers
+          }
+        });
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+          throw new FetchError(`HTTP error! Status: ${response.status}`, response.status, response);
+        }
+        const interceptedResponse = await this.applyInterceptors(this.responseInterceptors, response);
+        const contentType = interceptedResponse.headers.get("content-type");
+        let data;
+        if (contentType?.includes("application/json")) {
+          data = await interceptedResponse.json();
+        } else if (contentType?.includes("text")) {
+          data = await interceptedResponse.text();
+        } else {
+          data = await interceptedResponse.arrayBuffer();
+        }
+        return {
+          data,
+          // The response body
+          status: interceptedResponse.status,
+          // HTTP status code
+          statusText: interceptedResponse.statusText,
+          // HTTP status text
+          headers: interceptedResponse.headers,
+          // Response headers
+          config: options
+          // Request configuration
+        };
+      } catch (error2) {
+        clearTimeout(timeoutId);
+        if (attempt === retries - 1) {
+          console.error(`Fetch failed after ${retries} attempts:`, error2.message);
+          throw new FetchError(error2.message || "Request failed");
+        }
+        console.warn(`Retrying... (${attempt + 1}/${retries})`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
+    }
+  }
+  // Helper methods
+  get(url2, options = {}) {
+    return this.request(url2, { ...options, method: "GET" });
+  }
+  post(url2, data, options = {}) {
+    return this.request(url2, { ...options, method: "POST", body: JSON.stringify(data) });
+  }
+  put(url2, data, options = {}) {
+    return this.request(url2, { ...options, method: "PUT", body: JSON.stringify(data) });
+  }
+  patch(url2, data, options = {}) {
+    return this.request(url2, { ...options, method: "PATCH", body: JSON.stringify(data) });
+  }
+  delete(url2, options = {}) {
+    return this.request(url2, { ...options, method: "DELETE" });
+  }
+  // Multipart form data
+  postFormData(url2, data, options = {}) {
+    return this.request(url2, {
+      ...options,
+      method: "POST",
+      body: data,
+      headers: {
+        ...options.headers
+      }
+    });
+  }
+  // URL-encoded form
+  postUrlEncoded(url2, data, options = {}) {
+    const encodedData = new URLSearchParams(data).toString();
+    return this.request(url2, {
+      ...options,
+      method: "POST",
+      body: encodedData,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        ...options.headers
+      }
+    });
+  }
+  // Multiple concurrent requests
+  all(requests) {
+    return Promise.all(requests);
+  }
+  // Get buffer
+  getBuffer(url2, options = {}) {
+    return this.request(url2, { ...options, method: "GET" });
+  }
+  // Head request
+  head(url2, options = {}) {
+    return this.request(url2, { ...options, method: "HEAD" });
+  }
+};
+var axium = new Axium();
 
 // src/modules/crypto.ts
 import crypto from "crypto";
@@ -305,10 +421,10 @@ var joinPath = (...paths) => path.join(...paths);
 var getRelativePath = (from, to) => path.relative(from, to);
 
 // src/modules/url.ts
-import { URL } from "url";
+import { URL as URL2 } from "url";
 import querystring from "querystring";
 var pasrseURL = (urlString) => {
-  const urlObj = new URL(urlString);
+  const urlObj = new URL2(urlString);
   return {
     protocol: urlObj.protocol,
     hostname: urlObj.hostname,
@@ -742,6 +858,7 @@ export {
   ReadMore,
   apex,
   appendToFile,
+  axium,
   bufferToFile,
   buffertoJson,
   buildUrl,
@@ -749,24 +866,19 @@ export {
   debug,
   decryptAES,
   deleteFile,
-  deleteJson,
-  deleteRequest,
   encryptAES,
   error,
   extractUrlFromString,
-  fetchRequest,
   fileExists,
   formatBytes,
   formatNumber,
   generateUUID,
   getAbsolutePath,
-  getBuffer,
   getBufferFromStream,
   getCpuLoad,
   getDate,
   getFileExtension,
   getFileName,
-  getJson,
   getNetworkInterfaces,
   getRandom,
   getRelativePath,
@@ -774,7 +886,6 @@ export {
   getSystemInfo,
   getTime,
   getUserInfo,
-  headRequest,
   info,
   isArray,
   isEmail,
@@ -785,9 +896,6 @@ export {
   log,
   normalizePath,
   pasrseURL,
-  patchJson,
-  postJson,
-  putJson,
   randomBytes,
   randomElement,
   randomHexColor,
