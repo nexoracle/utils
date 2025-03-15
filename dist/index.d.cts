@@ -1,4 +1,5 @@
 import { Readable } from 'stream';
+import * as Crypto from 'crypto';
 import os from 'os';
 import querystring from 'querystring';
 import http, { ServerResponse, IncomingMessage } from 'http';
@@ -93,11 +94,23 @@ declare class Axium {
 }
 declare const axium: Axium;
 
-declare const sha256: (data: string) => string;
-declare const randomBytes: (length?: number) => string;
-declare const generateUUID: () => string;
-declare const encryptAES: (text: string, key: string) => string;
-declare const decryptAES: (encrypted: string, key: string) => string;
+declare const crypto: {
+    sha256: (data: string) => string;
+    sha512: (data: string) => string;
+    md5: (data: string) => string;
+    randomBytes: (length?: number) => string;
+    generateUUID: () => string;
+    encryptAES: (text: string, key: string, iv?: string) => string;
+    decryptAES: (encrypted: string, key: string, iv?: string) => string;
+    hmacSHA256: (data: string, secret: string) => string;
+    hmacSHA512: (data: string, secret: string) => string;
+    pbkdf2: (password: string, salt: string, iterations?: number, keylen?: number, digest?: string) => string;
+    generateKeyPair: (type?: "rsa", options?: Crypto.RSAKeyPairOptions<"pem", "pem">) => Crypto.KeyPairSyncResult<string, string>;
+    encryptRSA: (text: string, publicKey: string) => string;
+    decryptRSA: (encrypted: string, privateKey: string) => string;
+    sign: (data: string, privateKey: string, algorithm?: string) => string;
+    verify: (data: string, signature: string, publicKey: string, algorithm?: string) => boolean;
+};
 
 declare const readFile: (path: string) => string | null;
 declare const writeFile: (path: string, data: string) => void;
@@ -265,4 +278,4 @@ declare function debug(...args: any[]): void;
 declare function table(data: any, columns?: string[]): void;
 declare function clear(): void;
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, clear, debug, decryptAES, deleteFile, encryptAES, error, extractUrlFromString, fileExists, formatBytes, formatNumber, generateUUID, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isEmail, isObject, isURL, joinPath, jsontoBuffer, log, normalizePath, pasrseURL, randomBytes, randomElement, randomHexColor, randomInt, randomizeArray, readFile, runCommand, runCommandSync, runSpawn, sha256, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, clear, crypto, debug, deleteFile, error, extractUrlFromString, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isEmail, isObject, isURL, joinPath, jsontoBuffer, log, normalizePath, pasrseURL, randomElement, randomHexColor, randomInt, randomizeArray, readFile, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };

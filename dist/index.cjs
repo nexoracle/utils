@@ -38,16 +38,14 @@ __export(src_exports, {
   buffertoJson: () => buffertoJson,
   buildUrl: () => buildUrl,
   clear: () => clear,
+  crypto: () => crypto,
   debug: () => debug,
-  decryptAES: () => decryptAES,
   deleteFile: () => deleteFile,
-  encryptAES: () => encryptAES,
   error: () => error,
   extractUrlFromString: () => extractUrlFromString,
   fileExists: () => fileExists,
   formatBytes: () => formatBytes,
   formatNumber: () => formatNumber,
-  generateUUID: () => generateUUID,
   getAbsolutePath: () => getAbsolutePath,
   getBufferFromStream: () => getBufferFromStream,
   getCpuLoad: () => getCpuLoad,
@@ -71,7 +69,6 @@ __export(src_exports, {
   log: () => log,
   normalizePath: () => normalizePath,
   pasrseURL: () => pasrseURL,
-  randomBytes: () => randomBytes,
   randomElement: () => randomElement,
   randomHexColor: () => randomHexColor,
   randomInt: () => randomInt,
@@ -80,7 +77,6 @@ __export(src_exports, {
   runCommand: () => runCommand,
   runCommandSync: () => runCommandSync,
   runSpawn: () => runSpawn,
-  sha256: () => sha256,
   sleep: () => sleep,
   table: () => table,
   timeAgo: () => timeAgo,
@@ -496,17 +492,44 @@ var Axium = class {
 var axium = new Axium();
 
 // src/modules/crypto.ts
-var import_crypto = __toESM(require("crypto"), 1);
-var sha256 = (data) => import_crypto.default.createHash("sha256").update(data).digest("hex");
-var randomBytes = (length = 16) => import_crypto.default.randomBytes(length).toString("hex");
-var generateUUID = () => import_crypto.default.randomUUID();
-var encryptAES = (text, key) => {
-  const cipher = import_crypto.default.createCipheriv("aes-256-cbc", Buffer.from(key, "hex"), Buffer.alloc(16, 0));
-  return cipher.update(text, "utf8", "hex") + cipher.final("hex");
-};
-var decryptAES = (encrypted, key) => {
-  const decipher = import_crypto.default.createDecipheriv("aes-256-cbc", Buffer.from(key, "hex"), Buffer.alloc(16, 0));
-  return decipher.update(encrypted, "hex", "utf8") + decipher.final("utf8");
+var Crypto = __toESM(require("crypto"), 1);
+var crypto = {
+  sha256: (data) => Crypto.createHash("sha256").update(data).digest("hex"),
+  sha512: (data) => Crypto.createHash("sha512").update(data).digest("hex"),
+  md5: (data) => Crypto.createHash("md5").update(data).digest("hex"),
+  // Random generation
+  randomBytes: (length = 16) => Crypto.randomBytes(length).toString("hex"),
+  generateUUID: () => Crypto.randomUUID(),
+  // AES encryption/decryption
+  encryptAES: (text, key, iv) => {
+    const ivBuffer = iv ? Buffer.from(iv, "hex") : Buffer.alloc(16, 0);
+    const cipher = Crypto.createCipheriv("aes-256-cbc", Buffer.from(key, "hex"), ivBuffer);
+    return cipher.update(text, "utf8", "hex") + cipher.final("hex");
+  },
+  decryptAES: (encrypted, key, iv) => {
+    const ivBuffer = iv ? Buffer.from(iv, "hex") : Buffer.alloc(16, 0);
+    const decipher = Crypto.createDecipheriv("aes-256-cbc", Buffer.from(key, "hex"), ivBuffer);
+    return decipher.update(encrypted, "hex", "utf8") + decipher.final("utf8");
+  },
+  // HMAC (Hash-based Message Authentication Code)
+  hmacSHA256: (data, secret) => Crypto.createHmac("sha256", secret).update(data).digest("hex"),
+  hmacSHA512: (data, secret) => Crypto.createHmac("sha512", secret).update(data).digest("hex"),
+  // PBKDF2 (Password-Based Key Derivation Function)
+  pbkdf2: (password, salt, iterations = 1e4, keylen = 64, digest = "sha512") => Crypto.pbkdf2Sync(password, salt, iterations, keylen, digest).toString("hex"),
+  // RSA/EC/ED25519/ED448/X25519/X448 key generation
+  generateKeyPair: (type = "rsa", options = {
+    modulusLength: 2048,
+    publicKeyEncoding: { type: "spki", format: "pem" },
+    privateKeyEncoding: { type: "pkcs8", format: "pem" }
+  }) => {
+    return Crypto.generateKeyPairSync(type, options);
+  },
+  // RSA encryption/decryption
+  encryptRSA: (text, publicKey) => Crypto.publicEncrypt(publicKey, Buffer.from(text, "utf8")).toString("base64"),
+  decryptRSA: (encrypted, privateKey) => Crypto.privateDecrypt(privateKey, Buffer.from(encrypted, "base64")).toString("utf8"),
+  // Sign and verify (RSA/ECDSA)
+  sign: (data, privateKey, algorithm = "RSA-SHA256") => Crypto.createSign(algorithm).update(data).sign(privateKey, "hex"),
+  verify: (data, signature, publicKey, algorithm = "RSA-SHA256") => Crypto.createVerify(algorithm).update(data).verify(publicKey, signature, "hex")
 };
 
 // src/modules/fs.ts
@@ -1021,16 +1044,14 @@ function clear() {
   buffertoJson,
   buildUrl,
   clear,
+  crypto,
   debug,
-  decryptAES,
   deleteFile,
-  encryptAES,
   error,
   extractUrlFromString,
   fileExists,
   formatBytes,
   formatNumber,
-  generateUUID,
   getAbsolutePath,
   getBufferFromStream,
   getCpuLoad,
@@ -1054,7 +1075,6 @@ function clear() {
   log,
   normalizePath,
   pasrseURL,
-  randomBytes,
   randomElement,
   randomHexColor,
   randomInt,
@@ -1063,7 +1083,6 @@ function clear() {
   runCommand,
   runCommandSync,
   runSpawn,
-  sha256,
   sleep,
   table,
   timeAgo,
