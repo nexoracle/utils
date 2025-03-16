@@ -2,7 +2,7 @@ import http from "http";
 import url from "url";
 import fs from "fs";
 import path from "path";
-import tls from 'tls'
+import tls from "tls";
 import { IncomingMessage, ServerResponse } from "http";
 
 interface Request extends IncomingMessage {
@@ -76,22 +76,19 @@ class Router {
     }
   }
 
-  // Add GET route
+  // Routes Handling
   get(path: string, handler: (req: Request, res: Response) => void): void {
     this.addRoute(path, "GET", handler);
   }
 
-  // Add POST route
   post(path: string, handler: (req: Request, res: Response) => void): void {
     this.addRoute(path, "POST", handler);
   }
 
-  // Add PUT route
   put(path: string, handler: (req: Request, res: Response) => void): void {
     this.addRoute(path, "PUT", handler);
   }
 
-  // Add DELETE route
   delete(path: string, handler: (req: Request, res: Response) => void): void {
     this.addRoute(path, "DELETE", handler);
   }
@@ -212,20 +209,17 @@ class Router {
   handleRequest(req: IncomingMessage, res: ServerResponse): void {
     const reqMethod = req as Request;
     const resMethod = res as Response;
-  
-    // Parse the URL and extract query parameters
+
     const parsedUrl = parseUrl(req);
-    reqMethod.query = parsedUrl.query; // Ensure query is populated
-    reqMethod.path = parsedUrl.pathname; // Ensure path is populated
-  
-    // Enhance req object
+    reqMethod.query = parsedUrl.query;
+    reqMethod.path = parsedUrl.pathname;
+
     reqMethod.ip = this.getClientIp(reqMethod);
-    reqMethod.protocol = req.socket instanceof tls.TLSSocket ? "https" : "http"; // Fixed protocol
-    reqMethod.hostname = req.headers.host?.split(":")[0] || ""; // Extract hostname
-    reqMethod.method = req.method; // Ensure method is populated
-    reqMethod.get = (headerName: string) => req.headers[headerName.toLowerCase()] as string | undefined; // Add get method
-  
-    // Enhance res object
+    reqMethod.protocol = req.socket instanceof tls.TLSSocket ? "https" : "http";
+    reqMethod.hostname = req.headers.host?.split(":")[0] || "";
+    reqMethod.method = req.method;
+    reqMethod.get = (headerName: string) => req.headers[headerName.toLowerCase()] as string | undefined;
+
     resMethod.jsonSpaces = this.jsonSpaces;
     resMethod.status = function (code: number) {
       this.statusCode = code;
@@ -256,7 +250,7 @@ class Router {
       this.writeHead(302, { Location: url });
       this.end();
     };
-  
+
     // Execute middlewares
     const executeMiddlewares = (index: number) => {
       if (index < this.middlewares.length) {
@@ -269,13 +263,12 @@ class Router {
       } else {
         // Use the pathname (without query string) for route matching
         const pathname = parsedUrl.pathname || "";
-  
+
         // Check for exact match
         if (this.routes[pathname] && this.routes[pathname][reqMethod.method!]) {
           return this.routes[pathname][reqMethod.method!](reqMethod, resMethod);
         }
-  
-        // Check for wildcard matches (e.g., "/static/*" should match "/static/style.css")
+
         for (const route in this.routes) {
           if (route.endsWith("/*") && pathname.startsWith(route.slice(0, -2))) {
             if (this.routes[route][reqMethod.method!]) {
@@ -283,12 +276,12 @@ class Router {
             }
           }
         }
-  
+
         // If no match found, send 404
         this.notFoundHandler(reqMethod, resMethod);
       }
     };
-  
+
     executeMiddlewares(0);
   }
 
