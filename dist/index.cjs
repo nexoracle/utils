@@ -705,6 +705,7 @@ var import_http = __toESM(require("http"), 1);
 var import_url2 = __toESM(require("url"), 1);
 var import_fs3 = __toESM(require("fs"), 1);
 var import_path2 = __toESM(require("path"), 1);
+var import_tls = __toESM(require("tls"), 1);
 var Router = class {
   constructor() {
     this.routes = {};
@@ -848,8 +849,14 @@ var Router = class {
   handleRequest(req, res) {
     const reqMethod = req;
     const resMethod = res;
+    const parsedUrl = parseUrl(req);
+    reqMethod.query = parsedUrl.query;
+    reqMethod.path = parsedUrl.pathname;
     reqMethod.ip = this.getClientIp(reqMethod);
-    reqMethod.query = parseUrl(req).query;
+    reqMethod.protocol = req.socket instanceof import_tls.default.TLSSocket ? "https" : "http";
+    reqMethod.hostname = req.headers.host?.split(":")[0] || "";
+    reqMethod.method = req.method;
+    reqMethod.get = (headerName) => req.headers[headerName.toLowerCase()];
     resMethod.jsonSpaces = this.jsonSpaces;
     resMethod.status = function(code) {
       this.statusCode = code;
@@ -887,11 +894,12 @@ var Router = class {
           apex.text(resMethod, 500, "Internal Server Error");
         }
       } else {
-        if (this.routes[reqMethod.url] && this.routes[reqMethod.url][reqMethod.method]) {
-          return this.routes[reqMethod.url][reqMethod.method](reqMethod, resMethod);
+        const pathname = parsedUrl.pathname || "";
+        if (this.routes[pathname] && this.routes[pathname][reqMethod.method]) {
+          return this.routes[pathname][reqMethod.method](reqMethod, resMethod);
         }
         for (const route in this.routes) {
-          if (route.endsWith("/*") && reqMethod.url.startsWith(route.slice(0, -2))) {
+          if (route.endsWith("/*") && pathname.startsWith(route.slice(0, -2))) {
             if (this.routes[route][reqMethod.method]) {
               return this.routes[route][reqMethod.method](reqMethod, resMethod);
             }

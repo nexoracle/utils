@@ -208,6 +208,12 @@ interface Request extends IncomingMessage {
     };
     ip?: string;
     flash?: (type: string, message?: string) => string[] | void;
+    path?: string;
+    protocol?: string;
+    hostname?: string;
+    method?: string;
+    files?: any;
+    get?: (headerName: string) => string | undefined;
 }
 interface Response$1 extends ServerResponse {
     status: (code: number) => Response$1;

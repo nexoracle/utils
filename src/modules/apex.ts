@@ -2,6 +2,7 @@ import http from "http";
 import url from "url";
 import fs from "fs";
 import path from "path";
+import tls from 'tls'
 import { IncomingMessage, ServerResponse } from "http";
 
 interface Request extends IncomingMessage {
@@ -12,6 +13,12 @@ interface Request extends IncomingMessage {
   params?: { [key: string]: string };
   ip?: string;
   flash?: (type: string, message?: string) => string[] | void;
+  path?: string;
+  protocol?: string;
+  hostname?: string;
+  method?: string;
+  files?: any;
+  get?: (headerName: string) => string | undefined;
 }
 
 interface Response extends ServerResponse {
@@ -205,11 +212,19 @@ class Router {
   handleRequest(req: IncomingMessage, res: ServerResponse): void {
     const reqMethod = req as Request;
     const resMethod = res as Response;
-
+  
+    // Parse the URL and extract query parameters
+    const parsedUrl = parseUrl(req);
+    reqMethod.query = parsedUrl.query; // Ensure query is populated
+    reqMethod.path = parsedUrl.pathname; // Ensure path is populated
+  
     // Enhance req object
     reqMethod.ip = this.getClientIp(reqMethod);
-    reqMethod.query = parseUrl(req).query;
-
+    reqMethod.protocol = req.socket instanceof tls.TLSSocket ? "https" : "http"; // Fixed protocol
+    reqMethod.hostname = req.headers.host?.split(":")[0] || ""; // Extract hostname
+    reqMethod.method = req.method; // Ensure method is populated
+    reqMethod.get = (headerName: string) => req.headers[headerName.toLowerCase()] as string | undefined; // Add get method
+  
     // Enhance res object
     resMethod.jsonSpaces = this.jsonSpaces;
     resMethod.status = function (code: number) {
@@ -241,7 +256,7 @@ class Router {
       this.writeHead(302, { Location: url });
       this.end();
     };
-
+  
     // Execute middlewares
     const executeMiddlewares = (index: number) => {
       if (index < this.middlewares.length) {
@@ -252,25 +267,28 @@ class Router {
           apex.text(resMethod, 500, "Internal Server Error");
         }
       } else {
+        // Use the pathname (without query string) for route matching
+        const pathname = parsedUrl.pathname || "";
+  
         // Check for exact match
-        if (this.routes[reqMethod.url!] && this.routes[reqMethod.url!][reqMethod.method!]) {
-          return this.routes[reqMethod.url!][reqMethod.method!](reqMethod, resMethod);
+        if (this.routes[pathname] && this.routes[pathname][reqMethod.method!]) {
+          return this.routes[pathname][reqMethod.method!](reqMethod, resMethod);
         }
-
+  
         // Check for wildcard matches (e.g., "/static/*" should match "/static/style.css")
         for (const route in this.routes) {
-          if (route.endsWith("/*") && reqMethod.url!.startsWith(route.slice(0, -2))) {
+          if (route.endsWith("/*") && pathname.startsWith(route.slice(0, -2))) {
             if (this.routes[route][reqMethod.method!]) {
               return this.routes[route][reqMethod.method!](reqMethod, resMethod);
             }
           }
         }
-
+  
         // If no match found, send 404
         this.notFoundHandler(reqMethod, resMethod);
       }
     };
-
+  
     executeMiddlewares(0);
   }
 
