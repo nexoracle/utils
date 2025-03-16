@@ -272,8 +272,8 @@ declare const apex: {
     json(res: ServerResponse, statusCode: number, data: object, spaces?: number): void;
     html(res: ServerResponse, statusCode: number, html: string): void;
     sendFile(res: ServerResponse, filePath: string): void;
-    static(staticPath: string): Middleware;
-    favicon(iconPath: string): Middleware;
+    static(prefix: string, staticPath?: string): Middleware;
+    favicon(iconPath?: string): Middleware;
     rateLimit: (options?: RateLimiterOptions) => Middleware;
 };
 

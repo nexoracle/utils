@@ -356,10 +356,20 @@ const apex = {
       }
     });
   },
-  static(staticPath: string): Middleware {
+  static(prefix: string, staticPath?: string): Middleware {
+    if (!staticPath) {
+      staticPath = prefix;
+      prefix = "/";
+    }
+
     return (req, res, next) => {
       const { pathname } = parseUrl(req);
-      const filePath = path.join(staticPath, pathname);
+      if (!pathname.startsWith(prefix)) {
+        return next();
+      }
+
+      const relativePath = pathname.slice(prefix.length);
+      const filePath = path.join(staticPath, relativePath);
 
       fs.stat(filePath, (err, stats) => {
         if (err || !stats.isFile()) {
@@ -370,10 +380,19 @@ const apex = {
       });
     };
   },
-  favicon(iconPath: string): Middleware {
+  favicon(iconPath?: string): Middleware {
     return (req, res, next) => {
-      if (req.url === "/favicon.ico") {
-        apex.sendFile(res, iconPath);
+
+      if (req.url === "/favicon.ico" && iconPath) {
+        fs.stat(iconPath, (err, stats) => {
+
+          if (err || !stats.isFile()) {
+            apex.text(res, 404, "Favicon not found");
+          } else {
+            apex.sendFile(res, iconPath);
+          }
+          
+        });
       } else {
         next();
       }

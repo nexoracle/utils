@@ -731,19 +731,16 @@ var Router = class {
       this.middlewares.push(path3);
     }
   }
-  // Add GET route
+  // Routes Handling
   get(path3, handler) {
     this.addRoute(path3, "GET", handler);
   }
-  // Add POST route
   post(path3, handler) {
     this.addRoute(path3, "POST", handler);
   }
-  // Add PUT route
   put(path3, handler) {
     this.addRoute(path3, "PUT", handler);
   }
-  // Add DELETE route
   delete(path3, handler) {
     this.addRoute(path3, "DELETE", handler);
   }
@@ -975,10 +972,18 @@ var apex = {
       }
     });
   },
-  static(staticPath) {
+  static(prefix, staticPath) {
+    if (!staticPath) {
+      staticPath = prefix;
+      prefix = "/";
+    }
     return (req, res, next) => {
       const { pathname } = parseUrl(req);
-      const filePath = import_path2.default.join(staticPath, pathname);
+      if (!pathname.startsWith(prefix)) {
+        return next();
+      }
+      const relativePath = pathname.slice(prefix.length);
+      const filePath = import_path2.default.join(staticPath, relativePath);
       import_fs3.default.stat(filePath, (err, stats) => {
         if (err || !stats.isFile()) {
           next();
@@ -990,8 +995,14 @@ var apex = {
   },
   favicon(iconPath) {
     return (req, res, next) => {
-      if (req.url === "/favicon.ico") {
-        apex.sendFile(res, iconPath);
+      if (req.url === "/favicon.ico" && iconPath) {
+        import_fs3.default.stat(iconPath, (err, stats) => {
+          if (err || !stats.isFile()) {
+            apex.text(res, 404, "Favicon not found");
+          } else {
+            apex.sendFile(res, iconPath);
+          }
+        });
       } else {
         next();
       }
