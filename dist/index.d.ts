@@ -62,6 +62,7 @@ interface FetchOptions extends RequestInit {
     onDownloadProgress?: (progress: ProgressEvent) => void;
     onUploadProgress?: (progress: ProgressEvent) => void;
     signal?: AbortSignal;
+    responseType?: 'arraybuffer' | 'blob' | 'json' | 'text';
 }
 type Interceptor<T> = (value: T) => T | Promise<T>;
 declare class ProgressEvent {

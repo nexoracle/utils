@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer';
+
 // Define FetchOptions interface
 export interface FetchOptions extends RequestInit {
   retries?: number;
@@ -7,6 +9,7 @@ export interface FetchOptions extends RequestInit {
   onDownloadProgress?: (progress: ProgressEvent) => void;
   onUploadProgress?: (progress: ProgressEvent) => void;
   signal?: AbortSignal;
+  responseType?: 'arraybuffer' | 'blob' | 'json' | 'text';
 }
 
 // Define Interceptor type
@@ -143,21 +146,48 @@ class Axium {
           const contentType = interceptedResponse.headers.get("content-type");
           let data;
 
-          if (contentType?.includes("application/json")) {
-            data = await interceptedResponse.json();
-          } else if (contentType?.includes("text")) {
-            data = await interceptedResponse.text();
-          } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
-            data = await interceptedResponse.text();
-          } else if (contentType?.includes("application/pdf")) {
-            data = await interceptedResponse.blob();
-          } else if (contentType?.includes("image/")) {
-            data = await interceptedResponse.blob();
-          } else if (contentType?.includes("application/octet-stream")) {
-            data = await interceptedResponse.arrayBuffer();
+          if (options.responseType) {
+            // Use responseType if explicitly set
+            switch (options.responseType) {
+              case 'arraybuffer':
+                data = await interceptedResponse.arrayBuffer();
+                data = Buffer.from(data);
+                break;
+              case 'blob':
+                data = await interceptedResponse.blob();
+                break;
+              case 'json':
+                data = await interceptedResponse.json();
+                break;
+              case 'text':
+                data = await interceptedResponse.text();
+                break;
+              default:
+                data = await interceptedResponse.arrayBuffer();
+                data = Buffer.from(data);
+            }
           } else {
-            data = await interceptedResponse.arrayBuffer();
+            // Fall back to Content-Type if responseType is not set
+            if (contentType?.includes("application/json")) {
+              data = await interceptedResponse.json();
+            } else if (contentType?.includes("text")) {
+              data = await interceptedResponse.text();
+            } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
+              data = await interceptedResponse.text();
+            } else if (contentType?.includes("application/pdf")) {
+              data = await interceptedResponse.blob();
+            } else if (contentType?.includes("image/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("application/octet-stream")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            }
           }
+
           return {
             data,
             status: interceptedResponse.status,
@@ -172,20 +202,46 @@ class Axium {
           const contentType = interceptedResponse.headers.get("content-type");
           let data;
 
-          if (contentType?.includes("application/json")) {
-            data = await interceptedResponse.json();
-          } else if (contentType?.includes("text")) {
-            data = await interceptedResponse.text();
-          } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
-            data = await interceptedResponse.text();
-          } else if (contentType?.includes("application/pdf")) {
-            data = await interceptedResponse.blob();
-          } else if (contentType?.includes("image/")) {
-            data = await interceptedResponse.blob();
-          } else if (contentType?.includes("application/octet-stream")) {
-            data = await interceptedResponse.arrayBuffer();
+          if (options.responseType) {
+            // Use responseType if explicitly set
+            switch (options.responseType) {
+              case 'arraybuffer':
+                data = await interceptedResponse.arrayBuffer();
+                data = Buffer.from(data);
+                break;
+              case 'blob':
+                data = await interceptedResponse.blob();
+                break;
+              case 'json':
+                data = await interceptedResponse.json();
+                break;
+              case 'text':
+                data = await interceptedResponse.text();
+                break;
+              default:
+                data = await interceptedResponse.arrayBuffer();
+                data = Buffer.from(data);
+            }
           } else {
-            data = await interceptedResponse.arrayBuffer();
+            // Fall back to Content-Type if responseType is not set
+            if (contentType?.includes("application/json")) {
+              data = await interceptedResponse.json();
+            } else if (contentType?.includes("text")) {
+              data = await interceptedResponse.text();
+            } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
+              data = await interceptedResponse.text();
+            } else if (contentType?.includes("application/pdf")) {
+              data = await interceptedResponse.blob();
+            } else if (contentType?.includes("image/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("application/octet-stream")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            }
           }
 
           return {

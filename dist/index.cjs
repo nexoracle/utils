@@ -263,6 +263,7 @@ var getDate = (date = /* @__PURE__ */ new Date(), options) => {
 };
 
 // src/modules/axium.ts
+var import_buffer = require("buffer");
 var FetchError = class extends Error {
   constructor(message, status, response) {
     super(message);
@@ -373,20 +374,44 @@ var Axium = class {
           const interceptedResponse = await this.applyInterceptors(this.responseInterceptors, newResponse);
           const contentType = interceptedResponse.headers.get("content-type");
           let data;
-          if (contentType?.includes("application/json")) {
-            data = await interceptedResponse.json();
-          } else if (contentType?.includes("text")) {
-            data = await interceptedResponse.text();
-          } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
-            data = await interceptedResponse.text();
-          } else if (contentType?.includes("application/pdf")) {
-            data = await interceptedResponse.blob();
-          } else if (contentType?.includes("image/")) {
-            data = await interceptedResponse.blob();
-          } else if (contentType?.includes("application/octet-stream")) {
-            data = await interceptedResponse.arrayBuffer();
+          if (options.responseType) {
+            switch (options.responseType) {
+              case "arraybuffer":
+                data = await interceptedResponse.arrayBuffer();
+                data = import_buffer.Buffer.from(data);
+                break;
+              case "blob":
+                data = await interceptedResponse.blob();
+                break;
+              case "json":
+                data = await interceptedResponse.json();
+                break;
+              case "text":
+                data = await interceptedResponse.text();
+                break;
+              default:
+                data = await interceptedResponse.arrayBuffer();
+                data = import_buffer.Buffer.from(data);
+            }
           } else {
-            data = await interceptedResponse.arrayBuffer();
+            if (contentType?.includes("application/json")) {
+              data = await interceptedResponse.json();
+            } else if (contentType?.includes("text")) {
+              data = await interceptedResponse.text();
+            } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
+              data = await interceptedResponse.text();
+            } else if (contentType?.includes("application/pdf")) {
+              data = await interceptedResponse.blob();
+            } else if (contentType?.includes("image/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = import_buffer.Buffer.from(data);
+            } else if (contentType?.includes("application/octet-stream")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = import_buffer.Buffer.from(data);
+            } else {
+              data = await interceptedResponse.arrayBuffer();
+              data = import_buffer.Buffer.from(data);
+            }
           }
           return {
             data,
@@ -399,20 +424,44 @@ var Axium = class {
           const interceptedResponse = await this.applyInterceptors(this.responseInterceptors, response);
           const contentType = interceptedResponse.headers.get("content-type");
           let data;
-          if (contentType?.includes("application/json")) {
-            data = await interceptedResponse.json();
-          } else if (contentType?.includes("text")) {
-            data = await interceptedResponse.text();
-          } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
-            data = await interceptedResponse.text();
-          } else if (contentType?.includes("application/pdf")) {
-            data = await interceptedResponse.blob();
-          } else if (contentType?.includes("image/")) {
-            data = await interceptedResponse.blob();
-          } else if (contentType?.includes("application/octet-stream")) {
-            data = await interceptedResponse.arrayBuffer();
+          if (options.responseType) {
+            switch (options.responseType) {
+              case "arraybuffer":
+                data = await interceptedResponse.arrayBuffer();
+                data = import_buffer.Buffer.from(data);
+                break;
+              case "blob":
+                data = await interceptedResponse.blob();
+                break;
+              case "json":
+                data = await interceptedResponse.json();
+                break;
+              case "text":
+                data = await interceptedResponse.text();
+                break;
+              default:
+                data = await interceptedResponse.arrayBuffer();
+                data = import_buffer.Buffer.from(data);
+            }
           } else {
-            data = await interceptedResponse.arrayBuffer();
+            if (contentType?.includes("application/json")) {
+              data = await interceptedResponse.json();
+            } else if (contentType?.includes("text")) {
+              data = await interceptedResponse.text();
+            } else if (contentType?.includes("application/xml") || contentType?.includes("text/xml")) {
+              data = await interceptedResponse.text();
+            } else if (contentType?.includes("application/pdf")) {
+              data = await interceptedResponse.blob();
+            } else if (contentType?.includes("image/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = import_buffer.Buffer.from(data);
+            } else if (contentType?.includes("application/octet-stream")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = import_buffer.Buffer.from(data);
+            } else {
+              data = await interceptedResponse.arrayBuffer();
+              data = import_buffer.Buffer.from(data);
+            }
           }
           return {
             data,
