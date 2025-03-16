@@ -269,10 +269,6 @@ declare function createServer(router: Router): http.Server;
 declare const apex: {
     Router: typeof Router;
     createServer: typeof createServer;
-    text(res: ServerResponse, statusCode: number, message: string): void;
-    json(res: ServerResponse, statusCode: number, data: object, spaces?: number): void;
-    html(res: ServerResponse, statusCode: number, html: string): void;
-    sendFile(res: ServerResponse, filePath: string): void;
     static(prefix: string, staticPath?: string): Middleware;
     favicon(iconPath?: string): Middleware;
     rateLimit: (options?: RateLimiterOptions) => Middleware;

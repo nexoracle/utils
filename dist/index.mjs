@@ -740,12 +740,13 @@ var Router = class {
       throw new Error('View engine not set. Use router.set("view engine", "ejs") to configure a view engine.');
     }
     const viewPath = path2.join(this.viewsDir, `${viewName}.${viewExtension}`);
+    const resMethod = res;
     this.viewEngine(viewPath, data, (err, html) => {
       if (err) {
         console.error(`Error rendering view: ${err.message}`);
-        apex.text(res, 500, `Error rendering view: ${err.message}`);
+        resMethod.status(500).send(`Error rendering view: ${err.message}`);
       } else {
-        apex.html(res, 200, html || "");
+        resMethod.status(200).send(html || "");
       }
     });
   }
@@ -843,7 +844,7 @@ var Router = class {
           this.middlewares[index](reqMethod, resMethod, () => executeMiddlewares(index + 1));
         } catch (err) {
           console.error("Middleware error:", err);
-          apex.text(resMethod, 500, "Internal Server Error");
+          resMethod.status(500).send("Internal Server Error");
         }
       } else {
         const pathname = parsedUrl.pathname || "";
@@ -875,58 +876,6 @@ function createServer(router) {
 var apex = {
   Router,
   createServer,
-  text(res, statusCode, message) {
-    res.writeHead(statusCode, { "Content-Type": "text/plain" });
-    res.end(message);
-  },
-  json(res, statusCode, data, spaces) {
-    res.writeHead(statusCode, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(data, null, spaces || 0));
-  },
-  html(res, statusCode, html) {
-    res.writeHead(statusCode, { "Content-Type": "text/html" });
-    res.end(html);
-  },
-  sendFile(res, filePath) {
-    const extname = path2.extname(filePath).toLowerCase();
-    const contentType = {
-      ".html": "text/html",
-      ".css": "text/css",
-      ".js": "application/javascript",
-      ".json": "application/json",
-      ".png": "image/png",
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".gif": "image/gif",
-      ".svg": "image/svg+xml",
-      ".ico": "image/x-icon",
-      ".txt": "text/plain",
-      ".pdf": "application/pdf",
-      ".zip": "application/zip",
-      ".mp4": "video/mp4",
-      ".mp3": "audio/mpeg",
-      ".wav": "audio/wav",
-      ".ogg": "audio/ogg",
-      ".webp": "image/webp",
-      ".avif": "image/avif",
-      ".flac": "audio/flac",
-      ".aac": "audio/aac",
-      ".woff": "font/woff",
-      ".woff2": "font/woff2",
-      ".ttf": "font/ttf",
-      ".eot": "application/vnd.ms-fontobject",
-      ".xml": "application/xml",
-      ".csv": "text/csv"
-    }[extname] || "application/octet-stream";
-    fs3.readFile(filePath, (err, data) => {
-      if (err) {
-        apex.text(res, 404, "File Not Found");
-      } else {
-        res.writeHead(200, { "Content-Type": contentType });
-        res.end(data);
-      }
-    });
-  },
   static(prefix, staticPath) {
     if (!staticPath) {
       staticPath = prefix;
@@ -943,7 +892,7 @@ var apex = {
         if (err || !stats.isFile()) {
           next();
         } else {
-          apex.sendFile(res, filePath);
+          res.sendFile(filePath);
         }
       });
     };
@@ -953,9 +902,9 @@ var apex = {
       if (req.url === "/favicon.ico" && iconPath) {
         fs3.stat(iconPath, (err, stats) => {
           if (err || !stats.isFile()) {
-            apex.text(res, 404, "Favicon not found");
+            res.status(404).send("Favicon not found");
           } else {
-            apex.sendFile(res, iconPath);
+            res.sendFile(iconPath);
           }
         });
       } else {
