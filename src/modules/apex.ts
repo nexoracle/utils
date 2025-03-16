@@ -25,6 +25,7 @@ interface Response extends ServerResponse {
   status: (code: number) => Response;
   json: (data: any, spaces?: number) => void;
   send: (data: any) => void;
+  sendFile: (filePath: string) => void;
   cookie: (name: string, value: string, options?: any) => void;
   clearCookie: (name: string, options?: any) => void;
   redirect: (url: string) => void;
@@ -213,39 +214,97 @@ class Router {
     const parsedUrl = parseUrl(req);
     reqMethod.query = parsedUrl.query;
     reqMethod.path = parsedUrl.pathname;
-
     reqMethod.ip = this.getClientIp(reqMethod);
     reqMethod.protocol = req.socket instanceof tls.TLSSocket ? "https" : "http";
     reqMethod.hostname = req.headers.host?.split(":")[0] || "";
     reqMethod.method = req.method;
     reqMethod.get = (headerName: string) => req.headers[headerName.toLowerCase()] as string | undefined;
-
     resMethod.jsonSpaces = this.jsonSpaces;
+
     resMethod.status = function (code: number) {
       this.statusCode = code;
       return this;
     };
+
     resMethod.json = function (data: any, spaces?: number) {
       this.setHeader("Content-Type", "application/json");
       this.end(JSON.stringify(data, null, spaces ?? this.jsonSpaces ?? 0));
     };
+
     resMethod.send = function (data: any) {
-      if (typeof data === "object") {
-        this.json(data);
+      if (typeof data === "object" && !Buffer.isBuffer(data)) {
+        this.setHeader("Content-Type", "application/json");
+        this.end(JSON.stringify(data, null, this.jsonSpaces));
+
+      } else if (Buffer.isBuffer(data)) {
+        this.setHeader("Content-Type", "application/octet-stream");
+        this.end(data);
+      } else if (typeof data.pipe === "function") {
+        data.pipe(this);
+
       } else {
         this.setHeader("Content-Type", "text/plain");
         this.end(data);
       }
     };
+
+    resMethod.sendFile = function (filePath: string): void {
+      const extname = path.extname(filePath).toLowerCase();
+      const contentType =
+        {
+          ".html": "text/html",
+          ".css": "text/css",
+          ".js": "application/javascript",
+          ".json": "application/json",
+          ".png": "image/png",
+          ".jpg": "image/jpeg",
+          ".jpeg": "image/jpeg",
+          ".gif": "image/gif",
+          ".svg": "image/svg+xml",
+          ".ico": "image/x-icon",
+          ".txt": "text/plain",
+          ".pdf": "application/pdf",
+          ".zip": "application/zip",
+          ".mp4": "video/mp4",
+          ".mp3": "audio/mpeg",
+          ".wav": "audio/wav",
+          ".ogg": "audio/ogg",
+          ".webp": "image/webp",
+          ".avif": "image/avif",
+          ".flac": "audio/flac",
+          ".aac": "audio/aac",
+          ".woff": "font/woff",
+          ".woff2": "font/woff2",
+          ".ttf": "font/ttf",
+          ".eot": "application/vnd.ms-fontobject",
+          ".xml": "application/xml",
+          ".csv": "text/csv",
+        }[extname] || "application/octet-stream";
+      const stream = fs.createReadStream(filePath);
+    
+      stream.on("error", (err: NodeJS.ErrnoException) => {
+        if (err.code === "ENOENT") {
+          this.status(404).send("File Not Found");
+        } else {
+          this.status(500).send("Internal Server Error");
+        }
+      });
+    
+      this.setHeader("Content-Type", contentType);
+      stream.pipe(this);
+    };
+
     resMethod.cookie = function (name: string, value: string, options?: any) {
       const cookie = `${name}=${value}; ${Object.entries(options || {})
         .map(([k, v]) => `${k}=${v}`)
         .join("; ")}`;
       this.setHeader("Set-Cookie", cookie);
     };
+
     resMethod.clearCookie = function (name: string, options?: any) {
       this.setHeader("Set-Cookie", `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
     };
+
     resMethod.redirect = function (url: string) {
       this.writeHead(302, { Location: url });
       this.end();

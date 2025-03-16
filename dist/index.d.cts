@@ -219,6 +219,7 @@ interface Response$1 extends ServerResponse {
     status: (code: number) => Response$1;
     json: (data: any, spaces?: number) => void;
     send: (data: any) => void;
+    sendFile: (filePath: string) => void;
     cookie: (name: string, value: string, options?: any) => void;
     clearCookie: (name: string, options?: any) => void;
     redirect: (url: string) => void;
