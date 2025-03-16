@@ -7,5 +7,6 @@ export * from "./modules/os";
 export * from "./modules/path";
 export * from "./modules/url";
 export * from "./modules/child_process";
-export * from "./modules/apex"
-export * from "./modules/console"
+export * from "./modules/apex";
+export * from "./modules/console";
+export * from "./modules/mime";

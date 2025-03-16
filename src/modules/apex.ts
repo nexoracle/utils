@@ -3,6 +3,7 @@ import url from "url";
 import fs from "fs";
 import path from "path";
 import tls from "tls";
+import * as mime from "./mime"
 import { IncomingMessage, ServerResponse } from "http";
 
 interface Request extends IncomingMessage {
@@ -232,17 +233,20 @@ class Router {
       this.end(JSON.stringify(data, null, spaces ?? this.jsonSpaces ?? 0));
     };
 
-    resMethod.send = function (data: any) {
+    resMethod.send = function (data: any, filename = "file.bin") {
       if (typeof data === "object" && !Buffer.isBuffer(data)) {
         this.setHeader("Content-Type", "application/json");
         this.end(JSON.stringify(data, null, this.jsonSpaces));
-
       } else if (Buffer.isBuffer(data)) {
-        this.setHeader("Content-Type", "application/octet-stream");
+        // Use mime to detect MIME type based on filename
+        const contentType = mime.get(filename) || "application/octet-stream";
+        this.setHeader("Content-Type", contentType);
         this.end(data);
       } else if (typeof data.pipe === "function") {
+        // Use mime to detect MIME type for streams
+        const contentType = mime.get(filename) || "application/octet-stream";
+        this.setHeader("Content-Type", contentType);
         data.pipe(this);
-
       } else {
         this.setHeader("Content-Type", "text/plain");
         this.end(data);
@@ -251,36 +255,8 @@ class Router {
 
     resMethod.sendFile = function (filePath: string): void {
       const extname = path.extname(filePath).toLowerCase();
-      const contentType =
-        {
-          ".html": "text/html",
-          ".css": "text/css",
-          ".js": "application/javascript",
-          ".json": "application/json",
-          ".png": "image/png",
-          ".jpg": "image/jpeg",
-          ".jpeg": "image/jpeg",
-          ".gif": "image/gif",
-          ".svg": "image/svg+xml",
-          ".ico": "image/x-icon",
-          ".txt": "text/plain",
-          ".pdf": "application/pdf",
-          ".zip": "application/zip",
-          ".mp4": "video/mp4",
-          ".mp3": "audio/mpeg",
-          ".wav": "audio/wav",
-          ".ogg": "audio/ogg",
-          ".webp": "image/webp",
-          ".avif": "image/avif",
-          ".flac": "audio/flac",
-          ".aac": "audio/aac",
-          ".woff": "font/woff",
-          ".woff2": "font/woff2",
-          ".ttf": "font/ttf",
-          ".eot": "application/vnd.ms-fontobject",
-          ".xml": "application/xml",
-          ".csv": "text/csv",
-        }[extname] || "application/octet-stream";
+      const contentType = mime.get(extname) || "application/octet-stream";
+      console.log("detected content type:", contentType)
       const stream = fs.createReadStream(filePath);
     
       stream.on("error", (err: NodeJS.ErrnoException) => {
