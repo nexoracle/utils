@@ -32,6 +32,6 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "mrmime": "^2.0.1"
+    "file-type": "^20.4.1"
   }
 }

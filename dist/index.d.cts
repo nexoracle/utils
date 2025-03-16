@@ -282,7 +282,10 @@ declare function debug(...args: any[]): void;
 declare function table(data: any, columns?: string[]): void;
 declare function clear(): void;
 
-declare const mimes: Record<string, string>;
 declare function get(extn: string): string | undefined;
+declare const mime: {
+    mimes: Record<string, string>;
+    get: typeof get;
+};
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, clear, crypto, debug, deleteFile, error, extractUrlFromString, fileExists, formatBytes, formatNumber, get, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isEmail, isObject, isURL, joinPath, jsontoBuffer, log, mimes, normalizePath, pasrseURL, randomElement, randomHexColor, randomInt, randomizeArray, readFile, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, clear, crypto, debug, deleteFile, error, extractUrlFromString, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isEmail, isObject, isURL, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, randomElement, randomHexColor, randomInt, randomizeArray, readFile, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };

@@ -3,7 +3,7 @@ import url from "url";
 import fs from "fs";
 import path from "path";
 import tls from "tls";
-import * as mime from "./mime"
+import { mime } from "./mime";
 import { IncomingMessage, ServerResponse } from "http";
 
 interface Request extends IncomingMessage {
@@ -256,9 +256,8 @@ class Router {
     resMethod.sendFile = function (filePath: string): void {
       const extname = path.extname(filePath).toLowerCase();
       const contentType = mime.get(extname) || "application/octet-stream";
-      console.log("detected content type:", contentType)
       const stream = fs.createReadStream(filePath);
-    
+
       stream.on("error", (err: NodeJS.ErrnoException) => {
         if (err.code === "ENOENT") {
           this.status(404).send("File Not Found");
@@ -266,7 +265,7 @@ class Router {
           this.status(500).send("Internal Server Error");
         }
       });
-    
+
       this.setHeader("Content-Type", contentType);
       stream.pipe(this);
     };
@@ -294,7 +293,7 @@ class Router {
           this.middlewares[index](reqMethod, resMethod, () => executeMiddlewares(index + 1));
         } catch (err) {
           console.error("Middleware error:", err);
-          resMethod.status(500).send("Internal Server Error")
+          resMethod.status(500).send("Internal Server Error");
         }
       } else {
         // Use the pathname (without query string) for route matching
@@ -364,16 +363,13 @@ const apex = {
   },
   favicon(iconPath?: string): Middleware {
     return (req, res, next) => {
-
       if (req.url === "/favicon.ico" && iconPath) {
         fs.stat(iconPath, (err, stats) => {
-
           if (err || !stats.isFile()) {
             res.status(404).send("Favicon not found");
           } else {
             res.sendFile(iconPath);
           }
-          
         });
       } else {
         next();

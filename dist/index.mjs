@@ -1053,13 +1053,15 @@ var mimes = {
   "yang": "application/yang",
   "yin": "application/yin+xml",
   "yml": "text/yaml",
-  "zip": "application/zip"
+  "zip": "application/zip",
+  "ico": "image/x-icon"
 };
 function get(extn) {
   let tmp = ("" + extn).trim().toLowerCase();
   let idx = tmp.lastIndexOf(".");
   return mimes[!~idx ? tmp : tmp.substring(++idx)];
 }
+var mime = { mimes, get };
 
 // src/modules/apex.ts
 var Router = class {
@@ -1225,11 +1227,11 @@ var Router = class {
         this.setHeader("Content-Type", "application/json");
         this.end(JSON.stringify(data, null, this.jsonSpaces));
       } else if (Buffer.isBuffer(data)) {
-        const contentType = get(filename) || "application/octet-stream";
+        const contentType = mime.get(filename) || "application/octet-stream";
         this.setHeader("Content-Type", contentType);
         this.end(data);
       } else if (typeof data.pipe === "function") {
-        const contentType = get(filename) || "application/octet-stream";
+        const contentType = mime.get(filename) || "application/octet-stream";
         this.setHeader("Content-Type", contentType);
         data.pipe(this);
       } else {
@@ -1239,8 +1241,7 @@ var Router = class {
     };
     resMethod.sendFile = function(filePath) {
       const extname = path2.extname(filePath).toLowerCase();
-      const contentType = get(extname) || "application/octet-stream";
-      console.log("detected content type:", contentType);
+      const contentType = mime.get(extname) || "application/octet-stream";
       const stream = fs3.createReadStream(filePath);
       stream.on("error", (err) => {
         if (err.code === "ENOENT") {
@@ -1449,7 +1450,6 @@ export {
   fileExists,
   formatBytes,
   formatNumber,
-  get,
   getAbsolutePath,
   getBufferFromStream,
   getCpuLoad,
@@ -1471,7 +1471,7 @@ export {
   joinPath,
   jsontoBuffer,
   log,
-  mimes,
+  mime,
   normalizePath,
   pasrseURL,
   randomElement,
