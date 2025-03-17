@@ -1215,6 +1215,7 @@ var Router = class {
     reqMethod.get = (headerName) => req.headers[headerName.toLowerCase()];
     resMethod.jsonSpaces = this.jsonSpaces;
     reqMethod.params = {};
+    reqMethod.body = {};
     resMethod.status = function(code) {
       this.statusCode = code;
       return this;
@@ -1410,6 +1411,31 @@ function createServer(router) {
 var apex = {
   Router,
   createServer,
+  bodyParser: () => {
+    return (req, res, next) => {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk.toString();
+      });
+      req.on("end", () => {
+        if (req.headers["content-type"] === "application/json") {
+          try {
+            req.body = JSON.parse(body);
+          } catch (err) {
+            console.error("Error parsing JSON body:", err);
+            req.body = {};
+          }
+        } else if (req.headers["content-type"] === "application/x-www-form-urlencoded") {
+          req.body = Object.fromEntries(new URLSearchParams(body));
+        } else if (req.headers["content-type"] === "text/plain") {
+          req.body = body;
+        } else {
+          req.body = {};
+        }
+        next();
+      });
+    };
+  },
   static(prefix, staticPath) {
     if (!staticPath) {
       staticPath = prefix;

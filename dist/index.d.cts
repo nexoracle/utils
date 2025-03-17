@@ -287,6 +287,7 @@ declare function createServer(router: Router): http.Server;
 declare const apex: {
     Router: typeof Router;
     createServer: typeof createServer;
+    bodyParser: () => Middleware;
     static(prefix: string, staticPath?: string): Middleware;
     favicon(iconPath?: string): Middleware;
     rateLimit: (options?: RateLimiterOptions) => Middleware;

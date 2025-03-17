@@ -19,6 +19,7 @@ interface Request extends IncomingMessage {
   hostname?: string;
   method?: string;
   files?: any;
+  file?: any;
   get?: (headerName: string) => string | undefined;
 }
 
@@ -240,6 +241,8 @@ class Router {
     reqMethod.get = (headerName: string) => req.headers[headerName.toLowerCase()] as string | undefined;
     resMethod.jsonSpaces = this.jsonSpaces;
     reqMethod.params = {};
+    reqMethod.body = {};
+
     // Response Methods
     resMethod.status = function (code: number) {
       this.statusCode = code;
@@ -486,6 +489,31 @@ function createServer(router: Router): http.Server {
 const apex = {
   Router,
   createServer,
+  bodyParser: (): Middleware => {
+    return (req: Request, res: Response, next: () => void) => {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk.toString();
+      });
+      req.on("end", () => {
+        if (req.headers["content-type"] === "application/json") {
+          try {
+            req.body = JSON.parse(body);
+          } catch (err) {
+            console.error("Error parsing JSON body:", err);
+            req.body = {};
+          }
+        } else if (req.headers["content-type"] === "application/x-www-form-urlencoded") {
+          req.body = Object.fromEntries(new URLSearchParams(body));
+        } else if (req.headers["content-type"] === "text/plain") {
+          req.body = body;
+        } else {
+          req.body = {};
+        }
+        next();
+      });
+    };
+  },
   static(prefix: string, staticPath?: string): Middleware {
     if (!staticPath) {
       staticPath = prefix;
