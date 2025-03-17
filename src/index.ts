@@ -13,3 +13,4 @@ export * from "./modules/mime";
 export * from "./modules/tls";
 export * from "./modules/dns";
 export * from "./modules/https";
+export * from "./modules/perf_hooks";

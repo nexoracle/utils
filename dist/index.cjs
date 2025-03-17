@@ -76,6 +76,7 @@ __export(src_exports, {
   mime: () => mime,
   normalizePath: () => normalizePath,
   pasrseURL: () => pasrseURL,
+  perf_hooks: () => perf_hooks,
   randomElement: () => randomElement,
   randomHexColor: () => randomHexColor,
   randomInt: () => randomInt,
@@ -1628,6 +1629,88 @@ function isURLAccessible(url2) {
     }).on("error", () => resolve(false));
   });
 }
+
+// src/modules/perf_hooks.ts
+var import_perf_hooks = require("perf_hooks");
+var log2 = (message, error2 = null) => {
+  console.log(`[perf_hooks] ${message}`);
+  if (error2)
+    console.error(error2);
+};
+var perf_hooks = {
+  /**
+   * Get the current high-resolution timestamp in milliseconds
+   */
+  now: () => {
+    try {
+      return import_perf_hooks.performance.now();
+    } catch (error2) {
+      log2("Error getting performance timestamp", error2);
+      return -1;
+    }
+  },
+  /**
+   * Get the time origin (when the performance API started tracking)
+   */
+  getTimeOrigin: () => {
+    try {
+      return import_perf_hooks.performance.timeOrigin;
+    } catch (error2) {
+      log2("Error getting time origin", error2);
+      return -1;
+    }
+  },
+  /**
+   * Measures the execution time of a function in milliseconds
+   */
+  measureExecutionTime: (fn, ...args) => {
+    try {
+      const start = import_perf_hooks.performance.now();
+      fn(...args);
+      return import_perf_hooks.performance.now() - start;
+    } catch (error2) {
+      log2("Error measuring execution time", error2);
+      return -1;
+    }
+  },
+  /**
+   * Tracks event loop delays (helps identify performance issues)
+   */
+  monitorEventLoopDelay: () => {
+    try {
+      const histogram = (0, import_perf_hooks.monitorEventLoopDelay)();
+      histogram.enable();
+      return histogram;
+    } catch (error2) {
+      log2("Error monitoring event loop delay", error2);
+      return null;
+    }
+  },
+  /**
+   * Sets up a PerformanceObserver to watch for performance entries
+   */
+  observePerformance: (entryTypes, callback) => {
+    try {
+      const observer = new import_perf_hooks.PerformanceObserver((list) => callback(list));
+      observer.observe({ entryTypes });
+      return observer;
+    } catch (error2) {
+      log2("Error setting up PerformanceObserver", error2);
+      return null;
+    }
+  },
+  /**
+   * Returns Node.js performance timings (including startup time)
+   */
+  getNodePerformanceTiming: () => {
+    try {
+      return import_perf_hooks.performance.nodeTiming;
+    } catch (error2) {
+      log2("Error getting Node.js performance timing", error2);
+      return null;
+    }
+  }
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ReadMore,
@@ -1676,6 +1759,7 @@ function isURLAccessible(url2) {
   mime,
   normalizePath,
   pasrseURL,
+  perf_hooks,
   randomElement,
   randomHexColor,
   randomInt,

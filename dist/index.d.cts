@@ -4,6 +4,7 @@ import os from 'os';
 import querystring from 'querystring';
 import http, { ServerResponse, IncomingMessage } from 'http';
 import tls from 'tls';
+import { EntryType, PerformanceObserver, PerformanceNodeTiming } from 'perf_hooks';
 
 declare function getRandom(options?: {
     Alphabets?: boolean;
@@ -319,4 +320,31 @@ declare function downloadFile(url: string, destination: string): Promise<void>;
  */
 declare function isURLAccessible(url: string): Promise<boolean>;
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, extractUrlFromString, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isDomainReachable, isEmail, isObject, isTLSValid, isURL, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };
+declare const perf_hooks: {
+    /**
+     * Get the current high-resolution timestamp in milliseconds
+     */
+    now: () => number;
+    /**
+     * Get the time origin (when the performance API started tracking)
+     */
+    getTimeOrigin: () => number;
+    /**
+     * Measures the execution time of a function in milliseconds
+     */
+    measureExecutionTime: (fn: Function, ...args: any[]) => number;
+    /**
+     * Tracks event loop delays (helps identify performance issues)
+     */
+    monitorEventLoopDelay: () => any;
+    /**
+     * Sets up a PerformanceObserver to watch for performance entries
+     */
+    observePerformance: (entryTypes: EntryType[], callback: (list: PerformanceObserverEntryList) => void) => PerformanceObserver | null;
+    /**
+     * Returns Node.js performance timings (including startup time)
+     */
+    getNodePerformanceTiming: () => PerformanceNodeTiming | null;
+};
+
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, extractUrlFromString, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isDomainReachable, isEmail, isObject, isTLSValid, isURL, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };
