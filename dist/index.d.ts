@@ -205,7 +205,7 @@ interface Request extends IncomingMessage {
     query?: {
         [key: string]: string | string[];
     };
-    params?: {
+    params: {
         [key: string]: string;
     };
     ip?: string;
@@ -279,6 +279,8 @@ declare class Router {
         [key: string]: any;
     }): void;
     handleRequest(req: IncomingMessage, res: ServerResponse): void;
+    private convertRouteToRegex;
+    private extractParamNames;
     private notFoundHandler;
 }
 declare function createServer(router: Router): http.Server;

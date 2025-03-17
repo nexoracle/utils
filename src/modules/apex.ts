@@ -11,7 +11,7 @@ interface Request extends IncomingMessage {
   cookies?: { [key: string]: string };
   session?: any;
   query?: { [key: string]: string | string[] };
-  params?: { [key: string]: string };
+  params: { [key: string]: string };
   ip?: string;
   flash?: (type: string, message?: string) => string[] | void;
   path?: string;
@@ -31,7 +31,7 @@ interface Response extends ServerResponse {
   send: (data: any) => void;
   sendFile: (filePath: string) => void;
   redirect: (url: string) => void;
-  
+
   charset: (charset: string) => Response;
   links: (links: Record<string, string>) => Response;
   download: (filePath: string, filename?: string) => void;
@@ -44,7 +44,7 @@ interface Response extends ServerResponse {
   set: (headers: Record<string, string | number | string[]>) => Response;
   vary: (field: string) => Response;
   location: (url: string) => Response;
-  
+
   locals?: { [key: string]: any };
   jsonSpaces: number;
   app: any;
@@ -239,13 +239,13 @@ class Router {
     reqMethod.method = req.method;
     reqMethod.get = (headerName: string) => req.headers[headerName.toLowerCase()] as string | undefined;
     resMethod.jsonSpaces = this.jsonSpaces;
-
+    reqMethod.params = {};
     // Response Methods
     resMethod.status = function (code: number) {
       this.statusCode = code;
       return this;
     };
-    
+
     resMethod.json = function (data: any, spaces?: number) {
       this.setHeader("Content-Type", "application/json");
       this.end(JSON.stringify(data, null, spaces ?? this.jsonSpaces ?? 0));
@@ -257,21 +257,18 @@ class Router {
       if (typeof data === "object" && !Buffer.isBuffer(data)) {
         if (!contentType) this.setHeader("Content-Type", "application/json");
         this.end(JSON.stringify(data, null, this.jsonSpaces));
-
       } else if (Buffer.isBuffer(data)) {
         if (!contentType) {
           const detectedType = mime.get(filename) || "application/octet-stream";
           this.setHeader("Content-Type", detectedType);
         }
         this.end(data);
-
       } else if (typeof data.pipe === "function") {
         if (!contentType) {
           const detectedType = mime.get(filename) || "application/octet-stream";
           this.setHeader("Content-Type", detectedType);
         }
         data.pipe(this);
-
       } else {
         if (!contentType) {
           let detectedType = "text/plain";
@@ -359,7 +356,7 @@ class Router {
     resMethod.getHeader = function (name: string) {
       return nativeGetHeader(name);
     };
-    
+
     const nativeRemoveHeader = resMethod.removeHeader.bind(resMethod);
     resMethod.removeHeader = function (name: string) {
       nativeRemoveHeader(name);
@@ -433,11 +430,18 @@ class Router {
           return this.routes[pathname][reqMethod.method!](reqMethod, resMethod);
         }
 
+        // Check for parameterized routes
         for (const route in this.routes) {
-          if (route.endsWith("/*") && pathname.startsWith(route.slice(0, -2))) {
-            if (this.routes[route][reqMethod.method!]) {
-              return this.routes[route][reqMethod.method!](reqMethod, resMethod);
-            }
+          const routeRegex = this.convertRouteToRegex(route);
+          const match = pathname.match(routeRegex);
+
+          if (match && this.routes[route][reqMethod.method!]) {
+            const paramNames = this.extractParamNames(route);
+            paramNames.forEach((name, index) => {
+              reqMethod.params[name] = match[index + 1];
+            });
+
+            return this.routes[route][reqMethod.method!](reqMethod, resMethod);
           }
         }
 
@@ -447,6 +451,22 @@ class Router {
     };
 
     executeMiddlewares(0);
+  }
+
+  // Convert route path to regex for parameter matching
+  private convertRouteToRegex(route: string): RegExp {
+    const pattern = route.replace(/:\w+/g, "([^/]+)");
+    return new RegExp(`^${pattern}$`);
+  }
+
+  // Extract parameter names from route path
+  private extractParamNames(route: string): string[] {
+    const paramNames: string[] = [];
+    route.replace(/:\w+/g, (match) => {
+      paramNames.push(match.slice(1));
+      return match;
+    });
+    return paramNames;
   }
 
   // Default 404 handler

@@ -1214,6 +1214,7 @@ var Router = class {
     reqMethod.method = req.method;
     reqMethod.get = (headerName) => req.headers[headerName.toLowerCase()];
     resMethod.jsonSpaces = this.jsonSpaces;
+    reqMethod.params = {};
     resMethod.status = function(code) {
       this.statusCode = code;
       return this;
@@ -1367,16 +1368,34 @@ var Router = class {
           return this.routes[pathname][reqMethod.method](reqMethod, resMethod);
         }
         for (const route in this.routes) {
-          if (route.endsWith("/*") && pathname.startsWith(route.slice(0, -2))) {
-            if (this.routes[route][reqMethod.method]) {
-              return this.routes[route][reqMethod.method](reqMethod, resMethod);
-            }
+          const routeRegex = this.convertRouteToRegex(route);
+          const match = pathname.match(routeRegex);
+          if (match && this.routes[route][reqMethod.method]) {
+            const paramNames = this.extractParamNames(route);
+            paramNames.forEach((name, index2) => {
+              reqMethod.params[name] = match[index2 + 1];
+            });
+            return this.routes[route][reqMethod.method](reqMethod, resMethod);
           }
         }
         this.notFoundHandler(reqMethod, resMethod);
       }
     };
     executeMiddlewares(0);
+  }
+  // Convert route path to regex for parameter matching
+  convertRouteToRegex(route) {
+    const pattern = route.replace(/:\w+/g, "([^/]+)");
+    return new RegExp(`^${pattern}$`);
+  }
+  // Extract parameter names from route path
+  extractParamNames(route) {
+    const paramNames = [];
+    route.replace(/:\w+/g, (match) => {
+      paramNames.push(match.slice(1));
+      return match;
+    });
+    return paramNames;
   }
   // Default 404 handler
   notFoundHandler(req, res) {
