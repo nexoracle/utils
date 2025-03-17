@@ -216,6 +216,8 @@ interface Request extends IncomingMessage {
     get?: (headerName: string) => string | undefined;
 }
 interface Response$1 extends ServerResponse {
+    text: (data: any) => void;
+    html: (data: any) => void;
     status: (code: number) => Response$1;
     json: (data: any, spaces?: number) => void;
     send: (data: any) => void;

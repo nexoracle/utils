@@ -1253,6 +1253,14 @@ var Router = class {
       this.setHeader("Content-Type", contentType);
       stream.pipe(this);
     };
+    resMethod.html = function(data) {
+      this.setHeader("Content-Type", "text/html");
+      this.end(data);
+    };
+    resMethod.text = function(data) {
+      this.setHeader("Content-Type", "text/plain");
+      this.end(data);
+    };
     resMethod.cookie = function(name, value, options) {
       const cookie = `${name}=${value}; ${Object.entries(options || {}).map(([k, v]) => `${k}=${v}`).join("; ")}`;
       this.setHeader("Set-Cookie", cookie);

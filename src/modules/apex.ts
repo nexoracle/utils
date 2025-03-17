@@ -23,6 +23,8 @@ interface Request extends IncomingMessage {
 }
 
 interface Response extends ServerResponse {
+  text: (data: any) => void;
+  html: (data: any) => void;
   status: (code: number) => Response;
   json: (data: any, spaces?: number) => void;
   send: (data: any) => void;
@@ -268,6 +270,16 @@ class Router {
 
       this.setHeader("Content-Type", contentType);
       stream.pipe(this);
+    };
+
+    resMethod.html = function (data: any) {
+      this.setHeader("Content-Type", "text/html");
+      this.end(data);
+    };
+
+    resMethod.text = function (data: any) {
+      this.setHeader("Content-Type", "text/plain");
+      this.end(data);
     };
 
     resMethod.cookie = function (name: string, value: string, options?: any) {
