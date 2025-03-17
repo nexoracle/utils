@@ -1441,6 +1441,62 @@ function table(data, columns) {
 function clear() {
   console.clear();
 }
+
+// src/modules/tls.ts
+import tls2 from "tls";
+function checkTLSHandshake(host, port = 443) {
+  return new Promise((resolve) => {
+    const socket = tls2.connect(port, host, { rejectUnauthorized: false }, () => {
+      resolve(true);
+      socket.end();
+    });
+    socket.on("error", () => resolve(false));
+  });
+}
+function getSSLCertificate(host, port = 443) {
+  return new Promise((resolve) => {
+    const socket = tls2.connect(port, host, { rejectUnauthorized: false }, () => {
+      resolve(socket.getPeerCertificate());
+      socket.end();
+    });
+    socket.on("error", () => resolve(null));
+  });
+}
+async function isTLSValid(host, port = 443) {
+  const cert = await getSSLCertificate(host, port);
+  if (!cert || !cert.valid_to)
+    return false;
+  const expiryDate = new Date(cert.valid_to);
+  return expiryDate > /* @__PURE__ */ new Date();
+}
+
+// src/modules/dns.ts
+import dns from "dns";
+function resolveDNS(host, recordType) {
+  return new Promise((resolve, reject) => {
+    dns.resolve(host, recordType, (err, records) => {
+      if (err)
+        reject(err);
+      else
+        resolve(records);
+    });
+  });
+}
+function reverseLookup(ip) {
+  return new Promise((resolve, reject) => {
+    dns.reverse(ip, (err, hostnames) => {
+      if (err)
+        reject(err);
+      else
+        resolve(hostnames);
+    });
+  });
+}
+function isDomainReachable(host) {
+  return new Promise((resolve) => {
+    dns.resolve(host, "A", (err) => resolve(!err));
+  });
+}
 export {
   ReadMore,
   apex,
@@ -1449,6 +1505,7 @@ export {
   bufferToFile,
   buffertoJson,
   buildUrl,
+  checkTLSHandshake,
   clear,
   crypto,
   debug,
@@ -1467,14 +1524,17 @@ export {
   getNetworkInterfaces,
   getRandom,
   getRelativePath,
+  getSSLCertificate,
   getStreamFromBuffer,
   getSystemInfo,
   getTime,
   getUserInfo,
   info,
   isArray,
+  isDomainReachable,
   isEmail,
   isObject,
+  isTLSValid,
   isURL,
   joinPath,
   jsontoBuffer,
@@ -1487,6 +1547,8 @@ export {
   randomInt,
   randomizeArray,
   readFile,
+  resolveDNS,
+  reverseLookup,
   runCommand,
   runCommandSync,
   runSpawn,

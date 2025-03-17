@@ -10,3 +10,5 @@ export * from "./modules/child_process";
 export * from "./modules/apex";
 export * from "./modules/console";
 export * from "./modules/mime";
+export * from "./modules/tls";
+export * from "./modules/dns";

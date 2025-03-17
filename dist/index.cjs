@@ -37,6 +37,7 @@ __export(src_exports, {
   bufferToFile: () => bufferToFile,
   buffertoJson: () => buffertoJson,
   buildUrl: () => buildUrl,
+  checkTLSHandshake: () => checkTLSHandshake,
   clear: () => clear,
   crypto: () => crypto,
   debug: () => debug,
@@ -55,14 +56,17 @@ __export(src_exports, {
   getNetworkInterfaces: () => getNetworkInterfaces,
   getRandom: () => getRandom,
   getRelativePath: () => getRelativePath,
+  getSSLCertificate: () => getSSLCertificate,
   getStreamFromBuffer: () => getStreamFromBuffer,
   getSystemInfo: () => getSystemInfo,
   getTime: () => getTime,
   getUserInfo: () => getUserInfo,
   info: () => info,
   isArray: () => isArray,
+  isDomainReachable: () => isDomainReachable,
   isEmail: () => isEmail,
   isObject: () => isObject,
+  isTLSValid: () => isTLSValid,
   isURL: () => isURL,
   joinPath: () => joinPath,
   jsontoBuffer: () => jsontoBuffer,
@@ -75,6 +79,8 @@ __export(src_exports, {
   randomInt: () => randomInt,
   randomizeArray: () => randomizeArray,
   readFile: () => readFile,
+  resolveDNS: () => resolveDNS,
+  reverseLookup: () => reverseLookup,
   runCommand: () => runCommand,
   runCommandSync: () => runCommandSync,
   runSpawn: () => runSpawn,
@@ -1535,6 +1541,62 @@ function table(data, columns) {
 function clear() {
   console.clear();
 }
+
+// src/modules/tls.ts
+var import_tls2 = __toESM(require("tls"), 1);
+function checkTLSHandshake(host, port = 443) {
+  return new Promise((resolve) => {
+    const socket = import_tls2.default.connect(port, host, { rejectUnauthorized: false }, () => {
+      resolve(true);
+      socket.end();
+    });
+    socket.on("error", () => resolve(false));
+  });
+}
+function getSSLCertificate(host, port = 443) {
+  return new Promise((resolve) => {
+    const socket = import_tls2.default.connect(port, host, { rejectUnauthorized: false }, () => {
+      resolve(socket.getPeerCertificate());
+      socket.end();
+    });
+    socket.on("error", () => resolve(null));
+  });
+}
+async function isTLSValid(host, port = 443) {
+  const cert = await getSSLCertificate(host, port);
+  if (!cert || !cert.valid_to)
+    return false;
+  const expiryDate = new Date(cert.valid_to);
+  return expiryDate > /* @__PURE__ */ new Date();
+}
+
+// src/modules/dns.ts
+var import_dns = __toESM(require("dns"), 1);
+function resolveDNS(host, recordType) {
+  return new Promise((resolve, reject) => {
+    import_dns.default.resolve(host, recordType, (err, records) => {
+      if (err)
+        reject(err);
+      else
+        resolve(records);
+    });
+  });
+}
+function reverseLookup(ip) {
+  return new Promise((resolve, reject) => {
+    import_dns.default.reverse(ip, (err, hostnames) => {
+      if (err)
+        reject(err);
+      else
+        resolve(hostnames);
+    });
+  });
+}
+function isDomainReachable(host) {
+  return new Promise((resolve) => {
+    import_dns.default.resolve(host, "A", (err) => resolve(!err));
+  });
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ReadMore,
@@ -1544,6 +1606,7 @@ function clear() {
   bufferToFile,
   buffertoJson,
   buildUrl,
+  checkTLSHandshake,
   clear,
   crypto,
   debug,
@@ -1562,14 +1625,17 @@ function clear() {
   getNetworkInterfaces,
   getRandom,
   getRelativePath,
+  getSSLCertificate,
   getStreamFromBuffer,
   getSystemInfo,
   getTime,
   getUserInfo,
   info,
   isArray,
+  isDomainReachable,
   isEmail,
   isObject,
+  isTLSValid,
   isURL,
   joinPath,
   jsontoBuffer,
@@ -1582,6 +1648,8 @@ function clear() {
   randomInt,
   randomizeArray,
   readFile,
+  resolveDNS,
+  reverseLookup,
   runCommand,
   runCommandSync,
   runSpawn,

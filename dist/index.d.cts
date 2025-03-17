@@ -3,6 +3,7 @@ import * as Crypto from 'crypto';
 import os from 'os';
 import querystring from 'querystring';
 import http, { ServerResponse, IncomingMessage } from 'http';
+import tls from 'tls';
 
 declare function getRandom(options?: {
     Alphabets?: boolean;
@@ -290,4 +291,18 @@ declare const mime: {
     get: typeof get;
 };
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, clear, crypto, debug, deleteFile, error, extractUrlFromString, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isEmail, isObject, isURL, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, randomElement, randomHexColor, randomInt, randomizeArray, readFile, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };
+/** Checks if a server supports TLS by performing a handshake */
+declare function checkTLSHandshake(host: string, port?: number): Promise<boolean>;
+/** Fetches SSL certificate details of a domain */
+declare function getSSLCertificate(host: string, port?: number): Promise<tls.PeerCertificate | null>;
+/** Checks if a domain's TLS certificate is valid */
+declare function isTLSValid(host: string, port?: number): Promise<boolean>;
+
+/** Resolves a domain to its DNS records */
+declare function resolveDNS(host: string, recordType: "A" | "AAAA" | "CNAME" | "MX" | "TXT" | "NS"): Promise<string[]>;
+/** Performs a reverse DNS lookup on an IP address */
+declare function reverseLookup(ip: string): Promise<string[]>;
+/** Checks if a domain is reachable via DNS */
+declare function isDomainReachable(host: string): Promise<boolean>;
+
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, error, extractUrlFromString, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isDomainReachable, isEmail, isObject, isTLSValid, isURL, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };
