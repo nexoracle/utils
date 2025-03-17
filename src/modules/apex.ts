@@ -26,14 +26,28 @@ interface Response extends ServerResponse {
   text: (data: any) => void;
   html: (data: any) => void;
   status: (code: number) => Response;
+  type: (type: string) => Response;
   json: (data: any, spaces?: number) => void;
   send: (data: any) => void;
   sendFile: (filePath: string) => void;
+  redirect: (url: string) => void;
+  
+  charset: (charset: string) => Response;
+  links: (links: Record<string, string>) => Response;
+  download: (filePath: string, filename?: string) => void;
+  attachment: (filename?: string) => void;
   cookie: (name: string, value: string, options?: any) => void;
   clearCookie: (name: string, options?: any) => void;
-  redirect: (url: string) => void;
+  format: (obj: Record<string, () => void>) => void;
+  getHeader: (name: string) => string | number | string[] | undefined;
+  removeHeader: (name: string) => void;
+  set: (headers: Record<string, string | number | string[]>) => Response;
+  vary: (field: string) => Response;
+  location: (url: string) => Response;
+  
   locals?: { [key: string]: any };
   jsonSpaces: number;
+  app: any;
 }
 
 interface RateLimiterOptions {
@@ -214,8 +228,9 @@ class Router {
   handleRequest(req: IncomingMessage, res: ServerResponse): void {
     const reqMethod = req as Request;
     const resMethod = res as Response;
-
     const parsedUrl = parseUrl(req);
+
+    // Request Methods
     reqMethod.query = parsedUrl.query;
     reqMethod.path = parsedUrl.pathname;
     reqMethod.ip = this.getClientIp(reqMethod);
@@ -225,32 +240,54 @@ class Router {
     reqMethod.get = (headerName: string) => req.headers[headerName.toLowerCase()] as string | undefined;
     resMethod.jsonSpaces = this.jsonSpaces;
 
+    // Response Methods
     resMethod.status = function (code: number) {
       this.statusCode = code;
       return this;
     };
-
+    
     resMethod.json = function (data: any, spaces?: number) {
       this.setHeader("Content-Type", "application/json");
       this.end(JSON.stringify(data, null, spaces ?? this.jsonSpaces ?? 0));
     };
 
     resMethod.send = function (data: any, filename = "file.bin") {
+      const contentType = this.getHeader("Content-Type");
+
       if (typeof data === "object" && !Buffer.isBuffer(data)) {
-        this.setHeader("Content-Type", "application/json");
+        if (!contentType) this.setHeader("Content-Type", "application/json");
         this.end(JSON.stringify(data, null, this.jsonSpaces));
+
       } else if (Buffer.isBuffer(data)) {
-        // Use mime to detect MIME type based on filename
-        const contentType = mime.get(filename) || "application/octet-stream";
-        this.setHeader("Content-Type", contentType);
+        if (!contentType) {
+          const detectedType = mime.get(filename) || "application/octet-stream";
+          this.setHeader("Content-Type", detectedType);
+        }
         this.end(data);
+
       } else if (typeof data.pipe === "function") {
-        // Use mime to detect MIME type for streams
-        const contentType = mime.get(filename) || "application/octet-stream";
-        this.setHeader("Content-Type", contentType);
+        if (!contentType) {
+          const detectedType = mime.get(filename) || "application/octet-stream";
+          this.setHeader("Content-Type", detectedType);
+        }
         data.pipe(this);
+
       } else {
-        this.setHeader("Content-Type", "text/plain");
+        if (!contentType) {
+          let detectedType = "text/plain";
+
+          if (typeof data === "string") {
+            if (data.trim().startsWith("<!DOCTYPE html>") || data.trim().startsWith("<html>") || data.trim().startsWith("<")) {
+              detectedType = "text/html";
+            } else if (filename.includes("css")) {
+              detectedType = "text/css";
+            } else if (filename.includes("js")) {
+              detectedType = "application/javascript";
+            }
+          }
+
+          this.setHeader("Content-Type", detectedType);
+        }
         this.end(data);
       }
     };
@@ -277,11 +314,36 @@ class Router {
       this.end(data);
     };
 
+    resMethod.redirect = function (url: string) {
+      this.writeHead(302, { Location: url });
+      this.end();
+    };
+
     resMethod.text = function (data: any) {
       this.setHeader("Content-Type", "text/plain");
       this.end(data);
     };
 
+    resMethod.type = function (type: string) {
+      const mimeType = mime.get(type) || type;
+      this.setHeader("Content-Type", mimeType);
+      return this;
+    };
+
+    resMethod.format = function (obj: Record<string, () => void>) {
+      const acceptHeader = this.req.headers["accept"] || "*/*";
+      const types = Object.keys(obj);
+
+      for (const type of types) {
+        if (acceptHeader.includes(type) || type === "*/*") {
+          obj[type]();
+          return;
+        }
+      }
+      this.status(406).send("Not Acceptable");
+    };
+
+    // Response Headers
     resMethod.cookie = function (name: string, value: string, options?: any) {
       const cookie = `${name}=${value}; ${Object.entries(options || {})
         .map(([k, v]) => `${k}=${v}`)
@@ -293,10 +355,65 @@ class Router {
       this.setHeader("Set-Cookie", `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
     };
 
-    resMethod.redirect = function (url: string) {
-      this.writeHead(302, { Location: url });
-      this.end();
+    const nativeGetHeader = resMethod.getHeader.bind(resMethod);
+    resMethod.getHeader = function (name: string) {
+      return nativeGetHeader(name);
     };
+    
+    const nativeRemoveHeader = resMethod.removeHeader.bind(resMethod);
+    resMethod.removeHeader = function (name: string) {
+      nativeRemoveHeader(name);
+    };
+
+    resMethod.attachment = function (filename = "file") {
+      this.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    };
+
+    resMethod.download = function (filePath: string, filename = "file") {
+      this.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      this.sendFile(filePath);
+    };
+
+    resMethod.set = function (headers: Record<string, string | number | string[]>) {
+      for (const [name, value] of Object.entries(headers)) {
+        this.setHeader(name, value);
+      }
+      return this;
+    };
+
+    resMethod.vary = function (field: string) {
+      const varyHeader = String(this.getHeader("Vary") || "");
+      const fields = varyHeader.split(", ").filter(Boolean);
+
+      if (!fields.includes(field)) {
+        fields.push(field);
+        this.setHeader("Vary", fields.join(", "));
+      }
+      return this;
+    };
+
+    resMethod.location = function (url: string) {
+      this.setHeader("Location", url);
+      return this;
+    };
+
+    resMethod.links = function (links: Record<string, string>) {
+      const linkHeader = Object.entries(links)
+        .map(([rel, url]) => `<${url}>; rel="${rel}"`)
+        .join(", ");
+      this.setHeader("Link", linkHeader);
+      return this;
+    };
+
+    resMethod.charset = function (charset: string) {
+      const contentType = this.getHeader("Content-Type");
+      if (typeof contentType === "string") {
+        this.setHeader("Content-Type", `${contentType}; charset=${charset}`);
+      }
+      return this;
+    };
+
+    resMethod.app = {};
 
     // Execute middlewares
     const executeMiddlewares = (index: number) => {

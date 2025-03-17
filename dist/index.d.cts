@@ -221,16 +221,28 @@ interface Response$1 extends ServerResponse {
     text: (data: any) => void;
     html: (data: any) => void;
     status: (code: number) => Response$1;
+    type: (type: string) => Response$1;
     json: (data: any, spaces?: number) => void;
     send: (data: any) => void;
     sendFile: (filePath: string) => void;
+    redirect: (url: string) => void;
+    charset: (charset: string) => Response$1;
+    links: (links: Record<string, string>) => Response$1;
+    download: (filePath: string, filename?: string) => void;
+    attachment: (filename?: string) => void;
     cookie: (name: string, value: string, options?: any) => void;
     clearCookie: (name: string, options?: any) => void;
-    redirect: (url: string) => void;
+    format: (obj: Record<string, () => void>) => void;
+    getHeader: (name: string) => string | number | string[] | undefined;
+    removeHeader: (name: string) => void;
+    set: (headers: Record<string, string | number | string[]>) => Response$1;
+    vary: (field: string) => Response$1;
+    location: (url: string) => Response$1;
     locals?: {
         [key: string]: any;
     };
     jsonSpaces: number;
+    app: any;
 }
 interface RateLimiterOptions {
     windowMs?: number;
