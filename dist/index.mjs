@@ -1497,6 +1497,35 @@ function isDomainReachable(host) {
     dns.resolve(host, "A", (err) => resolve(!err));
   });
 }
+
+// src/modules/https.ts
+import https from "https";
+import fs4 from "fs";
+function logError(error2) {
+  console.error(`[HTTPS Error]: ${error2.message}`);
+}
+function downloadFile(url2, destination) {
+  return new Promise((resolve, reject) => {
+    const file = fs4.createWriteStream(destination);
+    https.get(url2, (res) => {
+      res.pipe(file);
+      file.on("finish", () => {
+        file.close();
+        resolve();
+      });
+    }).on("error", (err) => {
+      logError(err);
+      fs4.unlink(destination, () => reject(err));
+    });
+  });
+}
+function isURLAccessible(url2) {
+  return new Promise((resolve) => {
+    https.get(url2, (res) => {
+      resolve(res.statusCode === 200);
+    }).on("error", () => resolve(false));
+  });
+}
 export {
   ReadMore,
   apex,
@@ -1510,6 +1539,7 @@ export {
   crypto,
   debug,
   deleteFile,
+  downloadFile,
   error,
   extractUrlFromString,
   fileExists,
@@ -1536,6 +1566,7 @@ export {
   isObject,
   isTLSValid,
   isURL,
+  isURLAccessible,
   joinPath,
   jsontoBuffer,
   log,

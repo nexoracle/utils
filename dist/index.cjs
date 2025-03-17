@@ -42,6 +42,7 @@ __export(src_exports, {
   crypto: () => crypto,
   debug: () => debug,
   deleteFile: () => deleteFile,
+  downloadFile: () => downloadFile,
   error: () => error,
   extractUrlFromString: () => extractUrlFromString,
   fileExists: () => fileExists,
@@ -68,6 +69,7 @@ __export(src_exports, {
   isObject: () => isObject,
   isTLSValid: () => isTLSValid,
   isURL: () => isURL,
+  isURLAccessible: () => isURLAccessible,
   joinPath: () => joinPath,
   jsontoBuffer: () => jsontoBuffer,
   log: () => log,
@@ -1597,6 +1599,35 @@ function isDomainReachable(host) {
     import_dns.default.resolve(host, "A", (err) => resolve(!err));
   });
 }
+
+// src/modules/https.ts
+var import_https = __toESM(require("https"), 1);
+var import_fs4 = __toESM(require("fs"), 1);
+function logError(error2) {
+  console.error(`[HTTPS Error]: ${error2.message}`);
+}
+function downloadFile(url2, destination) {
+  return new Promise((resolve, reject) => {
+    const file = import_fs4.default.createWriteStream(destination);
+    import_https.default.get(url2, (res) => {
+      res.pipe(file);
+      file.on("finish", () => {
+        file.close();
+        resolve();
+      });
+    }).on("error", (err) => {
+      logError(err);
+      import_fs4.default.unlink(destination, () => reject(err));
+    });
+  });
+}
+function isURLAccessible(url2) {
+  return new Promise((resolve) => {
+    import_https.default.get(url2, (res) => {
+      resolve(res.statusCode === 200);
+    }).on("error", () => resolve(false));
+  });
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ReadMore,
@@ -1611,6 +1642,7 @@ function isDomainReachable(host) {
   crypto,
   debug,
   deleteFile,
+  downloadFile,
   error,
   extractUrlFromString,
   fileExists,
@@ -1637,6 +1669,7 @@ function isDomainReachable(host) {
   isObject,
   isTLSValid,
   isURL,
+  isURLAccessible,
   joinPath,
   jsontoBuffer,
   log,

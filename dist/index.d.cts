@@ -305,4 +305,18 @@ declare function reverseLookup(ip: string): Promise<string[]>;
 /** Checks if a domain is reachable via DNS */
 declare function isDomainReachable(host: string): Promise<boolean>;
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, error, extractUrlFromString, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isDomainReachable, isEmail, isObject, isTLSValid, isURL, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };
+/**
+ * Download a file from an HTTPS URL.
+ * @param url The file URL.
+ * @param destination The local file path to save.
+ * @returns Promise resolving when download is complete.
+ */
+declare function downloadFile(url: string, destination: string): Promise<void>;
+/**
+ * Validate if an HTTPS URL is accessible.
+ * @param url The URL to check.
+ * @returns True if accessible, false otherwise.
+ */
+declare function isURLAccessible(url: string): Promise<boolean>;
+
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, extractUrlFromString, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isDomainReachable, isEmail, isObject, isTLSValid, isURL, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };

@@ -12,3 +12,4 @@ export * from "./modules/console";
 export * from "./modules/mime";
 export * from "./modules/tls";
 export * from "./modules/dns";
+export * from "./modules/https";
