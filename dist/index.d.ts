@@ -215,7 +215,12 @@ interface Request extends IncomingMessage {
     hostname?: string;
     method?: string;
     files?: any;
+    file?: any;
     get?: (headerName: string) => string | undefined;
+    headers: http.IncomingHttpHeaders;
+    originalUrl: string;
+    baseUrl: string;
+    secure: boolean;
 }
 interface Response$1 extends ServerResponse {
     text: (data: any) => void;
@@ -263,7 +268,7 @@ declare class Router {
     private trustProxy;
     private jsonSpaces;
     private flashMessages;
-    use(path: string | Middleware, middleware?: Middleware): void;
+    use(path: string | Middleware, middleware?: Middleware | Router): void;
     get(path: string, handler: (req: Request, res: Response$1) => void): void;
     post(path: string, handler: (req: Request, res: Response$1) => void): void;
     put(path: string, handler: (req: Request, res: Response$1) => void): void;
