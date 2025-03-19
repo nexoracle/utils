@@ -198,10 +198,6 @@ declare const runSpawn: (command: string, args: string[], cwd?: string) => Promi
 
 interface Request extends IncomingMessage {
     body?: any;
-    cookies?: {
-        [key: string]: string;
-    };
-    session?: any;
     query?: {
         [key: string]: string | string[];
     };
@@ -209,18 +205,32 @@ interface Request extends IncomingMessage {
         [key: string]: string;
     };
     ip?: string;
+    ips?: string[];
+    remoteAddress: string;
+    xForwardedFor: string | string[] | undefined;
+    cfConnectingIP: string | undefined;
+    trueClientIP: string | undefined;
     flash?: (type: string, message?: string) => string[] | void;
     path?: string;
     protocol?: string;
-    hostname?: string;
     method?: string;
     files?: any;
     file?: any;
-    get?: (headerName: string) => string | undefined;
-    headers: http.IncomingHttpHeaders;
     originalUrl: string;
     baseUrl: string;
     secure: boolean;
+    cookies?: {
+        [key: string]: string;
+    };
+    session?: any;
+    hostname?: string;
+    headers: http.IncomingHttpHeaders;
+    get?: (headerName: string) => string | undefined;
+    accepts: (type: string | string[]) => string | boolean | string[];
+    is: (type: string) => string | boolean;
+    fresh: boolean;
+    stale: boolean;
+    xhr: boolean;
 }
 interface Response$1 extends ServerResponse {
     text: (data: any) => void;
@@ -277,7 +287,8 @@ declare class Router {
     set(key: string, value: any): void;
     getSetting(key: string): any;
     setTrustProxy(value: boolean | string | string[] | number): void;
-    getClientIp(req: Request): string;
+    private getClientIp;
+    private getClientIps;
     setJsonSpaces(spaces: number): void;
     useFlash(): Middleware;
     render(res: ServerResponse, viewName: string, data?: {

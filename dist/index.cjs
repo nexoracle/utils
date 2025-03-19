@@ -1247,18 +1247,32 @@ var Router = class {
   // Get client IP address considering trust proxy
   getClientIp(req) {
     if (!this.trustProxy) {
-      return req.socket.remoteAddress || "";
+      console.log("getClientIP 1", req.socket?.remoteAddress);
+      return req.socket?.remoteAddress || "";
     }
     const forwardedFor = req.headers["x-forwarded-for"];
     if (typeof forwardedFor === "string") {
-      const ips = forwardedFor.split(",");
+      const ips = forwardedFor.split(",").map((ip) => ip.trim());
       if (this.trustProxy === true || this.trustProxy === "all") {
-        return ips[0].trim();
+        return ips[0] || req.socket?.remoteAddress || "";
       } else if (typeof this.trustProxy === "number") {
-        return ips[this.trustProxy - 1]?.trim() || req.socket.remoteAddress || "";
+        const index = Math.max(0, Math.min(ips.length - 1, this.trustProxy - 1));
+        return ips[index] || req.socket?.remoteAddress || "";
       }
     }
-    return req.socket.remoteAddress || "";
+    return req.socket?.remoteAddress || "";
+  }
+  // Get all IPS if behind reverse proxy
+  getClientIps(req) {
+    if (!this.trustProxy) {
+      console.log("getClientIPS 1", req.socket?.remoteAddress);
+      return [req.socket?.remoteAddress || ""];
+    }
+    const forwardedFor = req.headers["x-forwarded-for"];
+    if (typeof forwardedFor === "string") {
+      return forwardedFor.split(",").map((ip) => ip.trim());
+    }
+    return [req.socket?.remoteAddress || ""];
   }
   // Set JSON spaces
   setJsonSpaces(spaces) {
@@ -1312,17 +1326,56 @@ var Router = class {
     reqMethod.query = parsedUrl.query;
     reqMethod.path = parsedUrl.pathname;
     reqMethod.ip = this.getClientIp(reqMethod);
+    reqMethod.ips = this.getClientIps(reqMethod);
+    reqMethod.remoteAddress = req.socket?.remoteAddress || "";
+    reqMethod.xForwardedFor = req.headers["x-forwarded-for"];
+    reqMethod.cfConnectingIP = req.headers["cf-connecting-ip"];
+    reqMethod.trueClientIP = req.headers["true-client-ip"];
     reqMethod.protocol = req.socket instanceof import_tls.default.TLSSocket ? "https" : "http";
-    reqMethod.hostname = req.headers.host?.split(":")[0] || "";
     reqMethod.method = req.method;
-    reqMethod.headers = req.headers;
     reqMethod.originalUrl = req.url || "";
     reqMethod.baseUrl = "";
     reqMethod.secure = req.socket instanceof import_tls.default.TLSSocket;
-    reqMethod.get = (headerName) => req.headers[headerName.toLowerCase()];
     resMethod.jsonSpaces = this.jsonSpaces;
     reqMethod.params = {};
     reqMethod.body = {};
+    reqMethod.xhr = req.headers["x-requested-with"] === "XMLHttpRequest";
+    reqMethod.hostname = req.headers.host?.split(":")[0] || "";
+    reqMethod.get = (headerName) => req.headers[headerName.toLowerCase()];
+    reqMethod.headers = req.headers;
+    reqMethod.fresh = false;
+    reqMethod.stale = true;
+    const etag = req.headers["if-none-match"];
+    const lastModified = req.headers["if-modified-since"];
+    if (etag || lastModified) {
+      const resEtag = res.getHeader("ETag");
+      const resLastModified = res.getHeader("Last-Modified");
+      if (etag && resEtag === etag) {
+        reqMethod.fresh = true;
+        reqMethod.stale = false;
+      } else if (lastModified && resLastModified === lastModified) {
+        reqMethod.fresh = true;
+        reqMethod.stale = false;
+      }
+    }
+    reqMethod.accepts = (type) => {
+      const acceptHeader = req.headers["accept"];
+      if (!acceptHeader)
+        return false;
+      const acceptedTypes = acceptHeader.split(",").map((t) => t.trim());
+      if (typeof type === "string") {
+        return acceptedTypes.some((t) => t.includes(type));
+      } else if (Array.isArray(type)) {
+        return type.find((t) => acceptedTypes.some((at) => at.includes(t))) || false;
+      }
+      return false;
+    };
+    reqMethod.is = (type) => {
+      const contentType = req.headers["content-type"];
+      if (!contentType)
+        return false;
+      return contentType.includes(type) ? type : false;
+    };
     resMethod.status = function(code) {
       this.statusCode = code;
       return this;

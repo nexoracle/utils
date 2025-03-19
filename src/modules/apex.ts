@@ -8,23 +8,34 @@ import { IncomingMessage, ServerResponse } from "http";
 
 interface Request extends IncomingMessage {
   body?: any;
-  cookies?: { [key: string]: string };
-  session?: any;
   query?: { [key: string]: string | string[] };
   params: { [key: string]: string };
   ip?: string;
+  ips?: string[];
+  remoteAddress: string;
+  xForwardedFor: string | string[] | undefined;
+  cfConnectingIP: string | undefined;
+  trueClientIP: string | undefined;
   flash?: (type: string, message?: string) => string[] | void;
   path?: string;
   protocol?: string;
-  hostname?: string;
   method?: string;
   files?: any;
   file?: any;
-  get?: (headerName: string) => string | undefined;
-  headers: http.IncomingHttpHeaders;
   originalUrl: string;
   baseUrl: string;
   secure: boolean;
+
+  cookies?: { [key: string]: string };
+  session?: any;
+  hostname?: string;
+  headers: http.IncomingHttpHeaders;
+  get?: (headerName: string) => string | undefined;
+  accepts: (type: string | string[]) => string | boolean | string[];
+  is: (type: string) => string | boolean;
+  fresh: boolean;
+  stale: boolean;
+  xhr: boolean;
 }
 
 interface Response extends ServerResponse {
@@ -159,22 +170,40 @@ class Router {
   }
 
   // Get client IP address considering trust proxy
-  getClientIp(req: Request): string {
+  private getClientIp(req: Request): string {
     if (!this.trustProxy) {
-      return req.socket.remoteAddress || "";
+      console.log("getClientIP 1", req.socket?.remoteAddress);
+      return req.socket?.remoteAddress || "";
     }
 
     const forwardedFor = req.headers["x-forwarded-for"];
     if (typeof forwardedFor === "string") {
-      const ips = forwardedFor.split(",");
+      const ips = forwardedFor.split(",").map((ip) => ip.trim());
+
       if (this.trustProxy === true || this.trustProxy === "all") {
-        return ips[0].trim();
+        return ips[0] || req.socket?.remoteAddress || "";
       } else if (typeof this.trustProxy === "number") {
-        return ips[this.trustProxy - 1]?.trim() || req.socket.remoteAddress || "";
+        const index = Math.max(0, Math.min(ips.length - 1, this.trustProxy - 1));
+        return ips[index] || req.socket?.remoteAddress || "";
       }
     }
 
-    return req.socket.remoteAddress || "";
+    return req.socket?.remoteAddress || "";
+  }
+
+  // Get all IPS if behind reverse proxy
+  private getClientIps(req: Request): string[] {
+    if (!this.trustProxy) {
+      console.log("getClientIPS 1", req.socket?.remoteAddress);
+      return [req.socket?.remoteAddress || ""];
+    }
+
+    const forwardedFor = req.headers["x-forwarded-for"];
+    if (typeof forwardedFor === "string") {
+      return forwardedFor.split(",").map((ip) => ip.trim());
+    }
+
+    return [req.socket?.remoteAddress || ""];
   }
 
   // Set JSON spaces
@@ -211,7 +240,7 @@ class Router {
       throw new Error('View engine not set. Use router.set("view engine", "ejs") to configure a view engine.');
     }
 
-    const viewExtension = this.getSetting("view engine"); // Get the view engine extension
+    const viewExtension = this.getSetting("view engine");
     if (!viewExtension) {
       throw new Error('View engine not set. Use router.set("view engine", "ejs") to configure a view engine.');
     }
@@ -239,17 +268,63 @@ class Router {
     reqMethod.query = parsedUrl.query;
     reqMethod.path = parsedUrl.pathname;
     reqMethod.ip = this.getClientIp(reqMethod);
+    reqMethod.ips = this.getClientIps(reqMethod);
+    reqMethod.remoteAddress = req.socket?.remoteAddress || "";
+    reqMethod.xForwardedFor = req.headers["x-forwarded-for"];
+    reqMethod.cfConnectingIP = req.headers["cf-connecting-ip"] as string | undefined;
+    reqMethod.trueClientIP = req.headers["true-client-ip"] as string | undefined;
     reqMethod.protocol = req.socket instanceof tls.TLSSocket ? "https" : "http";
-    reqMethod.hostname = req.headers.host?.split(":")[0] || "";
     reqMethod.method = req.method;
-    reqMethod.headers = req.headers
-    reqMethod.originalUrl = req.url || ""; // Add originalUrl
-    reqMethod.baseUrl = ""; // Add baseUrl (initialize as empty string)
-    reqMethod.secure = req.socket instanceof tls.TLSSocket; // Add secure
-    reqMethod.get = (headerName: string) => req.headers[headerName.toLowerCase()] as string | undefined;
+    reqMethod.originalUrl = req.url || "";
+    reqMethod.baseUrl = "";
+    reqMethod.secure = req.socket instanceof tls.TLSSocket;
     resMethod.jsonSpaces = this.jsonSpaces;
     reqMethod.params = {};
     reqMethod.body = {};
+
+    // Request Heades
+    reqMethod.xhr = req.headers["x-requested-with"] === "XMLHttpRequest";
+    reqMethod.hostname = req.headers.host?.split(":")[0] || "";
+    reqMethod.get = (headerName: string) => req.headers[headerName.toLowerCase()] as string | undefined;
+    reqMethod.headers = req.headers;
+    reqMethod.fresh = false;
+    reqMethod.stale = true;
+
+    const etag = req.headers["if-none-match"];
+    const lastModified = req.headers["if-modified-since"];
+
+    if (etag || lastModified) {
+      const resEtag = res.getHeader("ETag");
+      const resLastModified = res.getHeader("Last-Modified");
+
+      if (etag && resEtag === etag) {
+        reqMethod.fresh = true;
+        reqMethod.stale = false;
+      } else if (lastModified && resLastModified === lastModified) {
+        reqMethod.fresh = true;
+        reqMethod.stale = false;
+      }
+    }
+
+    reqMethod.accepts = (type: string | string[]): string | boolean | string[] => {
+      const acceptHeader = req.headers["accept"];
+      if (!acceptHeader) return false;
+      const acceptedTypes = acceptHeader.split(",").map((t) => t.trim());
+
+      if (typeof type === "string") {
+        return acceptedTypes.some((t) => t.includes(type));
+      } else if (Array.isArray(type)) {
+        return type.find((t) => acceptedTypes.some((at) => at.includes(t))) || false;
+      }
+      return false;
+    };
+
+    reqMethod.is = (type: string): string | boolean => {
+      const contentType = req.headers["content-type"];
+      if (!contentType) return false;
+
+      return contentType.includes(type) ? type : false;
+    };
 
     // Response Methods
     resMethod.status = function (code: number) {
@@ -508,7 +583,7 @@ const apex = {
           req.body = {};
           return next();
         }
-  
+
         if (req.headers["content-type"] === "application/json") {
           try {
             req.body = JSON.parse(body);
@@ -532,17 +607,17 @@ const apex = {
       staticPath = prefix;
       prefix = "/";
     }
-  
+
     return (req, res, next) => {
       const { pathname } = parseUrl(req);
-  
+
       if (!pathname.startsWith(prefix)) {
         return next();
       }
-  
+
       const relativePath = pathname.slice(prefix.length);
       const filePath = path.join(staticPath!, relativePath);
-  
+
       fs.stat(filePath, (err, stats) => {
         if (err || !stats.isFile()) {
           next();
