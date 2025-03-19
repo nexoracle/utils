@@ -1,8 +1,8 @@
-// src/functions/tools.ts
+// lib/functions/tools.ts
 import { promises as fs } from "fs";
 import { Readable } from "stream";
 
-// src/functions/validation.ts
+// lib/functions/validation.ts
 function isURL(url2) {
   const urlRegex = /^(https?:\/\/)?(www\.)?([\da-z.-]+)(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
   const ipv4Regex = /^(https?:\/\/)?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
@@ -20,7 +20,7 @@ function isArray(input) {
   return Array.isArray(input);
 }
 
-// src/functions/tools.ts
+// lib/functions/tools.ts
 function getRandom(options = {}) {
   const { Alphabets = true, Numbers = true, Symbols = false, DateNow = false, length = 20, fileExtension = ".png", attachFileExtension = false } = options;
   let characters = "";
@@ -169,7 +169,7 @@ var getDate = (date = /* @__PURE__ */ new Date(), options) => {
   }
 };
 
-// src/modules/axium.ts
+// lib/modules/axium.ts
 import { Buffer as Buffer2 } from "buffer";
 var FetchError = class extends Error {
   constructor(message, status, response) {
@@ -447,7 +447,7 @@ var Axium = class {
 };
 var axium = new Axium();
 
-// src/modules/crypto.ts
+// lib/modules/crypto.ts
 import * as Crypto from "crypto";
 var crypto = {
   // Hashing functions
@@ -489,7 +489,7 @@ var crypto = {
   verify: (data, signature, publicKey, algorithm = "RSA-SHA256") => Crypto.createVerify(algorithm).update(data).verify(publicKey, signature, "hex")
 };
 
-// src/modules/fs.ts
+// lib/modules/fs.ts
 import fs2 from "fs";
 var readFile = (path3) => {
   try {
@@ -524,7 +524,7 @@ var fileExists = (path3) => {
   return fs2.existsSync(path3);
 };
 
-// src/modules/os.ts
+// lib/modules/os.ts
 import os from "os";
 var getSystemInfo = () => ({
   platform: os.platform(),
@@ -543,7 +543,7 @@ var getCpuLoad = () => os.loadavg();
 var getNetworkInterfaces = () => os.networkInterfaces();
 var getUserInfo = () => os.userInfo();
 
-// src/modules/path.ts
+// lib/modules/path.ts
 import path from "path";
 var getFileName = (filePath, withExt = true) => {
   return withExt ? path.basename(filePath) : path.basename(filePath, path.extname(filePath));
@@ -557,7 +557,7 @@ var getFileExtension = (filePath, withDot = true) => {
 var joinPath = (...paths) => path.join(...paths);
 var getRelativePath = (from, to) => path.relative(from, to);
 
-// src/modules/url.ts
+// lib/modules/url.ts
 import { URL as URL2 } from "url";
 import querystring from "querystring";
 var pasrseURL = (urlString) => {
@@ -574,7 +574,7 @@ var buildUrl = (baseUrl, params) => {
   return `${baseUrl}?${querystring.stringify(params)}`;
 };
 
-// src/modules/child_process.ts
+// lib/modules/child_process.ts
 import { exec, execSync, spawn } from "child_process";
 var runCommand = (command, cwd, timeout = 5e3) => {
   return new Promise((resolve, reject) => {
@@ -607,14 +607,14 @@ var runSpawn = (command, args, cwd) => {
   });
 };
 
-// src/modules/apex.ts
+// lib/modules/apex.ts
 import http from "http";
 import url from "url";
 import fs3 from "fs";
 import path2 from "path";
 import tls from "tls";
 
-// src/modules/mime.ts
+// lib/modules/mime.ts
 var mimes = {
   "3g2": "video/3gpp2",
   "3gp": "video/3gpp",
@@ -1063,7 +1063,7 @@ function get(extn) {
 }
 var mime = { mimes, get };
 
-// src/modules/apex.ts
+// lib/modules/apex.ts
 var Router = class {
   constructor() {
     this.routes = {};
@@ -1606,7 +1606,7 @@ function parseUrl(req) {
   };
 }
 
-// src/modules/console.ts
+// lib/modules/console.ts
 function log(...args) {
   console.log(...args);
 }
@@ -1629,7 +1629,7 @@ function clear() {
   console.clear();
 }
 
-// src/modules/tls.ts
+// lib/modules/tls.ts
 import tls2 from "tls";
 function checkTLSHandshake(host, port = 443) {
   return new Promise((resolve) => {
@@ -1657,7 +1657,7 @@ async function isTLSValid(host, port = 443) {
   return expiryDate > /* @__PURE__ */ new Date();
 }
 
-// src/modules/dns.ts
+// lib/modules/dns.ts
 import dns from "dns";
 function resolveDNS(host, recordType) {
   return new Promise((resolve, reject) => {
@@ -1685,7 +1685,7 @@ function isDomainReachable(host) {
   });
 }
 
-// src/modules/https.ts
+// lib/modules/https.ts
 import https from "https";
 import fs4 from "fs";
 function logError(error2) {
@@ -1714,7 +1714,7 @@ function isURLAccessible(url2) {
   });
 }
 
-// src/modules/perf_hooks.ts
+// lib/modules/perf_hooks.ts
 import { performance, PerformanceObserver, monitorEventLoopDelay } from "perf_hooks";
 var log2 = (message, error2 = null) => {
   console.log(`[perf_hooks] ${message}`);

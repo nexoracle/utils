@@ -1,6 +1,6 @@
 {
   "name": "@maher-xubair/utils",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "A collection of utility functions for JavaScript.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -14,8 +14,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --out-dir dist",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --out-dir dist --watch",
+    "build": "tsup lib/index.ts --format cjs,esm --dts --out-dir dist",
+    "dev": "tsup lib/index.ts --format cjs,esm --dts --out-dir dist --watch",
     "test": "node test.js"
   },
   "keywords": [

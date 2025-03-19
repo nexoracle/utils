@@ -16,6 +16,6 @@
     "tsBuildInfoFile": "./.tsbuildinfo",
     "resolveJsonModule": true 
   },
-  "include": ["src/**/*"],
+  "include": ["lib/**/*"],
   "exclude": ["node_modules", "dist"]
 }

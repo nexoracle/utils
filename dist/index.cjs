@@ -27,9 +27,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/index.ts
-var src_exports = {};
-__export(src_exports, {
+// lib/index.ts
+var lib_exports = {};
+__export(lib_exports, {
   ReadMore: () => ReadMore,
   apex: () => apex,
   appendToFile: () => appendToFile,
@@ -99,13 +99,13 @@ __export(src_exports, {
   warn: () => warn,
   writeFile: () => writeFile
 });
-module.exports = __toCommonJS(src_exports);
+module.exports = __toCommonJS(lib_exports);
 
-// src/functions/tools.ts
+// lib/functions/tools.ts
 var import_fs = require("fs");
 var import_stream = require("stream");
 
-// src/functions/validation.ts
+// lib/functions/validation.ts
 function isURL(url2) {
   const urlRegex = /^(https?:\/\/)?(www\.)?([\da-z.-]+)(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
   const ipv4Regex = /^(https?:\/\/)?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
@@ -123,7 +123,7 @@ function isArray(input) {
   return Array.isArray(input);
 }
 
-// src/functions/tools.ts
+// lib/functions/tools.ts
 function getRandom(options = {}) {
   const { Alphabets = true, Numbers = true, Symbols = false, DateNow = false, length = 20, fileExtension = ".png", attachFileExtension = false } = options;
   let characters = "";
@@ -272,7 +272,7 @@ var getDate = (date = /* @__PURE__ */ new Date(), options) => {
   }
 };
 
-// src/modules/axium.ts
+// lib/modules/axium.ts
 var import_buffer = require("buffer");
 var FetchError = class extends Error {
   constructor(message, status, response) {
@@ -550,7 +550,7 @@ var Axium = class {
 };
 var axium = new Axium();
 
-// src/modules/crypto.ts
+// lib/modules/crypto.ts
 var Crypto = __toESM(require("crypto"), 1);
 var crypto = {
   // Hashing functions
@@ -592,7 +592,7 @@ var crypto = {
   verify: (data, signature, publicKey, algorithm = "RSA-SHA256") => Crypto.createVerify(algorithm).update(data).verify(publicKey, signature, "hex")
 };
 
-// src/modules/fs.ts
+// lib/modules/fs.ts
 var import_fs2 = __toESM(require("fs"), 1);
 var readFile = (path3) => {
   try {
@@ -627,7 +627,7 @@ var fileExists = (path3) => {
   return import_fs2.default.existsSync(path3);
 };
 
-// src/modules/os.ts
+// lib/modules/os.ts
 var import_os = __toESM(require("os"), 1);
 var getSystemInfo = () => ({
   platform: import_os.default.platform(),
@@ -646,7 +646,7 @@ var getCpuLoad = () => import_os.default.loadavg();
 var getNetworkInterfaces = () => import_os.default.networkInterfaces();
 var getUserInfo = () => import_os.default.userInfo();
 
-// src/modules/path.ts
+// lib/modules/path.ts
 var import_path = __toESM(require("path"), 1);
 var getFileName = (filePath, withExt = true) => {
   return withExt ? import_path.default.basename(filePath) : import_path.default.basename(filePath, import_path.default.extname(filePath));
@@ -660,7 +660,7 @@ var getFileExtension = (filePath, withDot = true) => {
 var joinPath = (...paths) => import_path.default.join(...paths);
 var getRelativePath = (from, to) => import_path.default.relative(from, to);
 
-// src/modules/url.ts
+// lib/modules/url.ts
 var import_url = require("url");
 var import_querystring = __toESM(require("querystring"), 1);
 var pasrseURL = (urlString) => {
@@ -677,7 +677,7 @@ var buildUrl = (baseUrl, params) => {
   return `${baseUrl}?${import_querystring.default.stringify(params)}`;
 };
 
-// src/modules/child_process.ts
+// lib/modules/child_process.ts
 var import_child_process = require("child_process");
 var runCommand = (command, cwd, timeout = 5e3) => {
   return new Promise((resolve, reject) => {
@@ -710,14 +710,14 @@ var runSpawn = (command, args, cwd) => {
   });
 };
 
-// src/modules/apex.ts
+// lib/modules/apex.ts
 var import_http = __toESM(require("http"), 1);
 var import_url2 = __toESM(require("url"), 1);
 var import_fs3 = __toESM(require("fs"), 1);
 var import_path2 = __toESM(require("path"), 1);
 var import_tls = __toESM(require("tls"), 1);
 
-// src/modules/mime.ts
+// lib/modules/mime.ts
 var mimes = {
   "3g2": "video/3gpp2",
   "3gp": "video/3gpp",
@@ -1166,7 +1166,7 @@ function get(extn) {
 }
 var mime = { mimes, get };
 
-// src/modules/apex.ts
+// lib/modules/apex.ts
 var Router = class {
   constructor() {
     this.routes = {};
@@ -1709,7 +1709,7 @@ function parseUrl(req) {
   };
 }
 
-// src/modules/console.ts
+// lib/modules/console.ts
 function log(...args) {
   console.log(...args);
 }
@@ -1732,7 +1732,7 @@ function clear() {
   console.clear();
 }
 
-// src/modules/tls.ts
+// lib/modules/tls.ts
 var import_tls2 = __toESM(require("tls"), 1);
 function checkTLSHandshake(host, port = 443) {
   return new Promise((resolve) => {
@@ -1760,7 +1760,7 @@ async function isTLSValid(host, port = 443) {
   return expiryDate > /* @__PURE__ */ new Date();
 }
 
-// src/modules/dns.ts
+// lib/modules/dns.ts
 var import_dns = __toESM(require("dns"), 1);
 function resolveDNS(host, recordType) {
   return new Promise((resolve, reject) => {
@@ -1788,7 +1788,7 @@ function isDomainReachable(host) {
   });
 }
 
-// src/modules/https.ts
+// lib/modules/https.ts
 var import_https = __toESM(require("https"), 1);
 var import_fs4 = __toESM(require("fs"), 1);
 function logError(error2) {
@@ -1817,7 +1817,7 @@ function isURLAccessible(url2) {
   });
 }
 
-// src/modules/perf_hooks.ts
+// lib/modules/perf_hooks.ts
 var import_perf_hooks = require("perf_hooks");
 var log2 = (message, error2 = null) => {
   console.log(`[perf_hooks] ${message}`);
