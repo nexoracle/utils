@@ -1182,7 +1182,9 @@ var Router = class {
   use(path3, middleware) {
     if (typeof path3 === "string" && middleware) {
       this.middlewares.push((req, res, next) => {
-        if (req.url?.startsWith(path3)) {
+        const { pathname } = parseUrl(req);
+        if (pathname.startsWith(path3)) {
+          req.url = pathname.slice(path3.length) || "/";
           middleware(req, res, next);
         } else {
           next();

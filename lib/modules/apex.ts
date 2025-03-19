@@ -99,7 +99,10 @@ class Router {
   use(path: string | Middleware, middleware?: Middleware): void {
     if (typeof path === "string" && middleware) {
       this.middlewares.push((req, res, next) => {
-        if (req.url?.startsWith(path)) {
+        const { pathname } = parseUrl(req);
+
+        if (pathname.startsWith(path)) {
+          req.url = pathname.slice(path.length) || "/";
           middleware(req, res, next);
         } else {
           next();
