@@ -268,7 +268,7 @@ declare class Router {
     private trustProxy;
     private jsonSpaces;
     private flashMessages;
-    use(path: string | Middleware, middleware?: Middleware | Router): void;
+    use(path: string | Middleware, middleware?: Middleware): void;
     get(path: string, handler: (req: Request, res: Response$1) => void): void;
     post(path: string, handler: (req: Request, res: Response$1) => void): void;
     put(path: string, handler: (req: Request, res: Response$1) => void): void;

@@ -85,42 +85,16 @@ class Router {
   private flashMessages: { [key: string]: string[] } = {};
 
   // Add middleware
-  use(path: string | Middleware, middleware?: Middleware | Router): void {
+  use(path: string | Middleware, middleware?: Middleware): void {
     if (typeof path === "string" && middleware) {
-      // Handle mounting a router
-      if (middleware instanceof Router) {
-        this.middlewares.push((req, res, next) => {
-          const { pathname } = parseUrl(req);
-  
-          // Check if the request path starts with the provided path
-          if (path === "/" || pathname.startsWith(path)) {
-            // Strip the prefix from the request path
-            req.url = pathname.slice(path.length) || "/";
-            req.baseUrl = path; // Set the baseUrl for the mounted router
-            req.originalUrl = req.originalUrl || pathname; // Set the originalUrl
-            middleware.handleRequest(req, res);
-          } else {
-            next();
-          }
-        });
-      }
-      // Handle regular middleware
-      else {
-        this.middlewares.push((req, res, next) => {
-          const { pathname } = parseUrl(req);
-  
-          // Check if the request path starts with the provided path
-          if (path === "/" || pathname.startsWith(path)) {
-            // Strip the prefix from the request path
-            req.url = pathname.slice(path.length) || "/";
-            middleware(req, res, next);
-          } else {
-            next();
-          }
-        });
-      }
+      this.middlewares.push((req, res, next) => {
+        if (req.url?.startsWith(path)) {
+          middleware(req, res, next);
+        } else {
+          next();
+        }
+      });
     } else if (typeof path === "function") {
-      // Handle global middleware
       this.middlewares.push(path);
     }
   }
@@ -452,9 +426,8 @@ class Router {
     // Execute middlewares
     const executeMiddlewares = (index: number) => {
       if (index < this.middlewares.length) {
-        const middleware = this.middlewares[index];
         try {
-          middleware(reqMethod, resMethod, () => executeMiddlewares(index + 1));
+          this.middlewares[index](reqMethod, resMethod, () => executeMiddlewares(index + 1));
         } catch (err) {
           console.error("Middleware error:", err);
           resMethod.status(500).send("Internal Server Error");
@@ -462,32 +435,32 @@ class Router {
       } else {
         // Use the pathname (without query string) for route matching
         const pathname = parsedUrl.pathname || "";
-  
+
         // Check for exact match
         if (this.routes[pathname] && this.routes[pathname][reqMethod.method!]) {
           return this.routes[pathname][reqMethod.method!](reqMethod, resMethod);
         }
-  
+
         // Check for parameterized routes
         for (const route in this.routes) {
           const routeRegex = this.convertRouteToRegex(route);
           const match = pathname.match(routeRegex);
-  
+
           if (match && this.routes[route][reqMethod.method!]) {
             const paramNames = this.extractParamNames(route);
             paramNames.forEach((name, index) => {
               reqMethod.params[name] = match[index + 1];
             });
-  
+
             return this.routes[route][reqMethod.method!](reqMethod, resMethod);
           }
         }
-  
+
         // If no match found, send 404
         this.notFoundHandler(reqMethod, resMethod);
       }
     };
-  
+
     executeMiddlewares(0);
   }
 
@@ -532,7 +505,7 @@ const apex = {
       });
       req.on("end", () => {
         if (!body) {
-          req.body = {}; // Set an empty object for empty bodies
+          req.body = {};
           return next();
         }
   
@@ -541,7 +514,7 @@ const apex = {
             req.body = JSON.parse(body);
           } catch (err) {
             console.error("Error parsing JSON body:", err);
-            req.body = {}; // Set an empty object on parsing error
+            req.body = {};
           }
         } else if (req.headers["content-type"] === "application/x-www-form-urlencoded") {
           req.body = Object.fromEntries(new URLSearchParams(body));
@@ -563,20 +536,18 @@ const apex = {
     return (req, res, next) => {
       const { pathname } = parseUrl(req);
   
-      // Ensure the pathname starts with the prefix
       if (!pathname.startsWith(prefix)) {
         return next();
       }
   
-      // Strip the prefix from the pathname
       const relativePath = pathname.slice(prefix.length);
       const filePath = path.join(staticPath!, relativePath);
   
       fs.stat(filePath, (err, stats) => {
         if (err || !stats.isFile()) {
-          next(); // File not found, proceed to the next middleware
+          next();
         } else {
-          res.sendFile(filePath); // Serve the file
+          res.sendFile(filePath);
         }
       });
     };

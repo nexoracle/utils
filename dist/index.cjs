@@ -1167,7 +1167,7 @@ function get(extn) {
 var mime = { mimes, get };
 
 // src/modules/apex.ts
-var Router = class _Router {
+var Router = class {
   constructor() {
     this.routes = {};
     this.middlewares = [];
@@ -1181,29 +1181,13 @@ var Router = class _Router {
   // Add middleware
   use(path3, middleware) {
     if (typeof path3 === "string" && middleware) {
-      if (middleware instanceof _Router) {
-        this.middlewares.push((req, res, next) => {
-          const { pathname } = parseUrl(req);
-          if (path3 === "/" || pathname.startsWith(path3)) {
-            req.url = pathname.slice(path3.length) || "/";
-            req.baseUrl = path3;
-            req.originalUrl = req.originalUrl || pathname;
-            middleware.handleRequest(req, res);
-          } else {
-            next();
-          }
-        });
-      } else {
-        this.middlewares.push((req, res, next) => {
-          const { pathname } = parseUrl(req);
-          if (path3 === "/" || pathname.startsWith(path3)) {
-            req.url = pathname.slice(path3.length) || "/";
-            middleware(req, res, next);
-          } else {
-            next();
-          }
-        });
-      }
+      this.middlewares.push((req, res, next) => {
+        if (req.url?.startsWith(path3)) {
+          middleware(req, res, next);
+        } else {
+          next();
+        }
+      });
     } else if (typeof path3 === "function") {
       this.middlewares.push(path3);
     }
@@ -1480,9 +1464,8 @@ var Router = class _Router {
     resMethod.app = {};
     const executeMiddlewares = (index) => {
       if (index < this.middlewares.length) {
-        const middleware = this.middlewares[index];
         try {
-          middleware(reqMethod, resMethod, () => executeMiddlewares(index + 1));
+          this.middlewares[index](reqMethod, resMethod, () => executeMiddlewares(index + 1));
         } catch (err) {
           console.error("Middleware error:", err);
           resMethod.status(500).send("Internal Server Error");
