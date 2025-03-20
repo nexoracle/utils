@@ -91,6 +91,7 @@ declare function toBool(input: string, returnBool?: boolean): string | boolean;
 declare const isEmail: (email: string) => boolean;
 declare const isObject: (value: unknown) => boolean;
 declare function isArray(input: unknown): input is unknown[];
+declare const hasEmoji: (str: string) => boolean;
 
 interface FetchOptions extends RequestInit {
     retries?: number;
@@ -414,4 +415,4 @@ declare const perf_hooks: {
     getNodePerformanceTiming: () => PerformanceNodeTiming | null;
 };
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isDomainReachable, isEmail, isObject, isTLSValid, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isDomainReachable, isEmail, isObject, isTLSValid, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };
