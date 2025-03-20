@@ -143,6 +143,10 @@ function toBool(input, returnBool = true) {
   return /true|yes|ok|act|sure|enable/gi.test(input) ? returnBool ? true : "true" : returnBool ? false : "false";
 }
 var isEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+var isGmail = (email) => {
+  const regex = /^[a-zA-Z0-9._%+-]+@(gmail|google|googlemail)\.com$/i;
+  return regex.test(email);
+};
 var isObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
 function isArray(input) {
   return Array.isArray(input);
@@ -1961,6 +1965,7 @@ export {
   isArray,
   isDomainReachable,
   isEmail,
+  isGmail,
   isObject,
   isTLSValid,
   isURLAccessible,
