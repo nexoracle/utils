@@ -22,7 +22,6 @@ declare const jsontoBuffer: (json: object) => Buffer;
 declare const transformBuffer: (buffer: Buffer, transformFn: (data: Buffer) => Buffer) => Buffer;
 declare const bufferToFile: (buffer: Buffer, filePath: string) => Promise<void>;
 declare function toBuffer(data: any): Buffer;
-declare const extractUrlFromString: (str: string) => string | null;
 declare const getBufferFromStream: (stream: Readable) => Promise<Buffer>;
 declare const getStreamFromBuffer: (buffer: Buffer) => Readable;
 declare const sleep: (ms?: number) => Promise<void>;
@@ -50,7 +49,22 @@ declare const getDate: (date?: Date, options?: {
     timezone?: string;
 }) => string;
 
-declare function isURL(url: string): boolean;
+declare const urlValidator: {
+    isURL(url: string): boolean;
+    mediafire(url: string): boolean;
+    gdrive(url: string): boolean;
+    spotify(url: string): boolean;
+    tiktok(url: string): boolean;
+    threads(url: string): boolean;
+    twitter(url: string): boolean;
+    youtube(url: string): boolean;
+    snapchat(url: string): boolean;
+    terabox(url: string): boolean;
+    instagram(url: string): boolean;
+    facebook(url: string): boolean;
+    extractUrlFromString(str: string): string | null;
+    extractAllUrlFromString(str: string): string[] | null;
+};
 declare function toBool(input: string, returnBool?: boolean): string | boolean;
 declare const isEmail: (email: string) => boolean;
 declare const isObject: (value: unknown) => boolean;
@@ -378,4 +392,4 @@ declare const perf_hooks: {
     getNodePerformanceTiming: () => PerformanceNodeTiming | null;
 };
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, extractUrlFromString, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isDomainReachable, isEmail, isObject, isTLSValid, isURL, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, warn, writeFile };
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, info, isArray, isDomainReachable, isEmail, isObject, isTLSValid, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };

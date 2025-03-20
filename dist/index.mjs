@@ -3,14 +3,70 @@ import { promises as fs } from "fs";
 import { Readable } from "stream";
 
 // lib/functions/validation.ts
-function isURL(url2) {
-  const urlRegex = /^(https?:\/\/)?(www\.)?([\da-z.-]+)(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
-  const ipv4Regex = /^(https?:\/\/)?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
-  const ipv6Regex = /^(https?:\/\/)?\[([a-f0-9:]+)\](?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
-  const localhostRegex = /^(https?:\/\/)?localhost(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
-  const fileRegex = /^file:\/\/\/?([\/\w .-]*)*\/?$/i;
-  return urlRegex.test(url2) || ipv4Regex.test(url2) || ipv6Regex.test(url2) || localhostRegex.test(url2) || fileRegex.test(url2);
-}
+var urlValidator = {
+  isURL(url2) {
+    const regex = /^(https?:\/\/)?(www\.)?([\da-z.-]+)(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
+    const ipv4Regex = /^(https?:\/\/)?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
+    const ipv6Regex = /^(https?:\/\/)?\[([a-f0-9:]+)\](?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
+    const localhostRegex = /^(https?:\/\/)?localhost(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
+    const fileRegex = /^file:\/\/\/?([\/\w .-]*)*\/?$/i;
+    return regex.test(url2) || ipv4Regex.test(url2) || ipv6Regex.test(url2) || localhostRegex.test(url2) || fileRegex.test(url2);
+  },
+  mediafire(url2) {
+    const regex = /https?:\/\/(www\.)?mediafire\.com\/(file\/[a-zA-Z0-9]+\/[a-zA-Z0-9_\-\.]+|\?[a-zA-Z0-9]+)/;
+    return regex.test(url2);
+  },
+  gdrive(url2) {
+    const regex = /https:\/\/(?:drive\.google\.com\/(?:file\/d\/|open\?id=)|docs\.google\.com\/(?:uc\?export=download&id=|file\/d\/))([\w-]{28,})/;
+    return regex.test(url2);
+  },
+  spotify(url2) {
+    const regex = /(https?:\/\/)?(open\.spotify\.com\/(track|album|playlist|artist)\/[a-zA-Z0-9]+|spotify:(track|album|playlist|artist):[a-zA-Z0-9]+)/;
+    return regex.test(url2);
+  },
+  tiktok(url2) {
+    const regex = /\bhttps?:\/\/(?:m|www|vm|vt)\.tiktok\.com\/(?:@[\w.-]+\/(?:video|photo)\/\d+|v\/\w+|embed\/\w+|\?shareId=\d+|\?item_id=\d+|[\w.-]+)\b/;
+    return regex.test(url2);
+  },
+  threads(url2) {
+    const regex = /\bhttps?:\/\/(?:www\.)?threads\.net\/[^\s]+\b/;
+    return regex.test(url2);
+  },
+  twitter(url2) {
+    const regex = /\bhttps?:\/\/(?:www\.)?twitter\.com\/(?:\w+\/status\/\d+|[A-Za-z0-9_]{1,15}(?:\?[^#\s]*)?|search\?[^#\s]*|hashtag\/[^#\s]*|i\/web\/status\/\d+)\b/;
+    return regex.test(url2);
+  },
+  youtube(url2) {
+    const regex = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|shorts\/|.*[?&]v=)|youtu\.be\/)([-_0-9A-Za-z]{11})(?:\S+)?$/;
+    return regex.test(url2);
+  },
+  snapchat(url2) {
+    const regex = /https?:\/\/(www\.)?(snapchat\.com\/(add\/[A-Za-z0-9_\-]+|discover\/[A-Za-z0-9_\-]+\/[A-Za-z0-9_\-]+|spotlight\/[A-Za-z0-9_\-]+|t\/[A-Za-z0-9_\-]+)|story\.snapchat\.com\/s\/[A-Za-z0-9_\-]+)/;
+    return regex.test(url2);
+  },
+  terabox(url2) {
+    const regex = /^(?:https?:\/\/)?(?:www\.)?(mirrobox\.com|nephobox\.com|freeterabox\.com|1024tera\.com|4funbox\.co|4funbox\.com|terabox\.app|terabox\.com|1024tera\.co|1024terabox\.com|momerybox\.com|teraboxapp\.com|tibibox\.com|teraboxlink\.com)/;
+    return regex.test(url2);
+  },
+  instagram(url2) {
+    const igRegex = /^((https|http)?:\/\/(?:www\.)?instagram\.com\/(p|tv|reel|stories)\/([^/?#&]+)).*/;
+    return igRegex.test(url2);
+  },
+  facebook(url2) {
+    const fbRegex = /(?:https?:\/\/)?(?:www\.)?(m\.facebook|facebook|fb)\.(com|me|watch)\/(?:(?:\w\.)*#!\/)?(?:groups\/)?(?:[\w\-\.]*\/)*([\w\-\.]*)/;
+    return fbRegex.test(url2);
+  },
+  extractUrlFromString(str) {
+    const regex = /(https?:\/\/[^\s"'<>()]+)/i;
+    const match = str.match(regex);
+    return match ? match[0] : null;
+  },
+  extractAllUrlFromString(str) {
+    const urlRegex = /https?:\/\/[^\s"'<>()]+|www\.[^\s"'<>()]+/gi;
+    const matches = str.match(urlRegex);
+    return matches ? matches : null;
+  }
+};
 function toBool(input, returnBool = true) {
   return /true|yes|ok|act|sure|enable/gi.test(input) ? returnBool ? true : "true" : returnBool ? false : "false";
 }
@@ -74,11 +130,6 @@ function toBuffer(data) {
     return Buffer.from(data);
   return Buffer.from(JSON.stringify(data));
 }
-var extractUrlFromString = (str) => {
-  const urlRegex = /(https?:\/\/[^\s"'<>()]+)/i;
-  const match = str.match(urlRegex);
-  return match ? match[0] : null;
-};
 var getBufferFromStream = async (stream) => {
   if (!stream.readable) {
     throw new Error("Stream is not readable");
@@ -1812,7 +1863,6 @@ export {
   deleteFile,
   downloadFile,
   error,
-  extractUrlFromString,
   fileExists,
   formatBytes,
   formatNumber,
@@ -1836,7 +1886,6 @@ export {
   isEmail,
   isObject,
   isTLSValid,
-  isURL,
   isURLAccessible,
   joinPath,
   jsontoBuffer,
@@ -1864,6 +1913,7 @@ export {
   transformBuffer,
   truncate,
   uniqueArray,
+  urlValidator,
   warn,
   writeFile
 };
