@@ -74,12 +74,6 @@ export function toBuffer(data: any): Buffer {
   return Buffer.from(JSON.stringify(data));
 }
 
-export const extractUrlFromString = (str: string): string | null => {
-  const urlRegex = /(https?:\/\/[^\s"'<>()]+)/i;
-  const match = str.match(urlRegex);
-  return match ? match[0] : null;
-};
-
 export const getBufferFromStream = async (stream: Readable): Promise<Buffer> => {
   if (!stream.readable) {
     throw new Error("Stream is not readable");
