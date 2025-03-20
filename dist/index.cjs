@@ -139,7 +139,7 @@ var urlValidator = {
     return regex.test(url2);
   },
   youtube(url2) {
-    const regex = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|shorts\/|.*[?&]v=)|youtu\.be\/)([-_0-9A-Za-z]{11})(?:\S+)?$/;
+    const regex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|playlist\?list=|channel\/|c\/|user\/|embed\/|shorts\/|live\/|music\/)|youtu\.be\/)[a-zA-Z0-9\-_]+(\?[^\s]*)?$/;
     return regex.test(url2);
   },
   snapchat(url2) {
@@ -151,12 +151,44 @@ var urlValidator = {
     return regex.test(url2);
   },
   instagram(url2) {
-    const igRegex = /^((https|http)?:\/\/(?:www\.)?instagram\.com\/(p|tv|reel|stories)\/([^/?#&]+)).*/;
-    return igRegex.test(url2);
+    const regex = /^((https|http)?:\/\/(?:www\.)?instagram\.com\/(p|tv|reel|stories)\/([^/?#&]+)).*/;
+    return regex.test(url2);
   },
   facebook(url2) {
-    const fbRegex = /(?:https?:\/\/)?(?:www\.)?(m\.facebook|facebook|fb)\.(com|me|watch)\/(?:(?:\w\.)*#!\/)?(?:groups\/)?(?:[\w\-\.]*\/)*([\w\-\.]*)/;
-    return fbRegex.test(url2);
+    const regex = /(?:https?:\/\/)?(?:www\.)?(m\.facebook|facebook|fb)\.(com|me|watch)\/(?:(?:\w\.)*#!\/)?(?:groups\/)?(?:[\w\-\.]*\/)*([\w\-\.]*)/;
+    return regex.test(url2);
+  },
+  linkedin(url2) {
+    const regex = /^(https?:\/\/)?(www\.)?linkedin\.com\/(in|company|posts|pulse)\/[a-zA-Z0-9\-_]+\/?$/;
+    return regex.test(url2);
+  },
+  reddit(url2) {
+    const regex = /^(https?:\/\/)?(www\.)?reddit\.com\/(r|user|comments)\/[a-zA-Z0-9_]+\/?/;
+    return regex.test(url2);
+  },
+  pinterest(url2) {
+    const regex = /^(https?:\/\/)?(www\.)?pinterest\.com\/(pin\/[a-zA-Z0-9_]+\/?|([a-zA-Z0-9_]+\/?([a-zA-Z0-9_]+\/?)?))$/;
+    return regex.test(url2);
+  },
+  whatsapp(url2) {
+    const regex = /^(https?:\/\/)?(www\.)?(whatsapp\.com\/(channel\/[a-zA-Z0-9]+|business|api)|wa\.me\/[0-9]+|chat\.whatsapp\.com\/[a-zA-Z0-9]+)\/?$/;
+    return regex.test(url2);
+  },
+  discord(url2) {
+    const regex = /^(https?:\/\/)?(discord\.(gg|com)\/invite\/[a-zA-Z0-9]+)\/?$/;
+    return regex.test(url2);
+  },
+  twitch(url2) {
+    const regex = /^(https?:\/\/)?(www\.)?twitch\.tv\/([a-zA-Z0-9\-_]+\/?([a-zA-Z0-9\-_]+\/?)?(video\/[a-zA-Z0-9\-_]+|clip\/[a-zA-Z0-9\-_]+)?)$/;
+    return regex.test(url2);
+  },
+  stackoverflow(url2) {
+    const regex = /^(https?:\/\/)?(www\.)?stackoverflow\.com\/(questions\/[0-9]+\/?|users\/[0-9]+\/?|tags\/[a-zA-Z0-9\-_]+\/?)$/;
+    return regex.test(url2);
+  },
+  medium(url2) {
+    const regex = /^(https?:\/\/)?(www\.)?medium\.com\/(@[a-zA-Z0-9\-_]+\/?([a-zA-Z0-9\-_]+\/?)?|[a-zA-Z0-9\-_]+\/[a-zA-Z0-9\-_]+\/?)$/;
+    return regex.test(url2);
   },
   extractUrlFromString(str) {
     const regex = /(https?:\/\/[^\s"'<>()]+)/i;
@@ -164,9 +196,49 @@ var urlValidator = {
     return match ? match[0] : null;
   },
   extractAllUrlFromString(str) {
-    const urlRegex = /https?:\/\/[^\s"'<>()]+|www\.[^\s"'<>()]+/gi;
-    const matches = str.match(urlRegex);
-    return matches ? matches : null;
+    const regex = /https?:\/\/[^\s"'<>()]+|www\.[^\s"'<>()]+/gi;
+    const match = str.match(regex);
+    return match ? match : null;
+  },
+  hasProtocol(url2, protocol) {
+    const regex = new RegExp(`^${protocol}:\\/\\/`, "i");
+    return regex.test(url2);
+  },
+  hasDomain(url2, domain) {
+    const regex = new RegExp(`^https?:\\/\\/(www\\.)?${domain}\\/`, "i");
+    return regex.test(url2);
+  },
+  hasPath(url2, path3) {
+    const regex = new RegExp(`^https?:\\/\\/[^\\/]+\\/${path3}`, "i");
+    return regex.test(url2);
+  },
+  hasQueryParam(url2, param) {
+    const regex = new RegExp(`[?&]${param}(=|&|$)`, "i");
+    return regex.test(url2);
+  },
+  hasFragment(url2, fragment) {
+    const regex = new RegExp(`#${fragment}$`, "i");
+    return regex.test(url2);
+  },
+  extractComponents(url2) {
+    const regex = /^(https?):\/\/([^\/?#]+)([^?#]*)(?:\?([^#]*))?(?:#(.*))?/i;
+    const match = url2.match(regex);
+    if (!match)
+      return null;
+    return {
+      protocol: match[1],
+      domain: match[2],
+      path: match[3],
+      query: match[4] || "",
+      fragment: match[5] || ""
+    };
+  },
+  isWithinLength(url2, maxLength) {
+    return url2.length <= maxLength;
+  },
+  hasValidCharacters(url2) {
+    const regex = /^[a-zA-Z0-9\-._~:\/?#[\]@!$&'()*+,;=]+$/;
+    return regex.test(url2);
   }
 };
 function toBool(input, returnBool = true) {

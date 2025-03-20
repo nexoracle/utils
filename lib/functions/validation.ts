@@ -40,7 +40,7 @@ export const urlValidator = {
   },
 
   youtube(url: string): boolean {
-    const regex = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|shorts\/|.*[?&]v=)|youtu\.be\/)([-_0-9A-Za-z]{11})(?:\S+)?$/;
+    const regex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|playlist\?list=|channel\/|c\/|user\/|embed\/|shorts\/|live\/|music\/)|youtu\.be\/)[a-zA-Z0-9\-_]+(\?[^\s]*)?$/;
     return regex.test(url);
   },
 
@@ -55,13 +55,53 @@ export const urlValidator = {
   },
 
   instagram(url: string): boolean {
-    const igRegex = /^((https|http)?:\/\/(?:www\.)?instagram\.com\/(p|tv|reel|stories)\/([^/?#&]+)).*/;
-    return igRegex.test(url);
+    const regex = /^((https|http)?:\/\/(?:www\.)?instagram\.com\/(p|tv|reel|stories)\/([^/?#&]+)).*/;
+    return regex.test(url);
   },
 
   facebook(url: string): boolean {
-    const fbRegex = /(?:https?:\/\/)?(?:www\.)?(m\.facebook|facebook|fb)\.(com|me|watch)\/(?:(?:\w\.)*#!\/)?(?:groups\/)?(?:[\w\-\.]*\/)*([\w\-\.]*)/;
-    return fbRegex.test(url);
+    const regex = /(?:https?:\/\/)?(?:www\.)?(m\.facebook|facebook|fb)\.(com|me|watch)\/(?:(?:\w\.)*#!\/)?(?:groups\/)?(?:[\w\-\.]*\/)*([\w\-\.]*)/;
+    return regex.test(url);
+  },
+
+  linkedin(url: string): boolean {
+    const regex = /^(https?:\/\/)?(www\.)?linkedin\.com\/(in|company|posts|pulse)\/[a-zA-Z0-9\-_]+\/?$/;
+    return regex.test(url);
+  },
+
+  reddit(url: string): boolean {
+    const regex = /^(https?:\/\/)?(www\.)?reddit\.com\/(r|user|comments)\/[a-zA-Z0-9_]+\/?/;
+    return regex.test(url);
+  },
+
+  pinterest(url: string): boolean {
+    const regex = /^(https?:\/\/)?(www\.)?pinterest\.com\/(pin\/[a-zA-Z0-9_]+\/?|([a-zA-Z0-9_]+\/?([a-zA-Z0-9_]+\/?)?))$/;
+    return regex.test(url);
+  },
+
+  whatsapp(url: string): boolean {
+    const regex = /^(https?:\/\/)?(www\.)?(whatsapp\.com\/(channel\/[a-zA-Z0-9]+|business|api)|wa\.me\/[0-9]+|chat\.whatsapp\.com\/[a-zA-Z0-9]+)\/?$/;
+    return regex.test(url);
+  },
+
+  discord(url: string): boolean {
+    const regex = /^(https?:\/\/)?(discord\.(gg|com)\/invite\/[a-zA-Z0-9]+)\/?$/;
+    return regex.test(url);
+  },
+
+  twitch(url: string): boolean {
+    const regex = /^(https?:\/\/)?(www\.)?twitch\.tv\/([a-zA-Z0-9\-_]+\/?([a-zA-Z0-9\-_]+\/?)?(video\/[a-zA-Z0-9\-_]+|clip\/[a-zA-Z0-9\-_]+)?)$/;
+    return regex.test(url);
+  },
+
+  stackoverflow(url: string): boolean {
+    const regex = /^(https?:\/\/)?(www\.)?stackoverflow\.com\/(questions\/[0-9]+\/?|users\/[0-9]+\/?|tags\/[a-zA-Z0-9\-_]+\/?)$/;
+    return regex.test(url);
+  },
+
+  medium(url: string): boolean {
+    const regex = /^(https?:\/\/)?(www\.)?medium\.com\/(@[a-zA-Z0-9\-_]+\/?([a-zA-Z0-9\-_]+\/?)?|[a-zA-Z0-9\-_]+\/[a-zA-Z0-9\-_]+\/?)$/;
+    return regex.test(url);
   },
 
   extractUrlFromString(str: string): string | null {
@@ -71,9 +111,56 @@ export const urlValidator = {
   },
 
   extractAllUrlFromString(str: string): string[] | null {
-    const urlRegex = /https?:\/\/[^\s"'<>()]+|www\.[^\s"'<>()]+/gi;
-    const matches = str.match(urlRegex);
-    return matches ? matches : null;
+    const regex = /https?:\/\/[^\s"'<>()]+|www\.[^\s"'<>()]+/gi;
+    const match = str.match(regex);
+    return match ? match : null;
+  },
+
+  hasProtocol(url: string, protocol: string): boolean {
+    const regex = new RegExp(`^${protocol}:\\/\\/`, "i");
+    return regex.test(url);
+  },
+
+  hasDomain(url: string, domain: string): boolean {
+    const regex = new RegExp(`^https?:\\/\\/(www\\.)?${domain}\\/`, "i");
+    return regex.test(url);
+  },
+
+  hasPath(url: string, path: string): boolean {
+    const regex = new RegExp(`^https?:\\/\\/[^\\/]+\\/${path}`, "i");
+    return regex.test(url);
+  },
+
+  hasQueryParam(url: string, param: string): boolean {
+    const regex = new RegExp(`[?&]${param}(=|&|$)`, "i");
+    return regex.test(url);
+  },
+
+  hasFragment(url: string, fragment: string): boolean {
+    const regex = new RegExp(`#${fragment}$`, "i");
+    return regex.test(url);
+  },
+
+  extractComponents(url: string): { protocol: string; domain: string; path: string; query: string; fragment: string } | null {
+    const regex = /^(https?):\/\/([^\/?#]+)([^?#]*)(?:\?([^#]*))?(?:#(.*))?/i;
+    const match = url.match(regex);
+    if (!match) return null;
+    return {
+      protocol: match[1],
+      domain: match[2],
+      path: match[3],
+      query: match[4] || "",
+      fragment: match[5] || "",
+    };
+  },
+
+  isWithinLength(url: string, maxLength: number): boolean {
+    return url.length <= maxLength;
+  },
+
+  hasValidCharacters(url: string): boolean {
+    const regex = /^[a-zA-Z0-9\-._~:\/?#[\]@!$&'()*+,;=]+$/;
+    return regex.test(url);
   },
 };
 
