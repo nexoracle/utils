@@ -16,15 +16,35 @@
   "scripts": {
     "build": "tsup lib/index.ts --format cjs,esm --dts --out-dir dist",
     "dev": "tsup lib/index.ts --format cjs,esm --dts --out-dir dist --watch",
-    "test": "node test.js"
+    "clean": "rm -rf dist .tsbuildinfo",
+    "release": "npm version patch && npm publish"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maher-xubair/utils"
+  },
+  "bugs": {
+    "url": "https://github.com/maher-xubair/utils/issues"
+  },
+  "homepage": "https://utils.nexoracle.com",
+  "funding": {
+    "type": "patreon",
+    "url": "https://patreon.com/nexoracle"
+  },
+  "sideEffects": false,
   "keywords": [
     "utils",
-    "utilities",
+    "utility-library",
     "javascript",
-    "typescript"
+    "typescript",
+    "performance",
+    "zero-dependency",
+    "esm",
+    "cjs",
+    "developer-tools",
+    "nodejs"
   ],
-  "author": "Maher Xubair",
+  "author": "Maher Zubair",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.13.10",
