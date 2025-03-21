@@ -90,8 +90,15 @@ declare const urlValidator: {
 declare function toBool(input: string, returnBool?: boolean): string | boolean;
 declare const isEmail: (email: string) => boolean;
 declare const isGmail: (email: string) => boolean;
+declare const isNumber: (input: unknown) => boolean;
 declare const isObject: (value: unknown) => boolean;
 declare function isArray(input: unknown): input is unknown[];
+/**
+ * Checks if a URL points to a valid image by first trying a HEAD request and falling back to a GET request.
+ * @param url - The URL to validate.
+ * @returns A promise that resolves to `true` if the URL points to a valid image, otherwise `false`.
+ */
+declare const isImageURL: (url: string) => Promise<boolean>;
 declare const hasEmoji: (str: string) => boolean;
 
 interface FetchOptions extends RequestInit {
@@ -416,4 +423,259 @@ declare const perf_hooks: {
     getNodePerformanceTiming: () => PerformanceNodeTiming | null;
 };
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, fileExists, formatBytes, formatNumber, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isDomainReachable, isEmail, isGmail, isObject, isTLSValid, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };
+interface ValidationProperty {
+    method: string;
+    arguments: any[];
+    description?: string;
+}
+interface ValidationOptions {
+    list?: boolean;
+    details?: boolean;
+}
+interface ValidationDetail {
+    validation: string;
+    arguments?: any;
+    inverted?: boolean;
+    message?: string;
+}
+type ValidationResult = boolean | string[] | ValidationDetail[];
+type PluginFunction = (password: string) => boolean;
+declare class passwordValidator {
+    properties: ValidationProperty[];
+    password: string;
+    positive: boolean;
+    list: boolean;
+    details: boolean;
+    /**
+     * Creates a password-validator schema
+     *
+     * @constructor
+     */
+    constructor();
+    /**
+     * Method to validate the password against schema
+     *
+     * @param {string} pwd - password to validate
+     * @param {object} [options] - optional options to configure validation
+     * @param {boolean} [options.list] - asks for a list of validation
+     *           failures instead of just true/false
+     * @param {boolean} [options.details] - asks for more details about
+     *           failed validations including arguments, and error messages
+     * @returns {boolean|array} Boolean value indicting the validity
+     *           of the password as per schema, if 'options.list' or
+     *           'options.details' is not set. Otherwise, it returns an
+     *           array of property names which failed validations
+     */
+    validate(pwd: string, options?: ValidationOptions): ValidationResult;
+    /**
+     * Rule to mandate the presence of letters in the password
+     *
+     * @param {number} [count] - minimum number of letters required
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    letters(count?: number, description?: string): passwordValidator;
+    /**
+     * Rule to mandate the presence of digits in the password
+     *
+     * @param {number} [count] - minimum number of digits required
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    digits(count?: number, description?: string): passwordValidator;
+    /**
+     * Rule to mandate the presence of symbols in the password
+     *
+     * @param {number} [count] - minimum number of symbols required
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    symbols(count?: number, description?: string): passwordValidator;
+    /**
+     * Rule to specify a minimum length of the password
+     *
+     * @param {number} num - minimum length
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    min(num: number, description?: string): passwordValidator;
+    /**
+     * Rule to specify a maximum length of the password
+     *
+     * @param {number} num - maximum length
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    max(num: number, description?: string): passwordValidator;
+    /**
+     * Rule to mandate the presence of lowercase letters in the password
+     *
+     * @param {number} [count] - minimum number of lowercase letters required
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    lowercase(count?: number, description?: string): passwordValidator;
+    /**
+     * Rule to mandate the presence of uppercase letters in the password
+     *
+     * @param {number} [count] - minimum number of uppercase letters required
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    uppercase(count?: number, description?: string): passwordValidator;
+    /**
+     * Rule to mandate the presence of space in the password
+     * It can be used along with 'not' to not allow spaces
+     * in the password
+     *
+     * @param {number} [count] - minimum number of spaces required
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    spaces(count?: number, description?: string): passwordValidator;
+    /**
+     * Rule to invert the effects of 'not'
+     * Apart from that, 'has' is also used
+     * to make the api readable and chainable
+     *
+     * @param {string|RegExp} [pattern] - pattern to match
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    has(pattern?: string | RegExp, description?: string): passwordValidator;
+    /**
+     * Rule to invert the next applied rules.
+     * All the rules applied after 'not' will have opposite effect,
+     * until 'has' rule is applied
+     *
+     * @param {string|RegExp} [pattern] - pattern to not match
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    not(pattern?: string | RegExp, description?: string): passwordValidator;
+    /**
+     * Rule to invert the effects of 'not'
+     * Apart from that, 'is' is also used
+     * to make the api readable and chainable
+     *
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    is(): passwordValidator;
+    /**
+     * Rule to whitelist words to be used as password
+     *
+     * @param {array} list - list of values allowed
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    oneOf(list: string[], description?: string): passwordValidator;
+    /**
+     * Insert a plugin function into the validation chain
+     *
+     * @param {PluginFunction} fn  - A plugin function
+     * @param {string} [description] - description of the validation
+     * @returns {passwordValidator} instance of passwordValidator schema
+     */
+    usingPlugin(fn: PluginFunction, description?: string): passwordValidator;
+}
+
+declare const errorHandler: {
+    length: string;
+    password: string;
+    invalidPlugin: string;
+};
+declare const regexHandler: {
+    digits: string;
+    letters: string;
+    symbols: string;
+    spaces: string;
+};
+
+declare function validationMessages(method: string, arg: any, inverted?: boolean): string | undefined;
+
+interface SchemaContext {
+    password: string;
+    positive: boolean;
+}
+declare const func: {
+    /**
+     * Method to invert the next validations
+     *
+     * @param {RegExp} [symbol] - custom Regex which should not be present
+     */
+    not: (this: SchemaContext, symbol?: RegExp | string) => boolean;
+    /**
+     * Method to invert the effects of not()
+     *
+     * @param {RegExp} [symbol] - custom Regex which should be present
+     */
+    has: (this: SchemaContext, symbol?: RegExp | string) => boolean;
+    /**
+     * Method to invert the effects of not() and
+     * to make the api readable and chainable
+     *
+     */
+    is: (this: SchemaContext) => boolean;
+    /**
+     * Method to specify a minimum length
+     *
+     * @param {number} num - minimum length
+     */
+    min: (this: SchemaContext, num: number) => boolean;
+    /**
+     * Method to specify a maximum length
+     *
+     * @param {number} num - maximum length
+     */
+    max: (this: SchemaContext, num: number) => boolean;
+    /**
+     * Method to validate the presence of digits
+     *
+     * @param {number} repeat - count of required digits
+     */
+    digits: (this: SchemaContext, repeat?: number) => boolean;
+    /**
+     * Method to validate the presence of letters
+     *
+     * @param {number} repeat - count of required letters
+     */
+    letters: (this: SchemaContext, repeat?: number) => boolean;
+    /**
+     * Method to validate the presence of uppercase letters
+     *
+     * @param {number} repeat - count of required uppercase letters
+     */
+    uppercase: (this: SchemaContext, repeat?: number) => boolean;
+    /**
+     * Method to validate the presence of lowercase letters
+     *
+     * @param {number} repeat - count of required lowercase letters
+     */
+    lowercase: (this: SchemaContext, repeat?: number) => boolean;
+    /**
+     * Method to validate the presence of symbols
+     *
+     * @param {number} repeat - count of required symbols
+     */
+    symbols: (this: SchemaContext, repeat?: number) => boolean;
+    /**
+     * Method to validate the presence of space
+     *
+     * @param {number} repeat - count of required spaces
+     */
+    spaces: (this: SchemaContext, repeat?: number) => boolean;
+    /**
+     * Method to provide pre-defined values for password
+     *
+     * @param {array} list - list of values allowed
+     */
+    oneOf: (this: SchemaContext, list: string[]) => boolean;
+    /**
+     * Method to run a plugin function for password
+     *
+     * @param {function} plugin - A plugin function
+     */
+    usingPlugin: (this: SchemaContext, fn: (password: string) => any) => boolean;
+};
+
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, errorHandler, fileExists, formatBytes, formatNumber, func, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isDomainReachable, isEmail, isGmail, isImageURL, isNumber, isObject, isTLSValid, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, regexHandler, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, validationMessages as validationMessage, warn, writeFile };
