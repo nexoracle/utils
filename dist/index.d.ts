@@ -678,4 +678,49 @@ declare const func: {
     usingPlugin: (this: SchemaContext, fn: (password: string) => any) => boolean;
 };
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, errorHandler, fileExists, formatBytes, formatNumber, func, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isDomainReachable, isEmail, isGmail, isImageURL, isNumber, isObject, isTLSValid, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, regexHandler, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, validationMessages as validationMessage, warn, writeFile };
+interface StringOptions {
+    method: 'string';
+    min?: number;
+    max?: number;
+    length?: number;
+    pool?: string;
+    prefix?: string;
+    batch?: number;
+}
+interface BytesOptions {
+    method: 'bytes';
+    min?: number;
+    max?: number;
+    length?: number;
+    prefix?: string;
+    batch?: number;
+}
+interface Base32Options {
+    method: 'base32';
+    dashes?: boolean;
+    prefix?: string;
+    batch?: number;
+}
+interface Base64Options {
+    method: 'base64';
+    prefix?: string;
+    batch?: number;
+}
+interface UuidV4Options {
+    method: 'uuidv4';
+    dashes?: boolean;
+    prefix?: string;
+    batch?: number;
+}
+interface UuidV5Options {
+    method: 'uuidv5';
+    name: string;
+    namespace?: string;
+    dashes?: boolean;
+    prefix?: string;
+    batch?: number;
+}
+type Options = StringOptions | BytesOptions | Base32Options | Base64Options | UuidV4Options | UuidV5Options;
+declare function generateApiKey(options?: Options): string | string[];
+
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, errorHandler, fileExists, formatBytes, formatNumber, func, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isDomainReachable, isEmail, isGmail, isImageURL, isNumber, isObject, isTLSValid, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, regexHandler, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, validationMessages as validationMessage, warn, writeFile };
