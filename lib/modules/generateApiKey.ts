@@ -155,3 +155,5 @@ export function generateApiKey(options: Options = { method: "string" }): string 
   const key = generateKey();
   return prefix ? `${prefix}.${key}` : key;
 }
+
+// Inspired By: https://github.com/pauldenver/generate-api-key

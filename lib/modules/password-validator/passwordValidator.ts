@@ -293,3 +293,5 @@ class passwordValidator {
 }
 
 export default passwordValidator;
+
+// Inspired By: https://github.com/tarunbatra/password-validator
