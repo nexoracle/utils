@@ -590,105 +590,6 @@ declare class passwordValidator {
     usingPlugin(fn: PluginFunction, description?: string): passwordValidator;
 }
 
-declare const errorHandler: {
-    length: string;
-    password: string;
-    invalidPlugin: string;
-};
-declare const regexHandler: {
-    digits: string;
-    letters: string;
-    symbols: string;
-    spaces: string;
-};
-
-declare function validationMessages(method: string, arg: any, inverted?: boolean): string | undefined;
-
-interface SchemaContext {
-    password: string;
-    positive: boolean;
-}
-declare const func: {
-    /**
-     * Method to invert the next validations
-     *
-     * @param {RegExp} [symbol] - custom Regex which should not be present
-     */
-    not: (this: SchemaContext, symbol?: RegExp | string) => boolean;
-    /**
-     * Method to invert the effects of not()
-     *
-     * @param {RegExp} [symbol] - custom Regex which should be present
-     */
-    has: (this: SchemaContext, symbol?: RegExp | string) => boolean;
-    /**
-     * Method to invert the effects of not() and
-     * to make the api readable and chainable
-     *
-     */
-    is: (this: SchemaContext) => boolean;
-    /**
-     * Method to specify a minimum length
-     *
-     * @param {number} num - minimum length
-     */
-    min: (this: SchemaContext, num: number) => boolean;
-    /**
-     * Method to specify a maximum length
-     *
-     * @param {number} num - maximum length
-     */
-    max: (this: SchemaContext, num: number) => boolean;
-    /**
-     * Method to validate the presence of digits
-     *
-     * @param {number} repeat - count of required digits
-     */
-    digits: (this: SchemaContext, repeat?: number) => boolean;
-    /**
-     * Method to validate the presence of letters
-     *
-     * @param {number} repeat - count of required letters
-     */
-    letters: (this: SchemaContext, repeat?: number) => boolean;
-    /**
-     * Method to validate the presence of uppercase letters
-     *
-     * @param {number} repeat - count of required uppercase letters
-     */
-    uppercase: (this: SchemaContext, repeat?: number) => boolean;
-    /**
-     * Method to validate the presence of lowercase letters
-     *
-     * @param {number} repeat - count of required lowercase letters
-     */
-    lowercase: (this: SchemaContext, repeat?: number) => boolean;
-    /**
-     * Method to validate the presence of symbols
-     *
-     * @param {number} repeat - count of required symbols
-     */
-    symbols: (this: SchemaContext, repeat?: number) => boolean;
-    /**
-     * Method to validate the presence of space
-     *
-     * @param {number} repeat - count of required spaces
-     */
-    spaces: (this: SchemaContext, repeat?: number) => boolean;
-    /**
-     * Method to provide pre-defined values for password
-     *
-     * @param {array} list - list of values allowed
-     */
-    oneOf: (this: SchemaContext, list: string[]) => boolean;
-    /**
-     * Method to run a plugin function for password
-     *
-     * @param {function} plugin - A plugin function
-     */
-    usingPlugin: (this: SchemaContext, fn: (password: string) => any) => boolean;
-};
-
 interface StringOptions {
     method: "string";
     min?: number;
@@ -795,4 +696,4 @@ declare const emojiApi: {
     unicodeToEmoji(unicode: string): string;
 };
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, emojiApi, error, errorHandler, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, func, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, regexHandler, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, validationMessages as validationMessage, warn, writeFile };
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, emojiApi, error, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };
