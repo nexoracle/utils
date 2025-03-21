@@ -679,7 +679,7 @@ declare const func: {
 };
 
 interface StringOptions {
-    method: 'string';
+    method: "string";
     min?: number;
     max?: number;
     length?: number;
@@ -688,7 +688,7 @@ interface StringOptions {
     batch?: number;
 }
 interface BytesOptions {
-    method: 'bytes';
+    method: "bytes";
     min?: number;
     max?: number;
     length?: number;
@@ -696,24 +696,24 @@ interface BytesOptions {
     batch?: number;
 }
 interface Base32Options {
-    method: 'base32';
+    method: "base32";
     dashes?: boolean;
     prefix?: string;
     batch?: number;
 }
 interface Base64Options {
-    method: 'base64';
+    method: "base64";
     prefix?: string;
     batch?: number;
 }
 interface UuidV4Options {
-    method: 'uuidv4';
+    method: "uuidv4";
     dashes?: boolean;
     prefix?: string;
     batch?: number;
 }
 interface UuidV5Options {
-    method: 'uuidv5';
+    method: "uuidv5";
     name: string;
     namespace?: string;
     dashes?: boolean;
@@ -723,4 +723,65 @@ interface UuidV5Options {
 type Options = StringOptions | BytesOptions | Base32Options | Base64Options | UuidV4Options | UuidV5Options;
 declare function generateApiKey(options?: Options): string | string[];
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, error, errorHandler, fileExists, formatBytes, formatNumber, func, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isDomainReachable, isEmail, isGmail, isImageURL, isNumber, isObject, isTLSValid, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, regexHandler, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, validationMessages as validationMessage, warn, writeFile };
+interface EmojiInfo {
+    emoji: string;
+    name: string;
+    group: EmojiGroup;
+    sub_group: EmojiSubGroup;
+    codepoints: string;
+}
+type EmojiGroup = "Smileys & Emotion" | "People & Body" | "Animals & Nature" | "Food & Drink" | "Travel & Places" | "Activities" | "Objects" | "Symbols" | "Flags";
+type EmojiSubGroup = "face-smiling" | "face-affection" | "face-tongue" | "face-hand" | "face-neutral-skeptical" | "face-sleepy" | "face-unwell" | "face-hat" | "face-glasses" | "face-concerned" | "face-negative" | "face-costume" | "cat-face" | "monkey-face" | "emotion" | "hand-fingers-open" | "hand-fingers-partial" | "hand-single-finger" | "hand-fingers-closed" | "hands" | "hand-prop" | "body-parts" | "person" | "person-gesture" | "person-role" | "person-fantasy" | "person-activity" | "person-sport" | "person-resting" | "family" | "person-symbol" | "animal-mammal" | "animal-bird" | "animal-amphibian" | "animal-reptile" | "animal-marine" | "animal-bug" | "plant-flower" | "plant-other" | "food-fruit" | "food-vegetable" | "food-prepared" | "food-asian" | "food-marine" | "food-sweet" | "drink" | "dishware" | "place-map" | "place-geographic" | "place-building" | "place-religious" | "place-other" | "transport-ground" | "transport-water" | "transport-air" | "hotel" | "time" | "sky & weather" | "event" | "award-medal" | "sport" | "game" | "arts & crafts" | "clothing" | "sound" | "music" | "musical-instrument" | "phone" | "computer" | "light & video" | "book-paper" | "money" | "mail" | "writing" | "office" | "lock" | "tool" | "science" | "medical" | "household" | "other-object" | "transport-sign" | "warning" | "arrow" | "religion" | "zodiac" | "av-symbol" | "gender" | "math" | "punctuation" | "currency" | "other-symbol" | "keycap" | "alphanum" | "geometric" | "flag" | "country-flag" | "subdivision-flag";
+declare class Emoji {
+    private readonly data;
+    constructor(data: EmojiInfo);
+    get emoji(): string;
+    get name(): string;
+    get formattedName(): string;
+    get group(): EmojiGroup;
+    get subGroup(): EmojiSubGroup;
+    get codePoints(): string[];
+    twemoji(opts?: {
+        size?: string;
+        format?: "png" | "svg";
+    }): string;
+    get fancyName(): string;
+    toUnicode(): string;
+    toString(): string;
+    toArray(): {
+        fancyName: string;
+        twemoji: string;
+        unicode: string;
+        formattedName: string;
+        emoji: string;
+        name: string;
+        group: EmojiGroup;
+        sub_group: EmojiSubGroup;
+        codepoints: string;
+    }[];
+    static from(data: EmojiInfo): Emoji;
+    toJSON(): {
+        fancyName: string;
+        twemoji: string;
+        unicode: string;
+        formattedName: string;
+        emoji: string;
+        name: string;
+        group: EmojiGroup;
+        sub_group: EmojiSubGroup;
+        codepoints: string;
+    };
+}
+declare const emojiApi: {
+    all(): Promise<Emoji[]>;
+    arrange(): Promise<Record<EmojiGroup, Emoji[]>>;
+    get(emoji: string): Promise<Emoji | null>;
+    filter(fn: (emoji: Emoji) => boolean): Promise<Emoji[]>;
+    random(): Promise<Emoji>;
+    randomFromGroup(group: EmojiGroup, subGroup?: EmojiSubGroup): Promise<Emoji>;
+    findByName(name: string): Promise<Emoji | null>;
+    emojiToUnicode(emoji: string): string;
+    unicodeToEmoji(unicode: string): string;
+};
+
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, emojiApi, error, errorHandler, fileExists, formatBytes, formatNumber, func, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isDomainReachable, isEmail, isGmail, isImageURL, isNumber, isObject, isTLSValid, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, regexHandler, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, validationMessages as validationMessage, warn, writeFile };

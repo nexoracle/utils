@@ -43,6 +43,7 @@ __export(lib_exports, {
   debug: () => debug,
   deleteFile: () => deleteFile,
   downloadFile: () => downloadFile,
+  emojiApi: () => emoji_default,
   error: () => error,
   errorHandler: () => errorHandler,
   fileExists: () => fileExists,
@@ -2611,6 +2612,133 @@ function generateApiKey(options = { method: "string" }) {
   const key = generateKey();
   return prefix ? `${prefix}.${key}` : key;
 }
+
+// lib/modules/emoji-api/emoji.ts
+var emojiList;
+var emojiCache = /* @__PURE__ */ new Map();
+var cachedAll;
+var groupedEmojis;
+var Emoji = class _Emoji {
+  constructor(data) {
+    this.data = data;
+  }
+  get emoji() {
+    return this.data.emoji;
+  }
+  get name() {
+    return this.data.name;
+  }
+  get formattedName() {
+    return this.data.name.split(" ").map((word) => `${word[0].toUpperCase()}${word.slice(1).toLowerCase()}`).join(" ");
+  }
+  get group() {
+    return this.data.group;
+  }
+  get subGroup() {
+    return this.data.sub_group;
+  }
+  get codePoints() {
+    return this.data.codepoints.split(" ");
+  }
+  twemoji(opts) {
+    const { format = "png", size = "72x72" } = opts ?? {};
+    const code = this.toUnicode().toLowerCase();
+    return `https://twemoji.maxcdn.com/v/latest/${format === "svg" ? "svg" : size}/${code}.${format}`;
+  }
+  get fancyName() {
+    return `:${this.name.replace(/\W/g, "_").toLowerCase()}:`;
+  }
+  toUnicode() {
+    return emojiApi.emojiToUnicode(this.emoji);
+  }
+  toString() {
+    return this.emoji;
+  }
+  toArray() {
+    return [this.toJSON()];
+  }
+  static from(data) {
+    return new _Emoji(data);
+  }
+  toJSON() {
+    return {
+      ...this.data,
+      fancyName: this.fancyName,
+      twemoji: this.twemoji(),
+      unicode: this.toUnicode(),
+      formattedName: this.formattedName
+    };
+  }
+};
+var fetchEmojis = async () => {
+  if (emojiList)
+    return emojiList;
+  try {
+    const response = await fetch("https://cdn.jsdelivr.net/gh/maher-xubair/emojiApi/emojis-data.json");
+    emojiList = await response.json();
+    return emojiList;
+  } catch (error2) {
+    console.error("Failed to fetch emoji data:", error2);
+    throw error2;
+  }
+};
+var emojiApi = {
+  async all() {
+    if (cachedAll)
+      return cachedAll;
+    const data = await fetchEmojis();
+    return cachedAll = data.map((d) => new Emoji(d));
+  },
+  async arrange() {
+    if (groupedEmojis)
+      return groupedEmojis;
+    const allEmojis = await this.all();
+    groupedEmojis = {};
+    for (const emoji of allEmojis) {
+      const group = emoji.group;
+      groupedEmojis[group] ? groupedEmojis[group].push(emoji) : groupedEmojis[group] = [emoji];
+    }
+    return groupedEmojis;
+  },
+  async get(emoji) {
+    if (emojiCache.has(emoji))
+      return emojiCache.get(emoji) || null;
+    const allEmojis = await this.all();
+    const found = allEmojis.find((e) => e.emoji === emoji);
+    if (!found)
+      return null;
+    emojiCache.set(emoji, found);
+    return found;
+  },
+  async filter(fn) {
+    const allEmojis = await this.all();
+    return allEmojis.filter(fn);
+  },
+  async random() {
+    const allEmojis = await this.all();
+    return allEmojis[Math.floor(Math.random() * allEmojis.length)];
+  },
+  async randomFromGroup(group, subGroup) {
+    const allEmojis = await this.all();
+    const filtered = allEmojis.filter((e) => e.group.toLowerCase() === group.toLowerCase() && (!subGroup || e.subGroup.toLowerCase() === subGroup.toLowerCase()));
+    return filtered[Math.floor(Math.random() * filtered.length)];
+  },
+  async findByName(name) {
+    const allEmojis = await this.all();
+    const found = allEmojis.find((e) => e.name.toLowerCase() === name.toLowerCase());
+    return found || null;
+  },
+  emojiToUnicode(emoji) {
+    if (emoji.length === 1)
+      return emoji.charCodeAt(0).toString(16);
+    const code = (emoji.charCodeAt(0) - 55296) * 1024 + (emoji.charCodeAt(1) - 56320) + 65536;
+    return code < 0 ? emoji.charCodeAt(0).toString(16) : code.toString(16).toUpperCase();
+  },
+  unicodeToEmoji(unicode) {
+    return String.fromCodePoint(parseInt(unicode, 16));
+  }
+};
+var emoji_default = emojiApi;
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ReadMore,
@@ -2626,6 +2754,7 @@ function generateApiKey(options = { method: "string" }) {
   debug,
   deleteFile,
   downloadFile,
+  emojiApi,
   error,
   errorHandler,
   fileExists,
