@@ -29,6 +29,7 @@ declare const randomInt: (min: number, max: number) => number;
 declare const truncate: (text: string, maxLength: number) => string;
 declare const timeAgo: (date: Date) => string;
 declare const uniqueArray: <T>(arr: T[]) => T[];
+declare const flattenArray: <T>(arr: T[]) => T[];
 declare const randomElement: <T>(arr: T[]) => T;
 declare const toQueryString: (params: Record<string, any>) => string;
 declare const randomHexColor: () => string;
@@ -48,6 +49,7 @@ declare const getDate: (date?: Date, options?: {
     utc?: boolean;
     timezone?: string;
 }) => string;
+declare const formatJSON: (data: unknown, spaces?: number) => string | null;
 
 declare const urlValidator: {
     isURL(url: string): boolean;
@@ -92,7 +94,16 @@ declare const isEmail: (email: string) => boolean;
 declare const isGmail: (email: string) => boolean;
 declare const isNumber: (input: unknown) => boolean;
 declare const isObject: (value: unknown) => boolean;
+declare const isEmptyObject: (obj: object) => boolean;
+declare const isEqualObj: (obj1: any, obj2: any) => boolean;
 declare function isArray(input: unknown): input is unknown[];
+declare const isString: (input: unknown) => input is string;
+declare const isBool: (input: unknown) => input is boolean;
+declare const isFunction: (input: unknown) => input is Function;
+declare const isBigInt: (input: unknown) => input is bigint;
+declare const isUndefined: (input: unknown) => input is undefined;
+declare const isSymbol: (input: unknown) => input is symbol;
+declare const isNull: (input: unknown) => input is null;
 /**
  * Checks if a URL points to a valid image by first trying a HEAD request and falling back to a GET request.
  * @param url - The URL to validate.
@@ -784,4 +795,4 @@ declare const emojiApi: {
     unicodeToEmoji(unicode: string): string;
 };
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, emojiApi, error, errorHandler, fileExists, formatBytes, formatNumber, func, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isDomainReachable, isEmail, isGmail, isImageURL, isNumber, isObject, isTLSValid, isURLAccessible, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, regexHandler, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, validationMessages as validationMessage, warn, writeFile };
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, emojiApi, error, errorHandler, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, func, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, regexHandler, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, validationMessages as validationMessage, warn, writeFile };

@@ -47,7 +47,9 @@ __export(lib_exports, {
   error: () => error,
   errorHandler: () => errorHandler,
   fileExists: () => fileExists,
+  flattenArray: () => flattenArray,
   formatBytes: () => formatBytes,
+  formatJSON: () => formatJSON,
   formatNumber: () => formatNumber,
   func: () => func_default,
   generateApiKey: () => generateApiKey,
@@ -68,14 +70,23 @@ __export(lib_exports, {
   hasEmoji: () => hasEmoji,
   info: () => info,
   isArray: () => isArray,
+  isBigInt: () => isBigInt,
+  isBool: () => isBool,
   isDomainReachable: () => isDomainReachable,
   isEmail: () => isEmail,
+  isEmptyObject: () => isEmptyObject,
+  isEqualObj: () => isEqualObj,
+  isFunction: () => isFunction,
   isGmail: () => isGmail,
   isImageURL: () => isImageURL,
+  isNull: () => isNull,
   isNumber: () => isNumber,
   isObject: () => isObject,
+  isString: () => isString,
+  isSymbol: () => isSymbol,
   isTLSValid: () => isTLSValid,
   isURLAccessible: () => isURLAccessible,
+  isUndefined: () => isUndefined,
   joinPath: () => joinPath,
   jsontoBuffer: () => jsontoBuffer,
   log: () => log,
@@ -273,9 +284,36 @@ var isNumber = (input) => {
   return false;
 };
 var isObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+var isEmptyObject = (obj) => {
+  return Object.keys(obj).length === 0;
+};
+var isEqualObj = (obj1, obj2) => {
+  return JSON.stringify(obj1) === JSON.stringify(obj2);
+};
 function isArray(input) {
   return Array.isArray(input);
 }
+var isString = (input) => {
+  return typeof input === "string";
+};
+var isBool = (input) => {
+  return typeof input === "boolean";
+};
+var isFunction = (input) => {
+  return typeof input === "function";
+};
+var isBigInt = (input) => {
+  return typeof input === "bigint";
+};
+var isUndefined = (input) => {
+  return typeof input === "undefined";
+};
+var isSymbol = (input) => {
+  return typeof input === "symbol";
+};
+var isNull = (input) => {
+  return input === null;
+};
 var isImageURL = async (url2) => {
   try {
     const parsedUrl = new import_url.URL(url2);
@@ -412,6 +450,9 @@ var timeAgo = (date) => {
   return "Just now";
 };
 var uniqueArray = (arr) => [...new Set(arr)];
+var flattenArray = (arr) => {
+  return arr.reduce((acc, val) => acc.concat(Array.isArray(val) ? flattenArray(val) : val), []);
+};
 var randomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
 var toQueryString = (params) => new URLSearchParams(params).toString();
 var randomHexColor = () => `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0")}`;
@@ -462,6 +503,14 @@ var getDate = (date = /* @__PURE__ */ new Date(), options) => {
       return `${year}/${month}/${day}`;
     default:
       return `${year}-${month}-${day}`;
+  }
+};
+var formatJSON = (data, spaces2 = 2) => {
+  try {
+    return JSON.stringify(data, null, spaces2);
+  } catch (error2) {
+    console.error("Failed to format JSON:", error2);
+    return null;
   }
 };
 
@@ -2758,7 +2807,9 @@ var emoji_default = emojiApi;
   error,
   errorHandler,
   fileExists,
+  flattenArray,
   formatBytes,
+  formatJSON,
   formatNumber,
   func,
   generateApiKey,
@@ -2779,14 +2830,23 @@ var emoji_default = emojiApi;
   hasEmoji,
   info,
   isArray,
+  isBigInt,
+  isBool,
   isDomainReachable,
   isEmail,
+  isEmptyObject,
+  isEqualObj,
+  isFunction,
   isGmail,
   isImageURL,
+  isNull,
   isNumber,
   isObject,
+  isString,
+  isSymbol,
   isTLSValid,
   isURLAccessible,
+  isUndefined,
   joinPath,
   jsontoBuffer,
   log,

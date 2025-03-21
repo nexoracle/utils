@@ -191,9 +191,45 @@ export const isNumber = (input: unknown): boolean => {
 
 export const isObject = (value: unknown): boolean => typeof value === "object" && value !== null && !Array.isArray(value);
 
+export const isEmptyObject = (obj: object): boolean => {
+  return Object.keys(obj).length === 0;
+};
+
+export const isEqualObj = (obj1: any, obj2: any): boolean => {
+  return JSON.stringify(obj1) === JSON.stringify(obj2);
+};
+
 export function isArray(input: unknown): input is unknown[] {
   return Array.isArray(input);
 }
+
+export const isString = (input: unknown): input is string => {
+  return typeof input === "string";
+};
+
+export const isBool = (input: unknown): input is boolean => {
+  return typeof input === "boolean";
+};
+
+export const isFunction = (input: unknown): input is Function => {
+  return typeof input === "function";
+};
+
+export const isBigInt = (input: unknown): input is bigint => {
+  return typeof input === "bigint";
+};
+
+export const isUndefined = (input: unknown): input is undefined => {
+  return typeof input === "undefined";
+};
+
+export const isSymbol = (input: unknown): input is symbol => {
+  return typeof input === "symbol";
+};
+
+export const isNull = (input: unknown): input is null => {
+  return input === null;
+};
 
 /**
  * Checks if a URL points to a valid image by first trying a HEAD request and falling back to a GET request.
