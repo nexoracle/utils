@@ -44,7 +44,7 @@
     "developer-tools",
     "nodejs"
   ],
-  "author": "NexOracle (Maher Zubair)",
+  "author": "NexOracle (Maher Zubair) - support@nexoracle.com",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.13.10",
