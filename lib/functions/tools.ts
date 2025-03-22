@@ -1,6 +1,8 @@
-import { promises as fs } from "fs";
+import fs from "fs";
 import { Readable } from "stream";
 import { isArray } from "./validation";
+import { axium } from "../modules/axium";
+import { execSync } from "child_process";
 
 export function getRandom(
   options: {
@@ -63,8 +65,8 @@ export const transformBuffer = (buffer: Buffer, transformFn: (data: Buffer) => B
   return transformFn(buffer);
 };
 
-export const bufferToFile = async (buffer: Buffer, filePath: string): Promise<void> => {
-  await fs.writeFile(filePath, buffer);
+export const bufferToFile = (buffer: Buffer, filePath: string): void => {
+  fs.writeFileSync(filePath, buffer);
 };
 
 export function toBuffer(data: any): Buffer {
@@ -197,3 +199,107 @@ export const formatJSON = (data: unknown, spaces: number = 2): string | null => 
     return null;
   }
 };
+
+export function runtime(seconds: number, capitalize: boolean = false, day: string = "day", hour: string = "hour", minute: string = "minute", second: string = "second"): string {
+  seconds = Number(seconds);
+
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+
+  const dDisplay = d > 0 ? `${d} ${d === 1 ? day : day + "s"}` : "";
+  const hDisplay = h > 0 ? `${h} ${h === 1 ? hour : hour + "s"}` : "";
+  const mDisplay = m > 0 ? `${m} ${m === 1 ? minute : minute + "s"}` : "";
+  const sDisplay = s > 0 ? `${s} ${s === 1 ? second : second + "s"}` : "";
+
+  let result = [dDisplay, hDisplay, mDisplay, sDisplay].filter((part) => part !== "").join(", ");
+
+  if (capitalize && result.length > 0) {
+    result = result
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
+  return result;
+}
+
+export async function getFileSize(path: string | Buffer): Promise<string> {
+  try {
+    if (!path) {
+      console.error("Path is not provided.");
+      return "0";
+    }
+
+    if (typeof path === "string" && (path.startsWith("http") || path.startsWith("Http"))) {
+      try {
+        const response = await fetch(path, { method: "HEAD" });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch headers: ${response.status} ${response.statusText}`);
+        }
+
+        const contentLength = response.headers.get("content-length");
+        if (!contentLength) {
+          throw new Error("Content-Length header is missing.");
+        }
+
+        const length = parseInt(contentLength, 10);
+        if (isNaN(length)) {
+          throw new Error("Invalid Content-Length header.");
+        }
+
+        return formatBytes(length, 3);
+      } catch (error) {
+        console.error(`Error fetching size from URL (${path}):`, error);
+        return "0";
+      }
+    }
+
+    if (typeof path === "string") {
+      try {
+        const stats = fs.statSync(path);
+        return formatBytes(stats.size, 3);
+      } catch (error) {
+        console.error(`Error reading local file (${path}):`, error);
+        return "0";
+      }
+    }
+
+    if (Buffer.isBuffer(path)) {
+      const length = Buffer.byteLength(path);
+      return formatBytes(length, 3);
+    }
+
+    throw new Error("Error: Couldn't fetch size of file. Invalid path type.");
+  } catch (error) {
+    console.error("Failed to get file size:", error);
+    return "0";
+  }
+}
+
+export function ensurePackage(packageName: string, packageManager: "npm" | "yarn" | "pnpm" = "npm", shouldInstall: boolean = true): any {
+  try {
+    return require(packageName);
+  } catch (e) {
+    console.log(`Package "${packageName}" is not installed.`);
+
+    if (!shouldInstall) {
+      return null;
+    }
+
+    console.log(`Installing "${packageName}" using ${packageManager}...`);
+
+    try {
+      const installCommand = packageManager === "yarn" ? `yarn add ${packageName}` : packageManager === "pnpm" ? `pnpm install ${packageName}` : `npm install ${packageName}`;
+
+      execSync(installCommand, { stdio: "inherit" });
+      console.log(`Successfully installed "${packageName}".`);
+
+      return require(packageName);
+    } catch (err) {
+      console.error(`Failed to install "${packageName}"`, err);
+      return null;
+    }
+  }
+}

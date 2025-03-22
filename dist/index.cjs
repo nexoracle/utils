@@ -45,6 +45,7 @@ __export(lib_exports, {
   deleteFile: () => deleteFile,
   downloadFile: () => downloadFile,
   emojiApi: () => emoji_default,
+  ensurePackage: () => ensurePackage,
   error: () => error,
   fileExists: () => fileExists,
   flattenArray: () => flattenArray,
@@ -58,6 +59,7 @@ __export(lib_exports, {
   getDate: () => getDate,
   getFileExtension: () => getFileExtension,
   getFileName: () => getFileName,
+  getFileSize: () => getFileSize,
   getNetworkInterfaces: () => getNetworkInterfaces,
   getRandom: () => getRandom,
   getRelativePath: () => getRelativePath,
@@ -104,6 +106,7 @@ __export(lib_exports, {
   runCommand: () => runCommand,
   runCommandSync: () => runCommandSync,
   runSpawn: () => runSpawn,
+  runtime: () => runtime,
   sleep: () => sleep,
   table: () => table,
   timeAgo: () => timeAgo,
@@ -120,7 +123,7 @@ __export(lib_exports, {
 module.exports = __toCommonJS(lib_exports);
 
 // lib/functions/tools.ts
-var import_fs = require("fs");
+var import_fs = __toESM(require("fs"), 1);
 var import_stream = require("stream");
 
 // lib/functions/validation.ts
@@ -357,6 +360,7 @@ var hasEmoji = (str) => {
 };
 
 // lib/functions/tools.ts
+var import_child_process = require("child_process");
 function getRandom(options = {}) {
   const { Alphabets = true, Numbers = true, Symbols = false, DateNow = false, length = 20, fileExtension = ".png", attachFileExtension = false } = options;
   let characters = "";
@@ -400,8 +404,8 @@ var jsontoBuffer = (json) => {
 var transformBuffer = (buffer, transformFn) => {
   return transformFn(buffer);
 };
-var bufferToFile = async (buffer, filePath) => {
-  await import_fs.promises.writeFile(filePath, buffer);
+var bufferToFile = (buffer, filePath) => {
+  import_fs.default.writeFileSync(filePath, buffer);
 };
 function toBuffer(data) {
   if (data instanceof Buffer)
@@ -510,6 +514,87 @@ var formatJSON = (data, spaces2 = 2) => {
     return null;
   }
 };
+function runtime(seconds, capitalize = false, day = "day", hour = "hour", minute = "minute", second = "second") {
+  seconds = Number(seconds);
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor(seconds % 86400 / 3600);
+  const m = Math.floor(seconds % 3600 / 60);
+  const s = Math.floor(seconds % 60);
+  const dDisplay = d > 0 ? `${d} ${d === 1 ? day : day + "s"}` : "";
+  const hDisplay = h > 0 ? `${h} ${h === 1 ? hour : hour + "s"}` : "";
+  const mDisplay = m > 0 ? `${m} ${m === 1 ? minute : minute + "s"}` : "";
+  const sDisplay = s > 0 ? `${s} ${s === 1 ? second : second + "s"}` : "";
+  let result = [dDisplay, hDisplay, mDisplay, sDisplay].filter((part) => part !== "").join(", ");
+  if (capitalize && result.length > 0) {
+    result = result.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+  }
+  return result;
+}
+async function getFileSize(path4) {
+  try {
+    if (!path4) {
+      console.error("Path is not provided.");
+      return "0";
+    }
+    if (typeof path4 === "string" && (path4.startsWith("http") || path4.startsWith("Http"))) {
+      try {
+        const response = await fetch(path4, { method: "HEAD" });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch headers: ${response.status} ${response.statusText}`);
+        }
+        const contentLength = response.headers.get("content-length");
+        if (!contentLength) {
+          throw new Error("Content-Length header is missing.");
+        }
+        const length = parseInt(contentLength, 10);
+        if (isNaN(length)) {
+          throw new Error("Invalid Content-Length header.");
+        }
+        return formatBytes(length, 3);
+      } catch (error2) {
+        console.error(`Error fetching size from URL (${path4}):`, error2);
+        return "0";
+      }
+    }
+    if (typeof path4 === "string") {
+      try {
+        const stats = import_fs.default.statSync(path4);
+        return formatBytes(stats.size, 3);
+      } catch (error2) {
+        console.error(`Error reading local file (${path4}):`, error2);
+        return "0";
+      }
+    }
+    if (Buffer.isBuffer(path4)) {
+      const length = Buffer.byteLength(path4);
+      return formatBytes(length, 3);
+    }
+    throw new Error("Error: Couldn't fetch size of file. Invalid path type.");
+  } catch (error2) {
+    console.error("Failed to get file size:", error2);
+    return "0";
+  }
+}
+function ensurePackage(packageName, packageManager = "npm", shouldInstall = true) {
+  try {
+    return require(packageName);
+  } catch (e) {
+    console.log(`Package "${packageName}" is not installed.`);
+    if (!shouldInstall) {
+      return null;
+    }
+    console.log(`Installing "${packageName}" using ${packageManager}...`);
+    try {
+      const installCommand = packageManager === "yarn" ? `yarn add ${packageName}` : packageManager === "pnpm" ? `pnpm install ${packageName}` : `npm install ${packageName}`;
+      (0, import_child_process.execSync)(installCommand, { stdio: "inherit" });
+      console.log(`Successfully installed "${packageName}".`);
+      return require(packageName);
+    } catch (err) {
+      console.error(`Failed to install "${packageName}"`, err);
+      return null;
+    }
+  }
+}
 
 // lib/modules/axium.ts
 var import_buffer = require("buffer");
@@ -917,10 +1002,10 @@ var buildUrl = (baseUrl, params) => {
 };
 
 // lib/modules/child_process.ts
-var import_child_process = require("child_process");
+var import_child_process2 = require("child_process");
 var runCommand = (command, cwd, timeout = 5e3) => {
   return new Promise((resolve, reject) => {
-    const process2 = (0, import_child_process.exec)(command, { cwd, timeout }, (error2, stdout, stderr) => {
+    const process2 = (0, import_child_process2.exec)(command, { cwd, timeout }, (error2, stdout, stderr) => {
       if (error2)
         return reject(`Error: ${error2.message}`);
       if (stderr)
@@ -933,7 +1018,7 @@ var runCommand = (command, cwd, timeout = 5e3) => {
 };
 var runCommandSync = (command, cwd) => {
   try {
-    return (0, import_child_process.execSync)(command, { cwd, encoding: "utf-8" }).trim();
+    return (0, import_child_process2.execSync)(command, { cwd, encoding: "utf-8" }).trim();
   } catch (error2) {
     console.error(`Command Failed: ${error2 instanceof Error ? error2.message : error2}`);
     return null;
@@ -941,7 +1026,7 @@ var runCommandSync = (command, cwd) => {
 };
 var runSpawn = (command, args, cwd) => {
   return new Promise((resolve, reject) => {
-    const process2 = (0, import_child_process.spawn)(command, args, { cwd, shell: true });
+    const process2 = (0, import_child_process2.spawn)(command, args, { cwd, shell: true });
     let output = "";
     process2.stdout.on("data", (data) => output += data.toString());
     process2.stderr.on("data", (data) => console.error(`Stderr: ${data.toString()}`));
@@ -3123,7 +3208,7 @@ var ScheduledTask = class extends import_events3.EventEmitter {
 // lib/modules/cron/backgroundScheduledTask.ts
 var import_events4 = require("events");
 var import_path3 = __toESM(require("path"), 1);
-var import_child_process2 = require("child_process");
+var import_child_process3 = require("child_process");
 var scheduledTask;
 function register(message) {
   const script = require(message.path);
@@ -3166,7 +3251,7 @@ var BackgroundScheduledTask = class extends import_events4.EventEmitter {
   }
   start() {
     this.stop();
-    this.forkProcess = (0, import_child_process2.fork)(daemonPath);
+    this.forkProcess = (0, import_child_process3.fork)(daemonPath);
     this.forkProcess.on("message", (message) => {
       switch (message.type) {
         case "task-done":
@@ -3264,6 +3349,7 @@ var cron = {
   deleteFile,
   downloadFile,
   emojiApi,
+  ensurePackage,
   error,
   fileExists,
   flattenArray,
@@ -3277,6 +3363,7 @@ var cron = {
   getDate,
   getFileExtension,
   getFileName,
+  getFileSize,
   getNetworkInterfaces,
   getRandom,
   getRelativePath,
@@ -3323,6 +3410,7 @@ var cron = {
   runCommand,
   runCommandSync,
   runSpawn,
+  runtime,
   sleep,
   table,
   timeAgo,

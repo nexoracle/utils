@@ -21,7 +21,7 @@ declare function ReadMore(length?: number): string;
 declare const buffertoJson: (buffer: Buffer) => any;
 declare const jsontoBuffer: (json: object) => Buffer;
 declare const transformBuffer: (buffer: Buffer, transformFn: (data: Buffer) => Buffer) => Buffer;
-declare const bufferToFile: (buffer: Buffer, filePath: string) => Promise<void>;
+declare const bufferToFile: (buffer: Buffer, filePath: string) => void;
 declare function toBuffer(data: any): Buffer;
 declare const getBufferFromStream: (stream: Readable) => Promise<Buffer>;
 declare const getStreamFromBuffer: (buffer: Buffer) => Readable;
@@ -51,6 +51,9 @@ declare const getDate: (date?: Date, options?: {
     timezone?: string;
 }) => string;
 declare const formatJSON: (data: unknown, spaces?: number) => string | null;
+declare function runtime(seconds: number, capitalize?: boolean, day?: string, hour?: string, minute?: string, second?: string): string;
+declare function getFileSize(path: string | Buffer): Promise<string>;
+declare function ensurePackage(packageName: string, packageManager?: "npm" | "yarn" | "pnpm", shouldInstall?: boolean): any;
 
 declare const urlValidator: {
     isURL(url: string): boolean;
@@ -729,4 +732,4 @@ declare const cron: {
     validate: typeof validate;
 };
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, cron, crypto, debug, deleteFile, downloadFile, emojiApi, error, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, cron, crypto, debug, deleteFile, downloadFile, emojiApi, ensurePackage, error, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getFileSize, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, runtime, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };

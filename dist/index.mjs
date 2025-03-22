@@ -7,7 +7,7 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
 });
 
 // lib/functions/tools.ts
-import { promises as fs } from "fs";
+import fs from "fs";
 import { Readable } from "stream";
 
 // lib/functions/validation.ts
@@ -244,6 +244,7 @@ var hasEmoji = (str) => {
 };
 
 // lib/functions/tools.ts
+import { execSync } from "child_process";
 function getRandom(options = {}) {
   const { Alphabets = true, Numbers = true, Symbols = false, DateNow = false, length = 20, fileExtension = ".png", attachFileExtension = false } = options;
   let characters = "";
@@ -287,8 +288,8 @@ var jsontoBuffer = (json) => {
 var transformBuffer = (buffer, transformFn) => {
   return transformFn(buffer);
 };
-var bufferToFile = async (buffer, filePath) => {
-  await fs.writeFile(filePath, buffer);
+var bufferToFile = (buffer, filePath) => {
+  fs.writeFileSync(filePath, buffer);
 };
 function toBuffer(data) {
   if (data instanceof Buffer)
@@ -397,6 +398,87 @@ var formatJSON = (data, spaces2 = 2) => {
     return null;
   }
 };
+function runtime(seconds, capitalize = false, day = "day", hour = "hour", minute = "minute", second = "second") {
+  seconds = Number(seconds);
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor(seconds % 86400 / 3600);
+  const m = Math.floor(seconds % 3600 / 60);
+  const s = Math.floor(seconds % 60);
+  const dDisplay = d > 0 ? `${d} ${d === 1 ? day : day + "s"}` : "";
+  const hDisplay = h > 0 ? `${h} ${h === 1 ? hour : hour + "s"}` : "";
+  const mDisplay = m > 0 ? `${m} ${m === 1 ? minute : minute + "s"}` : "";
+  const sDisplay = s > 0 ? `${s} ${s === 1 ? second : second + "s"}` : "";
+  let result = [dDisplay, hDisplay, mDisplay, sDisplay].filter((part) => part !== "").join(", ");
+  if (capitalize && result.length > 0) {
+    result = result.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+  }
+  return result;
+}
+async function getFileSize(path4) {
+  try {
+    if (!path4) {
+      console.error("Path is not provided.");
+      return "0";
+    }
+    if (typeof path4 === "string" && (path4.startsWith("http") || path4.startsWith("Http"))) {
+      try {
+        const response = await fetch(path4, { method: "HEAD" });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch headers: ${response.status} ${response.statusText}`);
+        }
+        const contentLength = response.headers.get("content-length");
+        if (!contentLength) {
+          throw new Error("Content-Length header is missing.");
+        }
+        const length = parseInt(contentLength, 10);
+        if (isNaN(length)) {
+          throw new Error("Invalid Content-Length header.");
+        }
+        return formatBytes(length, 3);
+      } catch (error2) {
+        console.error(`Error fetching size from URL (${path4}):`, error2);
+        return "0";
+      }
+    }
+    if (typeof path4 === "string") {
+      try {
+        const stats = fs.statSync(path4);
+        return formatBytes(stats.size, 3);
+      } catch (error2) {
+        console.error(`Error reading local file (${path4}):`, error2);
+        return "0";
+      }
+    }
+    if (Buffer.isBuffer(path4)) {
+      const length = Buffer.byteLength(path4);
+      return formatBytes(length, 3);
+    }
+    throw new Error("Error: Couldn't fetch size of file. Invalid path type.");
+  } catch (error2) {
+    console.error("Failed to get file size:", error2);
+    return "0";
+  }
+}
+function ensurePackage(packageName, packageManager = "npm", shouldInstall = true) {
+  try {
+    return __require(packageName);
+  } catch (e) {
+    console.log(`Package "${packageName}" is not installed.`);
+    if (!shouldInstall) {
+      return null;
+    }
+    console.log(`Installing "${packageName}" using ${packageManager}...`);
+    try {
+      const installCommand = packageManager === "yarn" ? `yarn add ${packageName}` : packageManager === "pnpm" ? `pnpm install ${packageName}` : `npm install ${packageName}`;
+      execSync(installCommand, { stdio: "inherit" });
+      console.log(`Successfully installed "${packageName}".`);
+      return __require(packageName);
+    } catch (err) {
+      console.error(`Failed to install "${packageName}"`, err);
+      return null;
+    }
+  }
+}
 
 // lib/modules/axium.ts
 import { Buffer as Buffer2 } from "buffer";
@@ -804,7 +886,7 @@ var buildUrl = (baseUrl, params) => {
 };
 
 // lib/modules/child_process.ts
-import { exec, execSync, spawn } from "child_process";
+import { exec, execSync as execSync2, spawn } from "child_process";
 var runCommand = (command, cwd, timeout = 5e3) => {
   return new Promise((resolve, reject) => {
     const process2 = exec(command, { cwd, timeout }, (error2, stdout, stderr) => {
@@ -820,7 +902,7 @@ var runCommand = (command, cwd, timeout = 5e3) => {
 };
 var runCommandSync = (command, cwd) => {
   try {
-    return execSync(command, { cwd, encoding: "utf-8" }).trim();
+    return execSync2(command, { cwd, encoding: "utf-8" }).trim();
   } catch (error2) {
     console.error(`Command Failed: ${error2 instanceof Error ? error2.message : error2}`);
     return null;
@@ -3150,6 +3232,7 @@ export {
   deleteFile,
   downloadFile,
   emoji_default as emojiApi,
+  ensurePackage,
   error,
   fileExists,
   flattenArray,
@@ -3163,6 +3246,7 @@ export {
   getDate,
   getFileExtension,
   getFileName,
+  getFileSize,
   getNetworkInterfaces,
   getRandom,
   getRelativePath,
@@ -3209,6 +3293,7 @@ export {
   runCommand,
   runCommandSync,
   runSpawn,
+  runtime,
   sleep,
   table,
   timeAgo,
