@@ -39,6 +39,7 @@ __export(lib_exports, {
   buildUrl: () => buildUrl,
   checkTLSHandshake: () => checkTLSHandshake,
   clear: () => clear,
+  cron: () => cron,
   crypto: () => crypto,
   debug: () => debug,
   deleteFile: () => deleteFile,
@@ -229,8 +230,8 @@ var urlValidator = {
     const regex = new RegExp(`^https?:\\/\\/(www\\.)?${domain}\\/`, "i");
     return regex.test(url2);
   },
-  hasPath(url2, path3) {
-    const regex = new RegExp(`^https?:\\/\\/[^\\/]+\\/${path3}`, "i");
+  hasPath(url2, path4) {
+    const regex = new RegExp(`^https?:\\/\\/[^\\/]+\\/${path4}`, "i");
     return regex.test(url2);
   },
   hasQueryParam(url2, param) {
@@ -832,37 +833,37 @@ var crypto = {
 
 // lib/modules/fs.ts
 var import_fs2 = __toESM(require("fs"), 1);
-var readFile = (path3) => {
+var readFile = (path4) => {
   try {
-    return import_fs2.default.readFileSync(path3, "utf-8");
+    return import_fs2.default.readFileSync(path4, "utf-8");
   } catch (error2) {
     console.error("File Read Error:", error2 instanceof Error ? error2.message : error2);
     return null;
   }
 };
-var writeFile = (path3, data) => {
+var writeFile = (path4, data) => {
   try {
-    import_fs2.default.writeFileSync(path3, data, "utf-8");
+    import_fs2.default.writeFileSync(path4, data, "utf-8");
   } catch (error2) {
     console.error("File Write Error:", error2 instanceof Error ? error2.message : error2);
   }
 };
-var appendToFile = (path3, data) => {
+var appendToFile = (path4, data) => {
   try {
-    import_fs2.default.appendFileSync(path3, data + "\n", "utf-8");
+    import_fs2.default.appendFileSync(path4, data + "\n", "utf-8");
   } catch (error2) {
     console.error("File Append Error:", error2 instanceof Error ? error2.message : error2);
   }
 };
-var deleteFile = (path3) => {
+var deleteFile = (path4) => {
   try {
-    import_fs2.default.unlinkSync(path3);
+    import_fs2.default.unlinkSync(path4);
   } catch (error2) {
     console.error("File Delete Error:", error2 instanceof Error ? error2.message : error2);
   }
 };
-var fileExists = (path3) => {
-  return import_fs2.default.existsSync(path3);
+var fileExists = (path4) => {
+  return import_fs2.default.existsSync(path4);
 };
 
 // lib/modules/os.ts
@@ -919,15 +920,15 @@ var buildUrl = (baseUrl, params) => {
 var import_child_process = require("child_process");
 var runCommand = (command, cwd, timeout = 5e3) => {
   return new Promise((resolve, reject) => {
-    const process = (0, import_child_process.exec)(command, { cwd, timeout }, (error2, stdout, stderr) => {
+    const process2 = (0, import_child_process.exec)(command, { cwd, timeout }, (error2, stdout, stderr) => {
       if (error2)
         return reject(`Error: ${error2.message}`);
       if (stderr)
         return reject(`Stderr: ${stderr}`);
       resolve(stdout.trim());
     });
-    process.stdout?.on("data", (data) => console.log(data.toString()));
-    process.stderr?.on("data", (data) => console.error(data.toString()));
+    process2.stdout?.on("data", (data) => console.log(data.toString()));
+    process2.stderr?.on("data", (data) => console.error(data.toString()));
   });
 };
 var runCommandSync = (command, cwd) => {
@@ -940,11 +941,11 @@ var runCommandSync = (command, cwd) => {
 };
 var runSpawn = (command, args, cwd) => {
   return new Promise((resolve, reject) => {
-    const process = (0, import_child_process.spawn)(command, args, { cwd, shell: true });
+    const process2 = (0, import_child_process.spawn)(command, args, { cwd, shell: true });
     let output = "";
-    process.stdout.on("data", (data) => output += data.toString());
-    process.stderr.on("data", (data) => console.error(`Stderr: ${data.toString()}`));
-    process.on("close", (code) => code === 0 ? resolve(output.trim()) : reject(`Exited with code ${code}`));
+    process2.stdout.on("data", (data) => output += data.toString());
+    process2.stderr.on("data", (data) => console.error(`Stderr: ${data.toString()}`));
+    process2.on("close", (code) => code === 0 ? resolve(output.trim()) : reject(`Exited with code ${code}`));
   });
 };
 
@@ -1417,40 +1418,40 @@ var Router = class {
     this.flashMessages = {};
   }
   // Add middleware
-  use(path3, middleware) {
-    if (typeof path3 === "string" && middleware) {
+  use(path4, middleware) {
+    if (typeof path4 === "string" && middleware) {
       this.middlewares.push((req, res, next) => {
         const { pathname } = parseUrl(req);
-        if (pathname.startsWith(path3)) {
-          req.url = pathname.slice(path3.length) || "/";
+        if (pathname.startsWith(path4)) {
+          req.url = pathname.slice(path4.length) || "/";
           middleware(req, res, next);
         } else {
           next();
         }
       });
-    } else if (typeof path3 === "function") {
-      this.middlewares.push(path3);
+    } else if (typeof path4 === "function") {
+      this.middlewares.push(path4);
     }
   }
   // Routes Handling
-  get(path3, handler) {
-    this.addRoute(path3, "GET", handler);
+  get(path4, handler) {
+    this.addRoute(path4, "GET", handler);
   }
-  post(path3, handler) {
-    this.addRoute(path3, "POST", handler);
+  post(path4, handler) {
+    this.addRoute(path4, "POST", handler);
   }
-  put(path3, handler) {
-    this.addRoute(path3, "PUT", handler);
+  put(path4, handler) {
+    this.addRoute(path4, "PUT", handler);
   }
-  delete(path3, handler) {
-    this.addRoute(path3, "DELETE", handler);
+  delete(path4, handler) {
+    this.addRoute(path4, "DELETE", handler);
   }
   // Add a route with a handler for a specific HTTP method
-  addRoute(path3, method, handler) {
-    if (!this.routes[path3]) {
-      this.routes[path3] = {};
+  addRoute(path4, method, handler) {
+    if (!this.routes[path4]) {
+      this.routes[path4] = {};
     }
-    this.routes[path3][method.toUpperCase()] = handler;
+    this.routes[path4][method.toUpperCase()] = handler;
   }
   // Set configuration
   set(key, value) {
@@ -2784,6 +2785,468 @@ var emojiApi = {
   }
 };
 var emoji_default = emojiApi;
+
+// lib/modules/cron/scheduled-task.ts
+var import_events3 = require("events");
+
+// lib/modules/cron/task.ts
+var import_events = require("events");
+var Task = class extends import_events.EventEmitter {
+  constructor(execution) {
+    super();
+    if (typeof execution !== "function") {
+      throw "execution must be a function";
+    }
+    this._execution = execution;
+  }
+  execute(now) {
+    let exec2;
+    try {
+      exec2 = this._execution(now);
+    } catch (error2) {
+      return this.emit("task-failed", error2);
+    }
+    if (exec2 instanceof Promise) {
+      return exec2.then(() => this.emit("task-finished")).catch((error2) => this.emit("task-failed", error2));
+    } else {
+      this.emit("task-finished");
+      return exec2;
+    }
+  }
+};
+
+// lib/modules/cron/scheduler.ts
+var import_events2 = require("events");
+
+// lib/modules/cron/validateExpression.ts
+var months_long = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+var months_short = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+var week_days_long = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+var week_days_short = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+function convertAsterisk(expression, replacement) {
+  if (expression.indexOf("*") !== -1) {
+    return expression.replace("*", replacement);
+  }
+  return expression;
+}
+function convertAsterisksToRanges(expressions) {
+  expressions[0] = convertAsterisk(expressions[0], "0-59");
+  expressions[1] = convertAsterisk(expressions[1], "0-59");
+  expressions[2] = convertAsterisk(expressions[2], "0-23");
+  expressions[3] = convertAsterisk(expressions[3], "1-31");
+  expressions[4] = convertAsterisk(expressions[4], "1-12");
+  expressions[5] = convertAsterisk(expressions[5], "0-6");
+  return expressions;
+}
+function convertMonthName(expression, items) {
+  for (let i = 0; i < items.length; i++) {
+    expression = expression.replace(new RegExp(items[i], "gi"), (i + 1).toString());
+  }
+  return expression;
+}
+function interpreteMonth(monthExpression) {
+  monthExpression = convertMonthName(monthExpression, months_long);
+  monthExpression = convertMonthName(monthExpression, months_short);
+  return monthExpression;
+}
+function replaceWithRange(expression, text, init, end) {
+  const numbers = [];
+  let last = parseInt(end);
+  let first = parseInt(init);
+  if (first > last) {
+    last = parseInt(init);
+    first = parseInt(end);
+  }
+  for (let i = first; i <= last; i++) {
+    numbers.push(i);
+  }
+  return expression.replace(new RegExp(text, "i"), numbers.join(","));
+}
+function convertRange(expression) {
+  const rangeRegEx = /(\d+)-(\d+)/;
+  let match = rangeRegEx.exec(expression);
+  while (match !== null && match.length > 0) {
+    expression = replaceWithRange(expression, match[0], match[1], match[2]);
+    match = rangeRegEx.exec(expression);
+  }
+  return expression;
+}
+function convertAllRanges(expressions) {
+  for (let i = 0; i < expressions.length; i++) {
+    expressions[i] = convertRange(expressions[i]);
+  }
+  return expressions;
+}
+function convertSteps(expressions) {
+  const stepValuePattern = /^(.+)\/(\w+)$/;
+  for (let i = 0; i < expressions.length; i++) {
+    const match = stepValuePattern.exec(expressions[i]);
+    const isStepValue = match !== null && match.length > 0;
+    if (isStepValue) {
+      const baseDivider = match[2];
+      if (isNaN(Number(baseDivider))) {
+        throw new Error(baseDivider + " is not a valid step value");
+      }
+      const values = match[1].split(",");
+      const stepValues = [];
+      const divider = parseInt(baseDivider, 10);
+      for (let j = 0; j < values.length; j++) {
+        const value = parseInt(values[j], 10);
+        if (value % divider === 0) {
+          stepValues.push(value);
+        }
+      }
+      expressions[i] = stepValues.join(",");
+    }
+  }
+  return expressions;
+}
+function convertWeekDayName(expression, items) {
+  for (let i = 0; i < items.length; i++) {
+    expression = expression.replace(new RegExp(items[i], "gi"), i.toString());
+  }
+  return expression;
+}
+function convertWeekDays(expression) {
+  expression = expression.replace("7", "0");
+  expression = convertWeekDayName(expression, week_days_long);
+  return convertWeekDayName(expression, week_days_short);
+}
+function appendSecondExpression(expressions) {
+  if (expressions.length === 5) {
+    return ["0"].concat(expressions);
+  }
+  return expressions;
+}
+function removeSpaces(str) {
+  return str.replace(/\s{2,}/g, " ").trim();
+}
+function normalizeIntegers(expressions) {
+  for (let i = 0; i < expressions.length; i++) {
+    const numbers = expressions[i].split(",").map((num) => parseInt(num, 10));
+    expressions[i] = numbers.join(",");
+  }
+  return expressions;
+}
+function validateExpression(expression) {
+  let expressions = removeSpaces(expression).split(" ");
+  expressions = appendSecondExpression(expressions);
+  expressions[4] = interpreteMonth(expressions[4]);
+  expressions[5] = convertWeekDays(expressions[5]);
+  expressions = convertAsterisksToRanges(expressions);
+  expressions = convertAllRanges(expressions);
+  expressions = convertSteps(expressions);
+  expressions = normalizeIntegers(expressions);
+  return expressions.join(" ");
+}
+
+// lib/modules/cron/validatePattern.ts
+var validationRegex = /^(?:\d+|\*|\*\/\d+)$/;
+function isValidExpression(expression, min2, max2) {
+  const options = expression.split(",");
+  for (const option of options) {
+    const optionAsInt = parseInt(option, 10);
+    if (!Number.isNaN(optionAsInt) && (optionAsInt < min2 || optionAsInt > max2) || !validationRegex.test(option)) {
+      return false;
+    }
+  }
+  return true;
+}
+function isInvalidSecond(expression) {
+  return !isValidExpression(expression, 0, 59);
+}
+function isInvalidMinute(expression) {
+  return !isValidExpression(expression, 0, 59);
+}
+function isInvalidHour(expression) {
+  return !isValidExpression(expression, 0, 23);
+}
+function isInvalidDayOfMonth(expression) {
+  return !isValidExpression(expression, 1, 31);
+}
+function isInvalidMonth(expression) {
+  return !isValidExpression(expression, 1, 12);
+}
+function isInvalidWeekDay(expression) {
+  return !isValidExpression(expression, 0, 7);
+}
+function validateFields(patterns, executablePatterns) {
+  if (isInvalidSecond(executablePatterns[0]))
+    throw new Error(`${patterns[0]} is a invalid expression for second`);
+  if (isInvalidMinute(executablePatterns[1]))
+    throw new Error(`${patterns[1]} is a invalid expression for minute`);
+  if (isInvalidHour(executablePatterns[2]))
+    throw new Error(`${patterns[2]} is a invalid expression for hour`);
+  if (isInvalidDayOfMonth(executablePatterns[3]))
+    throw new Error(`${patterns[3]} is a invalid expression for day of month`);
+  if (isInvalidMonth(executablePatterns[4]))
+    throw new Error(`${patterns[4]} is a invalid expression for month`);
+  if (isInvalidWeekDay(executablePatterns[5]))
+    throw new Error(`${patterns[5]} is a invalid expression for week day`);
+}
+function validatePattern(pattern) {
+  if (typeof pattern !== "string")
+    throw new TypeError("pattern must be a string!");
+  const patterns = pattern.split(" ");
+  const executablePatterns = validateExpression(pattern).split(" ");
+  if (patterns.length === 5)
+    patterns.unshift("0");
+  validateFields(patterns, executablePatterns);
+}
+
+// lib/modules/cron/timezone.ts
+function matchPattern(pattern, value) {
+  if (pattern.indexOf(",") !== -1) {
+    const patterns = pattern.split(",");
+    return patterns.some((p) => matchPattern(p, value));
+  }
+  if (pattern.indexOf("-") !== -1) {
+    const [start, end] = pattern.split("-").map((x) => parseInt(x, 10));
+    return value >= start && value <= end;
+  }
+  return pattern === value.toString();
+}
+var TimeZone = class {
+  constructor(pattern, timezone) {
+    validatePattern(pattern);
+    this.pattern = validateExpression(pattern);
+    this.timezone = timezone;
+    this.expressions = this.pattern.split(" ");
+    this.dtf = this.timezone ? new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+      timeZone: this.timezone
+    }) : null;
+  }
+  match(date) {
+    date = this.apply(date);
+    const runOnSecond = matchPattern(this.expressions[0], date.getSeconds());
+    const runOnMinute = matchPattern(this.expressions[1], date.getMinutes());
+    const runOnHour = matchPattern(this.expressions[2], date.getHours());
+    const runOnDay = matchPattern(this.expressions[3], date.getDate());
+    const runOnMonth = matchPattern(this.expressions[4], date.getMonth() + 1);
+    const runOnWeekDay = matchPattern(this.expressions[5], date.getDay());
+    return runOnSecond && runOnMinute && runOnHour && runOnDay && runOnMonth && runOnWeekDay;
+  }
+  apply(date) {
+    if (this.dtf) {
+      return new Date(this.dtf.format(date));
+    }
+    return date;
+  }
+};
+
+// lib/modules/cron/scheduler.ts
+var Scheduler = class extends import_events2.EventEmitter {
+  constructor(pattern, timezone, autorecover) {
+    super();
+    this.timeout = null;
+    this.timeMatcher = new TimeZone(pattern, timezone);
+    this.autorecover = autorecover;
+  }
+  start() {
+    this.stop();
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+      this.timeout = null;
+    }
+    let lastCheck = process.hrtime();
+    let lastExecution = this.timeMatcher.apply(/* @__PURE__ */ new Date());
+    const matchTime = () => {
+      const delay = 1e3;
+      const elapsedTime = process.hrtime(lastCheck);
+      const elapsedMs = (elapsedTime[0] * 1e9 + elapsedTime[1]) / 1e6;
+      const missedExecutions = Math.floor(elapsedMs / 1e3);
+      for (let i = missedExecutions; i >= 0; i--) {
+        const date = new Date((/* @__PURE__ */ new Date()).getTime() - i * 1e3);
+        let date_tmp = this.timeMatcher.apply(date);
+        if (lastExecution.getTime() < date_tmp.getTime() && (i === 0 || this.autorecover) && this.timeMatcher.match(date)) {
+          this.emit("scheduled-time-matched", date_tmp);
+          date_tmp.setMilliseconds(0);
+          lastExecution = date_tmp;
+        }
+      }
+      lastCheck = process.hrtime();
+      this.timeout = setTimeout(matchTime, delay);
+    };
+    matchTime();
+  }
+  stop() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+    this.timeout = null;
+  }
+};
+
+// lib/modules/cron/scheduled-task.ts
+var ScheduledTask = class extends import_events3.EventEmitter {
+  constructor(cronExpression, func2, options) {
+    super();
+    if (!options) {
+      options = {
+        scheduled: true,
+        recoverMissedExecutions: false
+      };
+    }
+    this.options = options;
+    this.options.name = this.options.name || getRandom({ Alphabets: true, Numbers: true, DateNow: true, length: 40 });
+    this._task = new Task(func2);
+    this._scheduler = new Scheduler(cronExpression, options.timezone, options.recoverMissedExecutions);
+    this._scheduler.on("scheduled-time-matched", (now) => {
+      this.now(now);
+    });
+    if (options.scheduled !== false) {
+      this._scheduler.start();
+    }
+    if (options.runOnInit === true) {
+      this.now("init");
+    }
+  }
+  now(now = "manual") {
+    const result = this._task.execute(now);
+    this.emit("task-done", result);
+  }
+  start() {
+    this._scheduler.start();
+  }
+  stop() {
+    this._scheduler.stop();
+  }
+};
+
+// lib/modules/cron/backgroundScheduledTask.ts
+var import_events4 = require("events");
+var import_path3 = __toESM(require("path"), 1);
+var import_child_process2 = require("child_process");
+var scheduledTask;
+function register(message) {
+  const script = require(message.path);
+  scheduledTask = new ScheduledTask(message.cron, script.task, message.options);
+  scheduledTask.on("task-done", (result) => {
+    if (process.send) {
+      process.send({ type: "task-done", result });
+    }
+  });
+  if (process.send) {
+    process.send({ type: "registered" });
+  }
+}
+if (process.send) {
+  process.on("message", (message) => {
+    switch (message.type) {
+      case "register":
+        return register(message);
+    }
+  });
+}
+var daemonPath = __filename;
+var BackgroundScheduledTask = class extends import_events4.EventEmitter {
+  constructor(cronExpression, taskPath, options) {
+    super();
+    this.forkProcess = null;
+    if (!options) {
+      options = {
+        scheduled: true,
+        recoverMissedExecutions: false
+      };
+    }
+    this.cronExpression = cronExpression;
+    this.taskPath = taskPath;
+    this.options = options;
+    this.options.name = this.options.name || getRandom({ Alphabets: true, Numbers: true, DateNow: true, length: 40 });
+    if (options.scheduled) {
+      this.start();
+    }
+  }
+  start() {
+    this.stop();
+    this.forkProcess = (0, import_child_process2.fork)(daemonPath);
+    this.forkProcess.on("message", (message) => {
+      switch (message.type) {
+        case "task-done":
+          this.emit("task-done", message.result);
+          break;
+      }
+    });
+    const options = this.options;
+    options.scheduled = true;
+    this.forkProcess.send({
+      type: "register",
+      path: import_path3.default.resolve(this.taskPath),
+      cron: this.cronExpression,
+      options
+    });
+  }
+  stop() {
+    if (this.forkProcess) {
+      this.forkProcess.kill();
+    }
+  }
+  pid() {
+    if (this.forkProcess) {
+      return this.forkProcess.pid;
+    }
+  }
+  isRunning() {
+    return !!this.forkProcess && !this.forkProcess.killed;
+  }
+};
+var backgroundScheduledTask_default = BackgroundScheduledTask;
+
+// lib/modules/cron/storage.ts
+var storage = (() => {
+  if (!global.scheduledTasks) {
+    global.scheduledTasks = /* @__PURE__ */ new Map();
+  }
+  return {
+    save: (task) => {
+      if (!task.options) {
+        task.options = {};
+        task.options.name = getRandom({ Alphabets: true, Numbers: true, DateNow: true, length: 40 });
+      }
+      global.scheduledTasks.set(task.options.name, task);
+    },
+    getTasks: () => {
+      return global.scheduledTasks;
+    }
+  };
+})();
+
+// lib/modules/cron/cron.ts
+function createTask(expression, func2, options) {
+  if (typeof func2 === "string")
+    return new backgroundScheduledTask_default(expression, func2, options);
+  return new ScheduledTask(expression, func2, options);
+}
+function schedule(expression, func2, options) {
+  const task = createTask(expression, func2, options);
+  storage.save(task);
+  return task;
+}
+function getTasks() {
+  return storage.getTasks();
+}
+function validate(expression) {
+  try {
+    validatePattern(expression);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+// lib/modules/cron/index.ts
+var cron = {
+  schedule,
+  getTasks,
+  validate
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ReadMore,
@@ -2795,6 +3258,7 @@ var emoji_default = emojiApi;
   buildUrl,
   checkTLSHandshake,
   clear,
+  cron,
   crypto,
   debug,
   deleteFile,

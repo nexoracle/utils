@@ -5,6 +5,7 @@ import querystring from 'querystring';
 import http, { ServerResponse, IncomingMessage } from 'http';
 import tls from 'tls';
 import { EntryType, PerformanceObserver, PerformanceNodeTiming } from 'perf_hooks';
+import { EventEmitter } from 'events';
 
 declare function getRandom(options?: {
     Alphabets?: boolean;
@@ -696,4 +697,36 @@ declare const emojiApi: {
     unicodeToEmoji(unicode: string): string;
 };
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, crypto, debug, deleteFile, downloadFile, emojiApi, error, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };
+declare class ScheduledTask extends EventEmitter {
+    private _task;
+    private _scheduler;
+    options: any;
+    constructor(cronExpression: string, func: Function, options?: any);
+    now(now?: any): void;
+    start(): void;
+    stop(): void;
+}
+
+declare class BackgroundScheduledTask extends EventEmitter {
+    private cronExpression;
+    private taskPath;
+    private options;
+    private forkProcess;
+    constructor(cronExpression: string, taskPath: string, options?: any);
+    start(): void;
+    stop(): void;
+    pid(): number | undefined;
+    isRunning(): boolean;
+}
+
+declare function schedule(expression: string, func: Function | string, options?: any): ScheduledTask | BackgroundScheduledTask;
+declare function getTasks(): Map<string, ScheduledTask | BackgroundScheduledTask>;
+declare function validate(expression: string): boolean;
+
+declare const cron: {
+    schedule: typeof schedule;
+    getTasks: typeof getTasks;
+    validate: typeof validate;
+};
+
+export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, cron, crypto, debug, deleteFile, downloadFile, emojiApi, error, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };
