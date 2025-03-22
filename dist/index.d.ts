@@ -124,7 +124,7 @@ interface FetchOptions extends RequestInit {
     onDownloadProgress?: (progress: ProgressEvent) => void;
     onUploadProgress?: (progress: ProgressEvent) => void;
     signal?: AbortSignal;
-    responseType?: 'arraybuffer' | 'blob' | 'json' | 'text';
+    responseType?: "arraybuffer" | "blob" | "json" | "text";
 }
 type Interceptor<T> = (value: T) => T | Promise<T>;
 declare class ProgressEvent {
@@ -133,17 +133,21 @@ declare class ProgressEvent {
     constructor(loaded: number, total: number);
     get percent(): number;
 }
-declare class Axium {
+
+declare class RequestHandler {
+    private globalDefaults;
     private requestInterceptors;
     private responseInterceptors;
-    private globalDefaults;
-    constructor(defaults?: FetchOptions);
+    constructor(globalDefaults: FetchOptions);
     addRequestInterceptor(interceptor: Interceptor<FetchOptions>): void;
     addResponseInterceptor(interceptor: Interceptor<Response>): void;
     setGlobalDefaults(defaults: FetchOptions): void;
-    private applyInterceptors;
-    private buildUrl;
+    buildUrl(url: string, params?: Record<string, string | number | boolean>): string;
     request(url: string, options?: FetchOptions): Promise<any>;
+}
+
+declare class Axium extends RequestHandler {
+    constructor(defaults?: FetchOptions);
     get(url: string, options?: FetchOptions): Promise<any>;
     post(url: string, data: any, options?: FetchOptions): Promise<any>;
     put(url: string, data: any, options?: FetchOptions): Promise<any>;
@@ -461,183 +465,22 @@ declare class passwordValidator {
     positive: boolean;
     list: boolean;
     details: boolean;
-    /**
-     * Creates a password-validator schema
-     *
-     * @constructor
-     */
     constructor();
-    /**
-     * Method to validate the password against schema
-     *
-     * @param {string} pwd - password to validate
-     * @param {object} [options] - optional options to configure validation
-     * @param {boolean} [options.list] - asks for a list of validation
-     *           failures instead of just true/false
-     * @param {boolean} [options.details] - asks for more details about
-     *           failed validations including arguments, and error messages
-     * @returns {boolean|array} Boolean value indicting the validity
-     *           of the password as per schema, if 'options.list' or
-     *           'options.details' is not set. Otherwise, it returns an
-     *           array of property names which failed validations
-     */
     validate(pwd: string, options?: ValidationOptions): ValidationResult;
-    /**
-     * Rule to mandate the presence of letters in the password
-     *
-     * @param {number} [count] - minimum number of letters required
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     letters(count?: number, description?: string): passwordValidator;
-    /**
-     * Rule to mandate the presence of digits in the password
-     *
-     * @param {number} [count] - minimum number of digits required
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     digits(count?: number, description?: string): passwordValidator;
-    /**
-     * Rule to mandate the presence of symbols in the password
-     *
-     * @param {number} [count] - minimum number of symbols required
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     symbols(count?: number, description?: string): passwordValidator;
-    /**
-     * Rule to specify a minimum length of the password
-     *
-     * @param {number} num - minimum length
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     min(num: number, description?: string): passwordValidator;
-    /**
-     * Rule to specify a maximum length of the password
-     *
-     * @param {number} num - maximum length
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     max(num: number, description?: string): passwordValidator;
-    /**
-     * Rule to mandate the presence of lowercase letters in the password
-     *
-     * @param {number} [count] - minimum number of lowercase letters required
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     lowercase(count?: number, description?: string): passwordValidator;
-    /**
-     * Rule to mandate the presence of uppercase letters in the password
-     *
-     * @param {number} [count] - minimum number of uppercase letters required
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     uppercase(count?: number, description?: string): passwordValidator;
-    /**
-     * Rule to mandate the presence of space in the password
-     * It can be used along with 'not' to not allow spaces
-     * in the password
-     *
-     * @param {number} [count] - minimum number of spaces required
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     spaces(count?: number, description?: string): passwordValidator;
-    /**
-     * Rule to invert the effects of 'not'
-     * Apart from that, 'has' is also used
-     * to make the api readable and chainable
-     *
-     * @param {string|RegExp} [pattern] - pattern to match
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     has(pattern?: string | RegExp, description?: string): passwordValidator;
-    /**
-     * Rule to invert the next applied rules.
-     * All the rules applied after 'not' will have opposite effect,
-     * until 'has' rule is applied
-     *
-     * @param {string|RegExp} [pattern] - pattern to not match
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     not(pattern?: string | RegExp, description?: string): passwordValidator;
-    /**
-     * Rule to invert the effects of 'not'
-     * Apart from that, 'is' is also used
-     * to make the api readable and chainable
-     *
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     is(): passwordValidator;
-    /**
-     * Rule to whitelist words to be used as password
-     *
-     * @param {array} list - list of values allowed
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     oneOf(list: string[], description?: string): passwordValidator;
-    /**
-     * Insert a plugin function into the validation chain
-     *
-     * @param {PluginFunction} fn  - A plugin function
-     * @param {string} [description] - description of the validation
-     * @returns {passwordValidator} instance of passwordValidator schema
-     */
     usingPlugin(fn: PluginFunction, description?: string): passwordValidator;
 }
-
-interface StringOptions {
-    method: "string";
-    min?: number;
-    max?: number;
-    length?: number;
-    pool?: string;
-    prefix?: string;
-    batch?: number;
-}
-interface BytesOptions {
-    method: "bytes";
-    min?: number;
-    max?: number;
-    length?: number;
-    prefix?: string;
-    batch?: number;
-}
-interface Base32Options {
-    method: "base32";
-    dashes?: boolean;
-    prefix?: string;
-    batch?: number;
-}
-interface Base64Options {
-    method: "base64";
-    prefix?: string;
-    batch?: number;
-}
-interface UuidV4Options {
-    method: "uuidv4";
-    dashes?: boolean;
-    prefix?: string;
-    batch?: number;
-}
-interface UuidV5Options {
-    method: "uuidv5";
-    name: string;
-    namespace?: string;
-    dashes?: boolean;
-    prefix?: string;
-    batch?: number;
-}
-type Options = StringOptions | BytesOptions | Base32Options | Base64Options | UuidV4Options | UuidV5Options;
-declare function generateApiKey(options?: Options): string | string[];
 
 interface EmojiInfo {
     emoji: string;
@@ -732,4 +575,50 @@ declare const cron: {
     validate: typeof validate;
 };
 
-export { FetchOptions, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, cron, crypto, debug, deleteFile, downloadFile, emojiApi, ensurePackage, error, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getFileSize, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, runtime, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };
+interface StringOptions {
+    method: "string";
+    min?: number;
+    max?: number;
+    length?: number;
+    pool?: string;
+    prefix?: string;
+    batch?: number;
+}
+interface BytesOptions {
+    method: "bytes";
+    min?: number;
+    max?: number;
+    length?: number;
+    prefix?: string;
+    batch?: number;
+}
+interface Base32Options {
+    method: "base32";
+    dashes?: boolean;
+    prefix?: string;
+    batch?: number;
+}
+interface Base64Options {
+    method: "base64";
+    prefix?: string;
+    batch?: number;
+}
+interface UuidV4Options {
+    method: "uuidv4";
+    dashes?: boolean;
+    prefix?: string;
+    batch?: number;
+}
+interface UuidV5Options {
+    method: "uuidv5";
+    name: string;
+    namespace?: string;
+    dashes?: boolean;
+    prefix?: string;
+    batch?: number;
+}
+type Options = StringOptions | BytesOptions | Base32Options | Base64Options | UuidV4Options | UuidV5Options;
+
+declare function generateApiKey(options?: Options): string | string[];
+
+export { ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, cron, crypto, debug, deleteFile, downloadFile, emojiApi, ensurePackage, error, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getFileSize, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, runtime, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };

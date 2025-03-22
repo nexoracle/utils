@@ -480,8 +480,7 @@ function ensurePackage(packageName, packageManager = "npm", shouldInstall = true
   }
 }
 
-// lib/modules/axium.ts
-import { Buffer as Buffer2 } from "buffer";
+// lib/modules/axium/types.ts
 var FetchError = class extends Error {
   constructor(message, status, response) {
     super(message);
@@ -500,38 +499,42 @@ var ProgressEvent = class {
     return this.total > 0 ? this.loaded / this.total * 100 : 0;
   }
 };
-var Axium = class {
-  constructor(defaults) {
-    this.requestInterceptors = [];
-    this.responseInterceptors = [];
-    this.globalDefaults = {
-      headers: {
-        "Content-Type": "application/json"
-      }
-    };
-    if (defaults) {
-      this.globalDefaults = { ...this.globalDefaults, ...defaults };
+
+// lib/modules/axium/interceptors.ts
+var InterceptorManager = class {
+  constructor() {
+    this.interceptors = [];
+  }
+  add(interceptor) {
+    this.interceptors.push(interceptor);
+  }
+  async apply(value) {
+    let result = value;
+    for (const interceptor of this.interceptors) {
+      result = await interceptor(result);
     }
+    return result;
+  }
+};
+
+// lib/modules/axium/request.ts
+var RequestHandler = class {
+  constructor(globalDefaults) {
+    this.globalDefaults = globalDefaults;
+    this.requestInterceptors = new InterceptorManager();
+    this.responseInterceptors = new InterceptorManager();
   }
   // Add request interceptor
   addRequestInterceptor(interceptor) {
-    this.requestInterceptors.push(interceptor);
+    this.requestInterceptors.add(interceptor);
   }
   // Add response interceptor
   addResponseInterceptor(interceptor) {
-    this.responseInterceptors.push(interceptor);
+    this.responseInterceptors.add(interceptor);
   }
   // Set global defaults
   setGlobalDefaults(defaults) {
     this.globalDefaults = { ...this.globalDefaults, ...defaults };
-  }
-  // Apply interceptors
-  async applyInterceptors(interceptors, value) {
-    let result = value;
-    for (const interceptor of interceptors) {
-      result = await interceptor(result);
-    }
-    return result;
   }
   // Build URL with query parameters
   buildUrl(url2, params) {
@@ -547,7 +550,7 @@ var Axium = class {
   }
   // Core fetch request
   async request(url2, options = {}) {
-    const { retries = 0, retryDelay = 0, timeout, params, onDownloadProgress, onUploadProgress, signal: externalSignal, ...fetchOptions } = await this.applyInterceptors(this.requestInterceptors, { ...this.globalDefaults, ...options });
+    const { retries = 0, retryDelay = 0, timeout, params, onDownloadProgress, onUploadProgress, signal: externalSignal, ...fetchOptions } = await this.requestInterceptors.apply({ ...this.globalDefaults, ...options });
     const finalUrl = this.buildUrl(url2, params);
     for (let attempt = 0; attempt <= retries; attempt++) {
       const controller = new AbortController();
@@ -566,6 +569,15 @@ var Axium = class {
           clearTimeout(timeoutId);
         if (!response.ok) {
           throw new FetchError(`HTTP error! Status: ${response.status}`, response.status, response);
+        }
+        if (fetchOptions.method === "HEAD") {
+          return {
+            data: null,
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+            config: options
+          };
         }
         if (onDownloadProgress && response.body) {
           const reader = response.body.getReader();
@@ -589,14 +601,14 @@ var Axium = class {
             status: response.status,
             statusText: response.statusText
           });
-          const interceptedResponse = await this.applyInterceptors(this.responseInterceptors, newResponse);
+          const interceptedResponse = await this.responseInterceptors.apply(newResponse);
           const contentType = interceptedResponse.headers.get("content-type");
           let data;
           if (options.responseType) {
             switch (options.responseType) {
               case "arraybuffer":
                 data = await interceptedResponse.arrayBuffer();
-                data = Buffer2.from(data);
+                data = Buffer.from(data);
                 break;
               case "blob":
                 data = await interceptedResponse.blob();
@@ -609,7 +621,7 @@ var Axium = class {
                 break;
               default:
                 data = await interceptedResponse.arrayBuffer();
-                data = Buffer2.from(data);
+                data = Buffer.from(data);
             }
           } else {
             if (contentType?.includes("application/json")) {
@@ -622,13 +634,13 @@ var Axium = class {
               data = await interceptedResponse.blob();
             } else if (contentType?.includes("image/")) {
               data = await interceptedResponse.arrayBuffer();
-              data = Buffer2.from(data);
+              data = Buffer.from(data);
             } else if (contentType?.includes("application/octet-stream")) {
               data = await interceptedResponse.arrayBuffer();
-              data = Buffer2.from(data);
+              data = Buffer.from(data);
             } else {
               data = await interceptedResponse.arrayBuffer();
-              data = Buffer2.from(data);
+              data = Buffer.from(data);
             }
           }
           return {
@@ -639,14 +651,14 @@ var Axium = class {
             config: options
           };
         } else {
-          const interceptedResponse = await this.applyInterceptors(this.responseInterceptors, response);
+          const interceptedResponse = await this.responseInterceptors.apply(response);
           const contentType = interceptedResponse.headers.get("content-type");
           let data;
           if (options.responseType) {
             switch (options.responseType) {
               case "arraybuffer":
                 data = await interceptedResponse.arrayBuffer();
-                data = Buffer2.from(data);
+                data = Buffer.from(data);
                 break;
               case "blob":
                 data = await interceptedResponse.blob();
@@ -659,7 +671,7 @@ var Axium = class {
                 break;
               default:
                 data = await interceptedResponse.arrayBuffer();
-                data = Buffer2.from(data);
+                data = Buffer.from(data);
             }
           } else {
             if (contentType?.includes("application/json")) {
@@ -672,13 +684,13 @@ var Axium = class {
               data = await interceptedResponse.blob();
             } else if (contentType?.includes("image/")) {
               data = await interceptedResponse.arrayBuffer();
-              data = Buffer2.from(data);
+              data = Buffer.from(data);
             } else if (contentType?.includes("application/octet-stream")) {
               data = await interceptedResponse.arrayBuffer();
-              data = Buffer2.from(data);
+              data = Buffer.from(data);
             } else {
               data = await interceptedResponse.arrayBuffer();
-              data = Buffer2.from(data);
+              data = Buffer.from(data);
             }
           }
           return {
@@ -693,8 +705,10 @@ var Axium = class {
         if (timeoutId)
           clearTimeout(timeoutId);
         if (attempt === retries) {
-          console.error(`Fetch failed after ${retries + 1} attempts:`, error2.message);
-          throw new FetchError(error2.message || "Request failed");
+          if (retries && retries !== 0) {
+            console.error(`Fetch failed after ${retries + 1} attempts`);
+            throw new FetchError(error2.message || "Request failed");
+          }
         }
         if (retryDelay > 0) {
           console.warn(`Retrying... (${attempt + 1}/${retries + 1})`);
@@ -702,6 +716,18 @@ var Axium = class {
         }
       }
     }
+  }
+};
+
+// lib/modules/axium/axium.ts
+var Axium = class extends RequestHandler {
+  constructor(defaults) {
+    super({
+      headers: {
+        "Content-Type": "application/json"
+      },
+      ...defaults
+    });
   }
   // Helper methods
   get(url2, options = {}) {
@@ -757,6 +783,7 @@ var Axium = class {
   }
 };
 var axium = new Axium();
+var axium_default = axium;
 
 // lib/modules/crypto.ts
 import * as Crypto from "crypto";
@@ -2002,7 +2029,7 @@ function isDomainReachable(host) {
 import https from "https";
 import fs4 from "fs";
 function logError(error2) {
-  console.error(`[HTTPS Error]: ${error2.message}`);
+  console.error(`[HTTPS Error]: ${error2}`);
 }
 function downloadFile(url2, destination) {
   return new Promise((resolve, reject) => {
@@ -2131,11 +2158,6 @@ function _process(regexp, repeat) {
   return new RegExp(regexp).test(this.password) === this.positive;
 }
 var func = {
-  /**
-   * Method to invert the next validations
-   *
-   * @param {RegExp} [symbol] - custom Regex which should not be present
-   */
   not: function not(symbol) {
     this.positive = false;
     if (symbol) {
@@ -2143,11 +2165,6 @@ var func = {
     }
     return true;
   },
-  /**
-   * Method to invert the effects of not()
-   *
-   * @param {RegExp} [symbol] - custom Regex which should be present
-   */
   has: function has(symbol) {
     this.positive = true;
     if (symbol) {
@@ -2155,52 +2172,22 @@ var func = {
     }
     return true;
   },
-  /**
-   * Method to invert the effects of not() and
-   * to make the api readable and chainable
-   *
-   */
   is: function is() {
     this.positive = true;
     return true;
   },
-  /**
-   * Method to specify a minimum length
-   *
-   * @param {number} num - minimum length
-   */
   min: function min(num) {
     return this.password.length >= num;
   },
-  /**
-   * Method to specify a maximum length
-   *
-   * @param {number} num - maximum length
-   */
   max: function max(num) {
     return this.password.length <= num;
   },
-  /**
-   * Method to validate the presence of digits
-   *
-   * @param {number} repeat - count of required digits
-   */
   digits: function digits(repeat) {
     return _process.call(this, regexHandler.digits, repeat);
   },
-  /**
-   * Method to validate the presence of letters
-   *
-   * @param {number} repeat - count of required letters
-   */
   letters: function letters(repeat) {
     return _process.call(this, regexHandler.letters, repeat);
   },
-  /**
-   * Method to validate the presence of uppercase letters
-   *
-   * @param {number} repeat - count of required uppercase letters
-   */
   uppercase: function uppercase(repeat) {
     if (repeat && repeat > 1) {
       let characterIndex = 0;
@@ -2216,11 +2203,6 @@ var func = {
     }
     return this.password !== this.password.toLowerCase() === this.positive;
   },
-  /**
-   * Method to validate the presence of lowercase letters
-   *
-   * @param {number} repeat - count of required lowercase letters
-   */
   lowercase: function lowercase(repeat) {
     if (repeat && repeat > 1) {
       let characterIndex = 0;
@@ -2236,35 +2218,15 @@ var func = {
     }
     return this.password !== this.password.toUpperCase() === this.positive;
   },
-  /**
-   * Method to validate the presence of symbols
-   *
-   * @param {number} repeat - count of required symbols
-   */
   symbols: function symbols(repeat) {
     return _process.call(this, regexHandler.symbols, repeat);
   },
-  /**
-   * Method to validate the presence of space
-   *
-   * @param {number} repeat - count of required spaces
-   */
   spaces: function spaces(repeat) {
     return _process.call(this, regexHandler.spaces, repeat);
   },
-  /**
-   * Method to provide pre-defined values for password
-   *
-   * @param {array} list - list of values allowed
-   */
   oneOf: function oneOf(list) {
     return list.indexOf(this.password) >= 0 === this.positive;
   },
-  /**
-   * Method to run a plugin function for password
-   *
-   * @param {function} plugin - A plugin function
-   */
   usingPlugin: function usingPlugin(fn) {
     try {
       const result = fn.call({}, this.password);
@@ -2328,11 +2290,6 @@ function _register(method, args, description) {
   return this;
 }
 var passwordValidator = class {
-  /**
-   * Creates a password-validator schema
-   *
-   * @constructor
-   */
   constructor() {
     this.password = "";
     this.positive = true;
@@ -2340,20 +2297,6 @@ var passwordValidator = class {
     this.details = false;
     this.properties = [];
   }
-  /**
-   * Method to validate the password against schema
-   *
-   * @param {string} pwd - password to validate
-   * @param {object} [options] - optional options to configure validation
-   * @param {boolean} [options.list] - asks for a list of validation
-   *           failures instead of just true/false
-   * @param {boolean} [options.details] - asks for more details about
-   *           failed validations including arguments, and error messages
-   * @returns {boolean|array} Boolean value indicting the validity
-   *           of the password as per schema, if 'options.list' or
-   *           'options.details' is not set. Otherwise, it returns an
-   *           array of property names which failed validations
-   */
   validate(pwd, options) {
     this.list = Boolean(options && options.list);
     this.details = Boolean(options && options.details);
@@ -2382,147 +2325,50 @@ var passwordValidator = class {
     }
     return this.properties.every(_isPasswordValidFor.bind(this));
   }
-  /**
-   * Rule to mandate the presence of letters in the password
-   *
-   * @param {number} [count] - minimum number of letters required
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   letters(count, description) {
     count && _validateLength(count);
     return _register.call(this, "letters", arguments);
   }
-  /**
-   * Rule to mandate the presence of digits in the password
-   *
-   * @param {number} [count] - minimum number of digits required
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   digits(count, description) {
     count && _validateLength(count);
     return _register.call(this, "digits", arguments);
   }
-  /**
-   * Rule to mandate the presence of symbols in the password
-   *
-   * @param {number} [count] - minimum number of symbols required
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   symbols(count, description) {
     count && _validateLength(count);
     return _register.call(this, "symbols", arguments);
   }
-  /**
-   * Rule to specify a minimum length of the password
-   *
-   * @param {number} num - minimum length
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   min(num, description) {
     _validateLength(num);
     return _register.call(this, "min", arguments);
   }
-  /**
-   * Rule to specify a maximum length of the password
-   *
-   * @param {number} num - maximum length
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   max(num, description) {
     _validateLength(num);
     return _register.call(this, "max", arguments);
   }
-  /**
-   * Rule to mandate the presence of lowercase letters in the password
-   *
-   * @param {number} [count] - minimum number of lowercase letters required
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   lowercase(count, description) {
     count && _validateLength(count);
     return _register.call(this, "lowercase", arguments);
   }
-  /**
-   * Rule to mandate the presence of uppercase letters in the password
-   *
-   * @param {number} [count] - minimum number of uppercase letters required
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   uppercase(count, description) {
     count && _validateLength(count);
     return _register.call(this, "uppercase", arguments);
   }
-  /**
-   * Rule to mandate the presence of space in the password
-   * It can be used along with 'not' to not allow spaces
-   * in the password
-   *
-   * @param {number} [count] - minimum number of spaces required
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   spaces(count, description) {
     count && _validateLength(count);
     return _register.call(this, "spaces", arguments);
   }
-  /**
-   * Rule to invert the effects of 'not'
-   * Apart from that, 'has' is also used
-   * to make the api readable and chainable
-   *
-   * @param {string|RegExp} [pattern] - pattern to match
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   has(pattern, description) {
     return _register.call(this, "has", arguments);
   }
-  /**
-   * Rule to invert the next applied rules.
-   * All the rules applied after 'not' will have opposite effect,
-   * until 'has' rule is applied
-   *
-   * @param {string|RegExp} [pattern] - pattern to not match
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   not(pattern, description) {
     return _register.call(this, "not", arguments);
   }
-  /**
-   * Rule to invert the effects of 'not'
-   * Apart from that, 'is' is also used
-   * to make the api readable and chainable
-   *
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   is() {
     return _register.call(this, "is", arguments);
   }
-  /**
-   * Rule to whitelist words to be used as password
-   *
-   * @param {array} list - list of values allowed
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   oneOf(list, description) {
     return _register.call(this, "oneOf", arguments);
   }
-  /**
-   * Insert a plugin function into the validation chain
-   *
-   * @param {PluginFunction} fn  - A plugin function
-   * @param {string} [description] - description of the validation
-   * @returns {passwordValidator} instance of passwordValidator schema
-   */
   usingPlugin(fn, description) {
     if (typeof fn !== "function") {
       throw new Error(errorHandler.invalidPlugin);
@@ -2531,102 +2377,6 @@ var passwordValidator = class {
   }
 };
 var passwordValidator_default = passwordValidator;
-
-// lib/modules/generateApiKey.ts
-import { createHash as createHash2, randomBytes as randomBytes2 } from "crypto";
-function generateRandomString(length, pool) {
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += pool[Math.floor(Math.random() * pool.length)];
-  }
-  return result;
-}
-function generateRandomBytes(length) {
-  const bytes = randomBytes2(length);
-  return bytes.toString("hex").slice(0, length);
-}
-function generateBase32(dashes = true) {
-  const uuid = generateUuidV4(false);
-  const base32Chars = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-  let result = "";
-  for (let i = 0; i < uuid.length; i++) {
-    const char = uuid[i];
-    if (char !== "-") {
-      result += base32Chars[parseInt(char, 16) % 32];
-    }
-  }
-  return dashes ? result.match(/.{1,4}/g).join("-") : result;
-}
-function generateBase64() {
-  const bytes = randomBytes2(24);
-  return bytes.toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-}
-function generateUuidV4(dashes = true) {
-  const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === "x" ? r : r & 3 | 8;
-    return v.toString(16);
-  });
-  return dashes ? uuid : uuid.replace(/-/g, "");
-}
-function generateUuidV5(name, namespace, dashes = true) {
-  const namespaceBytes = uuidToBytes(namespace || generateUuidV4(false));
-  const nameBytes = Buffer.from(name, "utf8");
-  const data = Buffer.concat([namespaceBytes, nameBytes]);
-  const hash = createHash2("sha1").update(data).digest();
-  const hashBytes = hash.slice(0, 16);
-  hashBytes[6] = hashBytes[6] & 15 | 80;
-  hashBytes[8] = hashBytes[8] & 63 | 128;
-  const hex = hashBytes.toString("hex");
-  const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
-  return dashes ? uuid : uuid.replace(/-/g, "");
-}
-function uuidToBytes(uuid) {
-  const hex = uuid.replace(/-/g, "");
-  return Buffer.from(hex, "hex");
-}
-function generateApiKey(options = { method: "string" }) {
-  const { method, prefix, batch } = options;
-  const generateKey = () => {
-    switch (method) {
-      case "string": {
-        const { min: min2 = 16, max: max2 = 32, length, pool = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~+/" } = options;
-        const len = length || Math.floor(Math.random() * (max2 - min2 + 1)) + min2;
-        return generateRandomString(len, pool);
-      }
-      case "bytes": {
-        const { min: min2 = 16, max: max2 = 32, length } = options;
-        const len = length || Math.floor(Math.random() * (max2 - min2 + 1)) + min2;
-        return generateRandomBytes(len);
-      }
-      case "base32": {
-        const { dashes = true } = options;
-        return generateBase32(dashes);
-      }
-      case "base64": {
-        return generateBase64();
-      }
-      case "uuidv4": {
-        const { dashes = true } = options;
-        return generateUuidV4(dashes);
-      }
-      case "uuidv5": {
-        const { name, namespace, dashes = true } = options;
-        return generateUuidV5(name, namespace || generateUuidV4(false), dashes);
-      }
-      default:
-        throw new Error(`Unsupported method: ${method}`);
-    }
-  };
-  if (batch) {
-    return Array.from({ length: batch }, () => {
-      const key2 = generateKey();
-      return prefix ? `${prefix}.${key2}` : key2;
-    });
-  }
-  const key = generateKey();
-  return prefix ? `${prefix}.${key}` : key;
-}
 
 // lib/modules/emoji-api/emoji.ts
 var emojiList;
@@ -3216,11 +2966,109 @@ var cron = {
   getTasks,
   validate
 };
+
+// lib/modules/generate-apikey/generator.ts
+import { createHash as createHash2, randomBytes as randomBytes2 } from "crypto";
+function generateRandomString(length, pool) {
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += pool[Math.floor(Math.random() * pool.length)];
+  }
+  return result;
+}
+function generateRandomBytes(length) {
+  const bytes = randomBytes2(length);
+  return bytes.toString("hex").slice(0, length);
+}
+function generateBase32(dashes = true) {
+  const uuid = generateUuidV4(false);
+  const base32Chars = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  let result = "";
+  for (let i = 0; i < uuid.length; i++) {
+    const char = uuid[i];
+    if (char !== "-") {
+      result += base32Chars[parseInt(char, 16) % 32];
+    }
+  }
+  return dashes ? result.match(/.{1,4}/g).join("-") : result;
+}
+function generateBase64() {
+  const bytes = randomBytes2(24);
+  return bytes.toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+function generateUuidV4(dashes = true) {
+  const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === "x" ? r : r & 3 | 8;
+    return v.toString(16);
+  });
+  return dashes ? uuid : uuid.replace(/-/g, "");
+}
+function generateUuidV5(name, namespace, dashes = true) {
+  const namespaceBytes = uuidToBytes(namespace || generateUuidV4(false));
+  const nameBytes = Buffer.from(name, "utf8");
+  const data = Buffer.concat([namespaceBytes, nameBytes]);
+  const hash = createHash2("sha1").update(data).digest();
+  const hashBytes = hash.slice(0, 16);
+  hashBytes[6] = hashBytes[6] & 15 | 80;
+  hashBytes[8] = hashBytes[8] & 63 | 128;
+  const hex = hashBytes.toString("hex");
+  const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+  return dashes ? uuid : uuid.replace(/-/g, "");
+}
+function uuidToBytes(uuid) {
+  const hex = uuid.replace(/-/g, "");
+  return Buffer.from(hex, "hex");
+}
+
+// lib/modules/generate-apikey/generateApiKey.ts
+function generateApiKey(options = { method: "string" }) {
+  const { method, prefix, batch } = options;
+  const generateKey = () => {
+    switch (method) {
+      case "string": {
+        const { min: min2 = 16, max: max2 = 32, length, pool = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~+/" } = options;
+        const len = length || Math.floor(Math.random() * (max2 - min2 + 1)) + min2;
+        return generateRandomString(len, pool);
+      }
+      case "bytes": {
+        const { min: min2 = 16, max: max2 = 32, length } = options;
+        const len = length || Math.floor(Math.random() * (max2 - min2 + 1)) + min2;
+        return generateRandomBytes(len);
+      }
+      case "base32": {
+        const { dashes = true } = options;
+        return generateBase32(dashes);
+      }
+      case "base64": {
+        return generateBase64();
+      }
+      case "uuidv4": {
+        const { dashes = true } = options;
+        return generateUuidV4(dashes);
+      }
+      case "uuidv5": {
+        const { name, namespace, dashes = true } = options;
+        return generateUuidV5(name, namespace || generateUuidV4(false), dashes);
+      }
+      default:
+        throw new Error(`Unsupported method: ${method}`);
+    }
+  };
+  if (batch) {
+    return Array.from({ length: batch }, () => {
+      const key2 = generateKey();
+      return prefix ? `${prefix}.${key2}` : key2;
+    });
+  }
+  const key = generateKey();
+  return prefix ? `${prefix}.${key}` : key;
+}
 export {
   ReadMore,
   apex,
   appendToFile,
-  axium,
+  axium_default as axium,
   bufferToFile,
   buffertoJson,
   buildUrl,

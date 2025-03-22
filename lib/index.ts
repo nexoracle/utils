@@ -15,6 +15,6 @@ export * from "./modules/dns";
 export * from "./modules/https";
 export * from "./modules/perf_hooks";
 export * from "./modules/password-validator";
-export * from "./modules/generateApiKey"
 export * from "./modules/emoji-api"
 export * from "./modules/cron"
+export * from "./modules/generate-apikey"

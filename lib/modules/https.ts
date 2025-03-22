@@ -6,7 +6,7 @@ import fs from "fs";
  * @param error Error object
  */
 function logError(error: any) {
-  console.error(`[HTTPS Error]: ${error.message}`);
+  console.error(`[HTTPS Error]: ${error}`);
 }
 
 /**

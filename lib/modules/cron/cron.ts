@@ -30,3 +30,5 @@ function validate(expression: string): boolean {
 }
 
 export { schedule, validate, getTasks };
+
+// Inspired By: https://github.com/node-cron/node-cron
