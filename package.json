@@ -1,6 +1,6 @@
 {
   "name": "@nexoracle/utils",
-  "version": "1.1.14",
+  "version": "1.1.15",
   "description": "A blazing-fast, flexible, and dependency-free utility library for JavaScript & TypeScript.",
   "type": "module",
   "main": "./dist/index.cjs",
