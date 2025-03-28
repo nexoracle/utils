@@ -28,7 +28,13 @@ if (process.send) {
   });
 }
 
-const daemonPath = __filename;
+const daemonPath = (() => {
+  try {
+    return new URL(import.meta.url).pathname;
+  } catch {
+    return typeof __filename !== 'undefined' ? __filename : '';
+}
+})();
 
 class BackgroundScheduledTask extends EventEmitter {
   private cronExpression: string;

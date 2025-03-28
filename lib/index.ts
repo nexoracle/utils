@@ -4,7 +4,6 @@ export * from "./modules/axium";
 export * from "./modules/crypto";
 export * from "./modules/fs";
 export * from "./modules/os";
-export * from "./modules/path";
 export * from "./modules/url";
 export * from "./modules/child_process";
 export * from "./modules/apex";

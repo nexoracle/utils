@@ -446,4 +446,4 @@ const mimes: Record<string, string> = {
     return mimes[!~idx ? tmp : tmp.substring(++idx)];
   }
 
-  export const mime = { mimes, get };
+  export const mime = { all: () => mimes, get };

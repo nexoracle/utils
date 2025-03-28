@@ -142,9 +142,9 @@ class Emoji {
   }
 
   twemoji(opts?: { size?: string; format?: "png" | "svg" }) {
-    const { format = "png", size = "72x72" } = opts ?? {};
+    const { format = "png", size = "120x120" } = opts ?? {};
     const code = this.toUnicode().toLowerCase();
-    return `https://twemoji.maxcdn.com/v/latest/${format === "svg" ? "svg" : size}/${code}.${format}`;
+    return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/${format === "svg" ? "svg" : size}/${code}.${format}`;
   }
 
   get fancyName() {

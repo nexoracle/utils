@@ -1,7 +1,7 @@
 import { Readable } from 'stream';
 import * as Crypto from 'crypto';
+import fs from 'fs';
 import os from 'os';
-import querystring from 'querystring';
 import http, { ServerResponse, IncomingMessage } from 'http';
 import tls from 'tls';
 import { EntryType, PerformanceObserver, PerformanceNodeTiming } from 'perf_hooks';
@@ -45,7 +45,11 @@ declare const getTime: (date?: Date | string | number | {
     timezone?: string;
     format12Hour?: boolean;
 }) => string | null;
-declare const getDate: (date?: Date, options?: {
+declare const getDate: (date?: Date | string | number | {
+    format?: string;
+    utc?: boolean;
+    timezone?: string;
+}, options?: {
     format?: string;
     utc?: boolean;
     timezone?: string;
@@ -108,11 +112,6 @@ declare const isBigInt: (input: unknown) => input is bigint;
 declare const isUndefined: (input: unknown) => input is undefined;
 declare const isSymbol: (input: unknown) => input is symbol;
 declare const isNull: (input: unknown) => input is null;
-/**
- * Checks if a URL points to a valid image by first trying a HEAD request and falling back to a GET request.
- * @param url - The URL to validate.
- * @returns A promise that resolves to `true` if the URL points to a valid image, otherwise `false`.
- */
 declare const isImageURL: (url: string) => Promise<boolean>;
 declare const hasEmoji: (str: string) => boolean;
 
@@ -172,22 +171,28 @@ declare const crypto: {
     hmacSHA256: (data: string, secret: string) => string;
     hmacSHA512: (data: string, secret: string) => string;
     pbkdf2: (password: string, salt: string, iterations?: number, keylen?: number, digest?: string) => string;
-    generateKeyPair: (type?: "rsa", options?: Crypto.RSAKeyPairOptions<"pem", "pem">) => Crypto.KeyPairSyncResult<string, string>;
+    generateKeyPair: (type?: "rsa" | "ec" | "ed25519" | "ed448" | "x25519" | "x448", options?: Crypto.RSAKeyPairOptions<"pem", "pem"> | Crypto.ECKeyPairOptions<"pem", "pem">, saveToFile?: boolean) => Crypto.KeyPairSyncResult<string, string>;
     encryptRSA: (text: string, publicKey: string) => string;
     decryptRSA: (encrypted: string, privateKey: string) => string;
     sign: (data: string, privateKey: string, algorithm?: string) => string;
     verify: (data: string, signature: string, publicKey: string, algorithm?: string) => boolean;
 };
 
-declare const readFile: (path: string) => string | null;
-declare const writeFile: (path: string, data: string) => void;
-declare const appendToFile: (path: string, data: string) => void;
-declare const deleteFile: (path: string) => void;
-declare const fileExists: (path: string) => boolean;
+declare const readFile: (filePath: string) => string | null;
+declare const writeFile: (filePath: string, data: string) => void;
+declare const appendToFile: (filePath: string, data: string) => void;
+declare const deleteFile: (filePath: string) => void;
+declare const fileExists: (filePath: string) => boolean;
+declare const createDirectory: (dirPath: string) => void;
+declare const removeDirectory: (dirPath: string) => void;
+declare const listFiles: (dirPath: string) => string[] | null;
+declare const getFileStats: (filePath: string) => fs.Stats | null;
+declare const renameFile: (oldPath: string, newPath: string) => void;
+declare const copyFile: (source: string, destination: string) => void;
+declare const watchFile: (filePath: string, callback: (curr: fs.Stats, prev: fs.Stats) => void) => void;
+declare const unwatchFile: (filePath: string) => void;
+declare const getAbsolutePath: (relativePath: string) => string;
 
-/**
- * Get detailed system information
- */
 declare const getSystemInfo: () => {
     platform: NodeJS.Platform;
     osType: string;
@@ -200,52 +205,46 @@ declare const getSystemInfo: () => {
     uptime: string;
     homeDir: string;
     hostname: string;
+    tempDir: string;
+    endianness: "BE" | "LE";
+    priority: number;
+    constants: typeof os.constants;
 };
-/**
- * Get CPU Load Average
- */
 declare const getCpuLoad: () => number[];
-/**
- * Get Network Interfaces
- */
 declare const getNetworkInterfaces: () => NodeJS.Dict<os.NetworkInterfaceInfo[]>;
-/**
- * Get User Info
- */
 declare const getUserInfo: () => os.UserInfo<string>;
+declare const getUptime: () => number;
+declare const getTempDirectory: () => string;
+declare const getProcessPriority: (pid?: number) => number;
+declare const setProcessPriority: (pid: number | undefined, priority: number) => string;
 
-/**
- * Get file name with or without extension
- */
-declare const getFileName: (filePath: string, withExt?: boolean) => string;
-/**
- * Get absolute path from relative path
- */
-declare const getAbsolutePath: (relativePath: string) => string;
-/**
- * Normalize a file path (removes extra slashes and dots)
- */
-declare const normalizePath: (filePath: string) => string;
-/**
- * Get file extension with or without dot
- */
-declare const getFileExtension: (filePath: string, withDot?: boolean) => string;
-/**
- * Join multiple paths dynamically
- */
-declare const joinPath: (...paths: string[]) => string;
-/**
- * Get relative path from one location to another
- */
-declare const getRelativePath: (from: string, to: string) => string;
-
-declare const pasrseURL: (urlString: string) => {
+interface ParsedURL {
+    href: string;
+    origin: string;
     protocol: string;
+    username: string;
+    password: string;
+    host: string;
     hostname: string;
+    port: string;
     pathname: string;
-    query: querystring.ParsedUrlQuery;
-};
-declare const buildUrl: (baseUrl: string, params: Record<string, string | number>) => string;
+    search: string;
+    hash: string;
+    query: Record<string, string | string[]>;
+    searchParams: URLSearchParams;
+    fragment: string;
+    isSecure: boolean;
+    isLocal: boolean;
+    isAbsolute: boolean;
+    hasAuth: boolean;
+}
+declare const parseURL: (urlString: string) => ParsedURL | null;
+interface BuildUrlOptions {
+    path?: string;
+    query?: Record<string, string | number | boolean | undefined>;
+    fragment?: string;
+}
+declare const buildUrl: (baseUrl: string, options?: BuildUrlOptions) => string;
 
 /**
  * Run a command asynchronously and return the output
@@ -373,72 +372,112 @@ declare const apex: {
     rateLimit: (options?: RateLimiterOptions) => Middleware;
 };
 
-declare function log(...args: any[]): void;
-declare function error(...args: any[]): void;
-declare function warn(...args: any[]): void;
-declare function info(...args: any[]): void;
-declare function debug(...args: any[]): void;
-declare function table(data: any, columns?: string[]): void;
-declare function clear(): void;
+type Color = 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white' | 'gray' | 'brightBlack' | 'brightRed' | 'brightGreen' | 'brightYellow' | 'brightBlue' | 'brightMagenta' | 'brightCyan' | 'brightWhite' | 'orange' | 'purple' | 'pink' | 'brown';
+type Style = 'bold' | 'dim' | 'italic' | 'underline' | 'inverse' | 'strikethrough' | 'hidden';
+type LogLevel = 'log' | 'error' | 'warn' | 'info' | 'debug';
+interface LoggerOptions {
+    color?: Color;
+    bgColor?: Color;
+    styles?: Style[];
+    level?: LogLevel;
+    prefix?: string;
+    suffix?: string;
+    preserveWhitespace?: boolean;
+}
+declare class CustomConsole {
+    private static colorCodes;
+    private static bgColorCodes;
+    private static styleCodes;
+    private static applyStyles;
+    private static processArgs;
+    private static isOptionsObject;
+    private static logWithOptions;
+    static log(...args: any[]): void;
+    static error(...args: any[]): void;
+    static warn(...args: any[]): void;
+    static info(...args: any[]): void;
+    static debug(...args: any[]): void;
+    static table(data: any, columns?: string[]): void;
+    static clear(): void;
+    static time(label: string): void;
+    static timeEnd(label: string): void;
+    static group(...args: any[]): void;
+    static groupEnd(): void;
+    static count(label?: string): void;
+    static countReset(label?: string): void;
+    static trace(...args: any[]): void;
+    static dir(item?: any, options?: any): void;
+    static dirxml(...data: any[]): void;
+    static assert(condition?: boolean, ...data: any[]): void;
+    static style(text: string, options?: LoggerOptions): {
+        color: (color: Color) => any;
+        bg: (color: Color) => any;
+        bold: () => any;
+        dim: () => any;
+        italic: () => any;
+        underline: () => any;
+        inverse: () => any;
+        strikethrough: () => any;
+        hidden: () => any;
+        log: () => void;
+        error: () => void;
+        warn: () => void;
+        info: () => void;
+        debug: () => void;
+        toString: () => string;
+        preserveWhitespace: () => any;
+    };
+}
+declare const customConsole: {
+    log: typeof CustomConsole.log;
+    error: typeof CustomConsole.error;
+    warn: typeof CustomConsole.warn;
+    info: typeof CustomConsole.info;
+    debug: typeof CustomConsole.debug;
+    table: typeof CustomConsole.table;
+    clear: typeof CustomConsole.clear;
+    time: typeof CustomConsole.time;
+    timeEnd: typeof CustomConsole.timeEnd;
+    group: typeof CustomConsole.group;
+    groupEnd: typeof CustomConsole.groupEnd;
+    count: typeof CustomConsole.count;
+    countReset: typeof CustomConsole.countReset;
+    trace: typeof CustomConsole.trace;
+    dir: typeof CustomConsole.dir;
+    dirxml: typeof CustomConsole.dirxml;
+    assert: typeof CustomConsole.assert;
+    style: typeof CustomConsole.style;
+};
 
 declare function get(extn: string): string | undefined;
 declare const mime: {
-    mimes: Record<string, string>;
+    all: () => Record<string, string>;
     get: typeof get;
 };
 
-/** Checks if a server supports TLS by performing a handshake */
-declare function checkTLSHandshake(host: string, port?: number): Promise<boolean>;
-/** Fetches SSL certificate details of a domain */
-declare function getSSLCertificate(host: string, port?: number): Promise<tls.PeerCertificate | null>;
-/** Checks if a domain's TLS certificate is valid */
-declare function isTLSValid(host: string, port?: number): Promise<boolean>;
+declare function checkTLSHandshake(hostname: string, port?: number): Promise<boolean>;
+declare function getSSLCertificate(hostname: string, port?: number): Promise<tls.PeerCertificate | null>;
+declare function isTLSValid(hostname: string, port?: number): Promise<boolean>;
 
-/** Resolves a domain to its DNS records */
 declare function resolveDNS(host: string, recordType: "A" | "AAAA" | "CNAME" | "MX" | "TXT" | "NS"): Promise<string[]>;
-/** Performs a reverse DNS lookup on an IP address */
 declare function reverseLookup(ip: string): Promise<string[]>;
-/** Checks if a domain is reachable via DNS */
 declare function isDomainReachable(host: string): Promise<boolean>;
+declare function getIPAddress(host: string): Promise<string>;
+declare function getAllIPs(host: string): Promise<{
+    ipv4: string[];
+    ipv6: string[];
+}>;
+declare function hasMXRecords(host: string): Promise<boolean>;
 
-/**
- * Download a file from an HTTPS URL.
- * @param url The file URL.
- * @param destination The local file path to save.
- * @returns Promise resolving when download is complete.
- */
 declare function downloadFile(url: string, destination: string): Promise<void>;
-/**
- * Validate if an HTTPS URL is accessible.
- * @param url The URL to check.
- * @returns True if accessible, false otherwise.
- */
 declare function isURLAccessible(url: string): Promise<boolean>;
 
 declare const perf_hooks: {
-    /**
-     * Get the current high-resolution timestamp in milliseconds
-     */
     now: () => number;
-    /**
-     * Get the time origin (when the performance API started tracking)
-     */
     getTimeOrigin: () => number;
-    /**
-     * Measures the execution time of a function in milliseconds
-     */
     measureExecutionTime: (fn: Function, ...args: any[]) => number;
-    /**
-     * Tracks event loop delays (helps identify performance issues)
-     */
     monitorEventLoopDelay: () => any;
-    /**
-     * Sets up a PerformanceObserver to watch for performance entries
-     */
     observePerformance: (entryTypes: EntryType[], callback: (list: PerformanceObserverEntryList) => void) => PerformanceObserver | null;
-    /**
-     * Returns Node.js performance timings (including startup time)
-     */
     getNodePerformanceTiming: () => PerformanceNodeTiming | null;
 };
 
@@ -621,4 +660,4 @@ type Options = StringOptions | BytesOptions | Base32Options | Base64Options | Uu
 
 declare function generateApiKey(options?: Options): string | string[];
 
-export { ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, clear, cron, crypto, debug, deleteFile, downloadFile, emojiApi, ensurePackage, error, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getBufferFromStream, getCpuLoad, getDate, getFileExtension, getFileName, getFileSize, getNetworkInterfaces, getRandom, getRelativePath, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTime, getUserInfo, hasEmoji, info, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, joinPath, jsontoBuffer, log, mime, normalizePath, pasrseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, runtime, sleep, table, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, urlValidator, warn, writeFile };
+export { ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, customConsole as console, copyFile, createDirectory, cron, crypto, deleteFile, downloadFile, emojiApi, ensurePackage, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getAllIPs, getBufferFromStream, getCpuLoad, getDate, getFileSize, getFileStats, getIPAddress, getNetworkInterfaces, getProcessPriority, getRandom, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTempDirectory, getTime, getUptime, getUserInfo, hasEmoji, hasMXRecords, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, jsontoBuffer, listFiles, mime, parseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, removeDirectory, renameFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, runtime, setProcessPriority, sleep, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, unwatchFile, urlValidator, watchFile, writeFile };

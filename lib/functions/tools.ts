@@ -164,8 +164,16 @@ export const getTime = (date?: Date | string | number | { utc?: boolean; timezon
   return new Intl.DateTimeFormat("en-US", formatOptions).format(dateObj);
 };
 
-export const getDate = (date: Date = new Date(), options?: { format?: string; utc?: boolean; timezone?: string }): string => {
-  const { format = "YYYY-MM-DD", utc = false, timezone } = options || {};
+export const getDate = (date?: Date | string | number | { format?: string; utc?: boolean; timezone?: string }, options?: { format?: string; utc?: boolean; timezone?: string }): string => {
+  if (typeof date === "object" && !("getTime" in date)) {
+    options = date;
+    date = undefined;
+  }
+
+  const { format = "DD-MM-YYYY", utc = false, timezone } = options || {};
+
+  let dateObj: Date = date ? new Date(date) : new Date();
+  if (isNaN(dateObj.getTime())) throw new Error("Invalid date");
 
   const formatOptions: Intl.DateTimeFormatOptions = {
     year: "numeric",
@@ -174,7 +182,7 @@ export const getDate = (date: Date = new Date(), options?: { format?: string; ut
     timeZone: timezone || (utc ? "UTC" : undefined),
   };
 
-  const formattedDate = new Intl.DateTimeFormat("en-US", formatOptions).format(date);
+  const formattedDate = new Intl.DateTimeFormat("en-US", formatOptions).format(dateObj);
   const [month, day, year] = formattedDate.split("/");
 
   switch (format) {
@@ -187,10 +195,9 @@ export const getDate = (date: Date = new Date(), options?: { format?: string; ut
     case "YYYY/MM/DD":
       return `${year}/${month}/${day}`;
     default:
-      return `${year}-${month}-${day}`; // Default fallback
+      return `${year}-${month}-${day}`;
   }
 };
-
 export const formatJSON = (data: unknown, spaces: number = 2): string | null => {
   try {
     return JSON.stringify(data, null, spaces);
@@ -234,7 +241,7 @@ export async function getFileSize(path: string | Buffer): Promise<string> {
 
     if (typeof path === "string" && (path.startsWith("http") || path.startsWith("Http"))) {
       try {
-        const response = await fetch(path, { method: "HEAD" });
+        const response = await axium.head(path);
         if (!response.ok) {
           throw new Error(`Failed to fetch headers: ${response.status} ${response.statusText}`);
         }

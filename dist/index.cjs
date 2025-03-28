@@ -38,15 +38,15 @@ __export(lib_exports, {
   buffertoJson: () => buffertoJson,
   buildUrl: () => buildUrl,
   checkTLSHandshake: () => checkTLSHandshake,
-  clear: () => clear,
+  console: () => customConsole,
+  copyFile: () => copyFile,
+  createDirectory: () => createDirectory,
   cron: () => cron,
   crypto: () => crypto,
-  debug: () => debug,
   deleteFile: () => deleteFile,
   downloadFile: () => downloadFile,
   emojiApi: () => emoji_default,
   ensurePackage: () => ensurePackage,
-  error: () => error,
   fileExists: () => fileExists,
   flattenArray: () => flattenArray,
   formatBytes: () => formatBytes,
@@ -54,22 +54,25 @@ __export(lib_exports, {
   formatNumber: () => formatNumber,
   generateApiKey: () => generateApiKey,
   getAbsolutePath: () => getAbsolutePath,
+  getAllIPs: () => getAllIPs,
   getBufferFromStream: () => getBufferFromStream,
   getCpuLoad: () => getCpuLoad,
   getDate: () => getDate,
-  getFileExtension: () => getFileExtension,
-  getFileName: () => getFileName,
   getFileSize: () => getFileSize,
+  getFileStats: () => getFileStats,
+  getIPAddress: () => getIPAddress,
   getNetworkInterfaces: () => getNetworkInterfaces,
+  getProcessPriority: () => getProcessPriority,
   getRandom: () => getRandom,
-  getRelativePath: () => getRelativePath,
   getSSLCertificate: () => getSSLCertificate,
   getStreamFromBuffer: () => getStreamFromBuffer,
   getSystemInfo: () => getSystemInfo,
+  getTempDirectory: () => getTempDirectory,
   getTime: () => getTime,
+  getUptime: () => getUptime,
   getUserInfo: () => getUserInfo,
   hasEmoji: () => hasEmoji,
-  info: () => info,
+  hasMXRecords: () => hasMXRecords,
   isArray: () => isArray,
   isBigInt: () => isBigInt,
   isBool: () => isBool,
@@ -88,12 +91,10 @@ __export(lib_exports, {
   isTLSValid: () => isTLSValid,
   isURLAccessible: () => isURLAccessible,
   isUndefined: () => isUndefined,
-  joinPath: () => joinPath,
   jsontoBuffer: () => jsontoBuffer,
-  log: () => log,
+  listFiles: () => listFiles,
   mime: () => mime,
-  normalizePath: () => normalizePath,
-  pasrseURL: () => pasrseURL,
+  parseURL: () => parseURL,
   passwordValidator: () => passwordValidator_default,
   perf_hooks: () => perf_hooks,
   randomElement: () => randomElement,
@@ -101,14 +102,16 @@ __export(lib_exports, {
   randomInt: () => randomInt,
   randomizeArray: () => randomizeArray,
   readFile: () => readFile,
+  removeDirectory: () => removeDirectory,
+  renameFile: () => renameFile,
   resolveDNS: () => resolveDNS,
   reverseLookup: () => reverseLookup,
   runCommand: () => runCommand,
   runCommandSync: () => runCommandSync,
   runSpawn: () => runSpawn,
   runtime: () => runtime,
+  setProcessPriority: () => setProcessPriority,
   sleep: () => sleep,
-  table: () => table,
   timeAgo: () => timeAgo,
   toBool: () => toBool,
   toBuffer: () => toBuffer,
@@ -116,8 +119,9 @@ __export(lib_exports, {
   transformBuffer: () => transformBuffer,
   truncate: () => truncate,
   uniqueArray: () => uniqueArray,
+  unwatchFile: () => unwatchFile,
   urlValidator: () => urlValidator,
-  warn: () => warn,
+  watchFile: () => watchFile,
   writeFile: () => writeFile
 });
 module.exports = __toCommonJS(lib_exports);
@@ -132,7 +136,7 @@ var import_https = require("https");
 var import_url = require("url");
 var urlValidator = {
   isURL(url2) {
-    const regex = /^(https?:\/\/)?(www\.)?([\da-z.-]+)(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
+    const regex = /^(https?:\/\/)(www\.)?([\da-z.-]+)(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
     const ipv4Regex = /^(https?:\/\/)?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
     const ipv6Regex = /^(https?:\/\/)?\[([a-f0-9:]+)\](?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
     const localhostRegex = /^(https?:\/\/)?localhost(?::(\d{1,5}))?([\/\w .-]*)*\/?(\?[&\w=.+-]*)?(#[\w-]*)?$/i;
@@ -140,79 +144,79 @@ var urlValidator = {
     return regex.test(url2) || ipv4Regex.test(url2) || ipv6Regex.test(url2) || localhostRegex.test(url2) || fileRegex.test(url2);
   },
   mediafire(url2) {
-    const regex = /https?:\/\/(www\.)?mediafire\.com\/(file\/[a-zA-Z0-9]+\/[a-zA-Z0-9_\-\.]+|\?[a-zA-Z0-9]+)/;
+    const regex = /https?:\/\/(www\.)?mediafire\.com\/(file\/[a-zA-Z0-9]+\/[a-zA-Z0-9_\-\.]+|view\/[a-zA-Z0-9]+\/[a-zA-Z0-9_\-\.]+(\/file)?|\?[a-zA-Z0-9]+|folder\/[a-zA-Z0-9]+)/;
     return regex.test(url2);
   },
   gdrive(url2) {
-    const regex = /https:\/\/(?:drive\.google\.com\/(?:file\/d\/|open\?id=)|docs\.google\.com\/(?:uc\?export=download&id=|file\/d\/))([\w-]{28,})/;
+    const regex = /https:\/\/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|drive\/folders\/)|docs\.google\.com\/(?:uc\?export=download&id=|file\/d\/|document\/d\/)([\w-]{28,})(?:\/edit)?)/;
     return regex.test(url2);
   },
   spotify(url2) {
-    const regex = /(https?:\/\/)?(open\.spotify\.com\/(track|album|playlist|artist)\/[a-zA-Z0-9]+|spotify:(track|album|playlist|artist):[a-zA-Z0-9]+)/;
+    const regex = /(https?:\/\/)?(open\.spotify\.com\/(track|album|artist|playlist|show|episode|user|collection|browse|search|genre|featured|creator|pod|station|embed)\/[a-zA-Z0-9]+(?:\?[a-zA-Z0-9_=&-]+)?|spotify:(track|album|artist|playlist|show|episode|user|collection|search|station):[a-zA-Z0-9]+(?:\?[a-zA-Z0-9_=&-]+)?)|spotify:user:[a-zA-Z0-9]+:playlist:[a-zA-Z0-9]+/;
     return regex.test(url2);
   },
   tiktok(url2) {
-    const regex = /\bhttps?:\/\/(?:m|www|vm|vt)\.tiktok\.com\/(?:@[\w.-]+\/(?:video|photo)\/\d+|v\/\w+|embed\/\w+|\?shareId=\d+|\?item_id=\d+|[\w.-]+)\b/;
+    const regex = /\bhttps?:\/\/(?:m|www|vm|vt)?\.?tiktok\.com\/(?:@[\w.-]+\/(?:video|photo)\/\d+|v\/\w+|t\/\w+|embed\/\w+|\?shareId=\d+|\?item_id=\d+|[\w.-]+|music\/[\w.-]+|tag\/[\w.-]+|amp\/[\w.-]+|effects\/[\w.-]+|trending\/[\w.-]+|discover\/[\w.-]+|hashtag\/[\w.-]+)\b/;
     return regex.test(url2);
   },
   threads(url2) {
-    const regex = /\bhttps?:\/\/(?:www\.)?threads\.net\/[^\s]+\b/;
+    const regex = /\bhttps?:\/\/(?:www\.)?threads\.net\/(?:@?[\w.-]+(?:\/post\/[\w.-]+)?|post\/[\w.-]+|t\/[\w.-]+|explore|search|profile|direct|settings|activity)\b(?:\?.*)?$/;
     return regex.test(url2);
   },
   twitter(url2) {
-    const regex = /\bhttps?:\/\/(?:www\.)?twitter\.com\/(?:\w+\/status\/\d+|[A-Za-z0-9_]{1,15}(?:\?[^#\s]*)?|search\?[^#\s]*|hashtag\/[^#\s]*|i\/web\/status\/\d+)\b/;
+    const regex = /\bhttps?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/(?:@?[\w.-]+\/status\/\d+(?:\/(?:photo|video)\/\d+)?|@?[A-Za-z0-9_]{1,15}(?:\?[^#\s]*)?|search\?[^#\s]*|hashtag\/[^#\s]*|i\/web\/status\/\d+|explore|(?:i\/)?(?:moments|lists|topics|bookmarks)(?:\/[\w.-]+)?|(?:home|notifications|messages|explore|settings))\b(?:\?.*)?$/;
     return regex.test(url2);
   },
   youtube(url2) {
-    const regex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|playlist\?list=|channel\/|c\/|user\/|embed\/|shorts\/|live\/|music\/)|youtu\.be\/)[a-zA-Z0-9\-_]+(\?[^\s]*)?$/;
+    const regex = /^(https?:\/\/)?(www\.|m\.|music\.)?(youtube\.com\/(?:watch\?v=|playlist\?list=|channel\/|c\/|user\/|embed\/|shorts\/|live\/|clip\/|hashtag\/|results\?search_query=|feed(?:\/[\w-]+)?|subscription_manager|account|reporthistory|view_all_playlists|premium|studio|movies|gaming)|youtu\.be\/)[a-zA-Z0-9\-_]*((?:\?|&)[^\s]*)?$/;
     return regex.test(url2);
   },
   snapchat(url2) {
-    const regex = /https?:\/\/(www\.)?(snapchat\.com\/(add\/[A-Za-z0-9_\-]+|discover\/[A-Za-z0-9_\-]+\/[A-Za-z0-9_\-]+|spotlight\/[A-Za-z0-9_\-]+|t\/[A-Za-z0-9_\-]+)|story\.snapchat\.com\/s\/[A-Za-z0-9_\-]+)/;
+    const regex = /https?:\/\/(?:www\.)?(?:snapchat\.com\/(?:add\/[A-Za-z0-9_.-]+|discover\/[A-Za-z0-9_.-]+|spotlight\/[A-Za-z0-9_.-]+|stories\/[A-Za-z0-9_.-]+|lens\/[A-Za-z0-9_.-]+|t\/[A-Za-z0-9_.-]+|snap\/[A-Za-z0-9_.-]+)|story\.snapchat\.com\/s\/[A-Za-z0-9_.-]+)/;
     return regex.test(url2);
   },
   terabox(url2) {
-    const regex = /^(?:https?:\/\/)?(?:www\.)?(mirrobox\.com|nephobox\.com|freeterabox\.com|1024tera\.com|4funbox\.co|4funbox\.com|terabox\.app|terabox\.com|1024tera\.co|1024terabox\.com|momerybox\.com|teraboxapp\.com|tibibox\.com|teraboxlink\.com)/;
+    const regex = /^(?:https?:\/\/)?(?:www\.)?(?:mirrobox\.com|nephobox\.com|freeterabox\.com|1024tera\.com|4funbox\.co|4funbox\.com|terabox\.app|terabox\.com|1024tera\.co|1024terabox\.com|momerybox\.com|teraboxapp\.com|tibibox\.com|teraboxlink\.com)(?:\/s\/[A-Za-z0-9_-]+)?(?:\?.*)?$/;
     return regex.test(url2);
   },
   instagram(url2) {
-    const regex = /^((https|http)?:\/\/(?:www\.)?instagram\.com\/(p|tv|reel|stories)\/([^/?#&]+)).*/;
+    const regex = /^(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv|stories)\/([A-Za-z0-9_-]+)(?:\/)?(?:\?.*)?$/;
     return regex.test(url2);
   },
   facebook(url2) {
-    const regex = /(?:https?:\/\/)?(?:www\.)?(m\.facebook|facebook|fb)\.(com|me|watch)\/(?:(?:\w\.)*#!\/)?(?:groups\/)?(?:[\w\-\.]*\/)*([\w\-\.]*)/;
+    const regex = /(?:https?:\/\/)?(?:www\.|m\.)?(?:facebook|fb)\.(?:com|me|watch)\/(?:(?:[\w.]+\/)?(?:videos|photos|posts|events)\/(?:[\w-]+\/)?(?:[\d]+)|(?:profile\.php\?id=\d+)|(?:[\w.]+)|(?:groups\/[\w-]+))\/?(?:\?.*)?$/;
     return regex.test(url2);
   },
   linkedin(url2) {
-    const regex = /^(https?:\/\/)?(www\.)?linkedin\.com\/(in|company|posts|pulse)\/[a-zA-Z0-9\-_]+\/?$/;
+    const regex = /^(https?:\/\/)?(www\.)?linkedin\.com\/(in|company|posts|pulse|jobs|feed|school|groups|events|showcase|learning)\/[a-zA-Z0-9\-_%.]+\/?(?:\?.*)?$/;
     return regex.test(url2);
   },
   reddit(url2) {
-    const regex = /^(https?:\/\/)?(www\.)?reddit\.com\/(r|user|comments)\/[a-zA-Z0-9_]+\/?/;
+    const regex = /^(https?:\/\/)?(www\.|old\.)?reddit\.com\/(r|user|comments)\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+){0,2}\/?(?:\?.*)?$/;
     return regex.test(url2);
   },
   pinterest(url2) {
-    const regex = /^(https?:\/\/)?(www\.)?pinterest\.com\/(pin\/[a-zA-Z0-9_]+\/?|([a-zA-Z0-9_]+\/?([a-zA-Z0-9_]+\/?)?))$/;
+    const regex = /^(https?:\/\/)?(www\.)?(?:pinterest\.(?:com|ca|co\.uk|fr|de|jp|au)\/(?:pin\/[a-zA-Z0-9_-]+\/?|[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+\/?|[a-zA-Z0-9_-]+\/?)?(?:\?.*)?|i\.pinimg\.com\/(?:\d+x\/)?[a-zA-Z0-9_\/-]+\.[a-zA-Z0-9]+)$/;
     return regex.test(url2);
   },
   whatsapp(url2) {
-    const regex = /^(https?:\/\/)?(www\.)?(whatsapp\.com\/(channel\/[a-zA-Z0-9]+|business|api)|wa\.me\/[0-9]+|chat\.whatsapp\.com\/[a-zA-Z0-9]+)\/?$/;
+    const regex = /^(https?:\/\/)?(www\.)?(whatsapp\.com\/(channel\/[a-zA-Z0-9_-]+|business|send|download|android|iphone|api|about|contact|security)|wa\.me\/[0-9]+|chat\.whatsapp\.com\/[a-zA-Z0-9_-]+)\/?(?:\?.*)?$/;
     return regex.test(url2);
   },
   discord(url2) {
-    const regex = /^(https?:\/\/)?(discord\.(gg|com)\/invite\/[a-zA-Z0-9]+)\/?$/;
+    const regex = /^(https?:\/\/)?((?:www\.)?(?:discord\.(?:gg|com|me)|discordapp\.com)(?:\/(?:invite\/[a-zA-Z0-9-]+|channels\/(?:\d+\/\d+\/?\d*)|users\/\d+|servers\/\d+|communities\/\d+))?|(?:www\.)?discord\.me\/[a-zA-Z0-9-_]+)\/?(?:\?.*)?$/;
     return regex.test(url2);
   },
   twitch(url2) {
-    const regex = /^(https?:\/\/)?(www\.)?twitch\.tv\/([a-zA-Z0-9\-_]+\/?([a-zA-Z0-9\-_]+\/?)?(video\/[a-zA-Z0-9\-_]+|clip\/[a-zA-Z0-9\-_]+)?)$/;
+    const regex = /^(https?:\/\/)?(?:(?:www\.|m\.)?twitch\.tv\/(?:[a-zA-Z0-9\-_]+\/?(?:[a-zA-Z0-9\-_]+\/?)?)(?:video\/\d+|clip\/[a-zA-Z0-9\-_]+)?|clips\.twitch\.tv\/[a-zA-Z0-9\-_]+|(?:www\.)?twitch\.tv\/directory\/(?:game|category)\/[a-zA-Z0-9\-_%]+|(?:www\.)?twitch\.tv\/[a-zA-Z0-9\-_]+\/(?:videos|clips|collections|about|schedule))\/?(?:\?.*)?$/;
     return regex.test(url2);
   },
   stackoverflow(url2) {
-    const regex = /^(https?:\/\/)?(www\.)?stackoverflow\.com\/(questions\/[0-9]+\/?|users\/[0-9]+\/?|tags\/[a-zA-Z0-9\-_]+\/?)$/;
+    const regex = /^(https?:\/\/)?((?:www\.)?stackoverflow\.com\/(?:questions\/\d+(?:\/[\w-]+)?|users\/\d+(?:\/[\w-]+)?|tags\/[\w-]+|a\/\d+|q\/\d+|search\?[^\/]+)|(?:[\w-]+\.)?stackexchange\.com\/(?:questions\/\d+(?:\/[\w-]+)?|users\/\d+(?:\/[\w-]+)?|tags\/[\w-]+))\/?(?:\?.*)?$/;
     return regex.test(url2);
   },
   medium(url2) {
-    const regex = /^(https?:\/\/)?(www\.)?medium\.com\/(@[a-zA-Z0-9\-_]+\/?([a-zA-Z0-9\-_]+\/?)?|[a-zA-Z0-9\-_]+\/[a-zA-Z0-9\-_]+\/?)$/;
+    const regex = /^(https?:\/\/)?(?:(?:www\.)?medium\.com\/(?:@[\w-]+(?:\/[\w-]+)?|[\w-]+\/[\w-]+|tag\/[\w-]+|topics\/[\w-]+|lists\/[\w-]+)|[\w-]+\.medium\.com\/[\w-]+)\/?(?:\?.*)?$/;
     return regex.test(url2);
   },
   extractUrlFromString(str) {
@@ -230,7 +234,7 @@ var urlValidator = {
     return regex.test(url2);
   },
   hasDomain(url2, domain) {
-    const regex = new RegExp(`^https?:\\/\\/(www\\.)?${domain}\\/`, "i");
+    const regex = new RegExp(`^https?:\\/\\/(www\\.)?${domain}(\\/|$)`, "i");
     return regex.test(url2);
   },
   hasPath(url2, path4) {
@@ -349,8 +353,8 @@ var isImageURL = async (url2) => {
       return true;
     const isImageGet = await makeRequest("GET");
     return isImageGet;
-  } catch (error2) {
-    console.error(error2);
+  } catch (error) {
+    console.error(error);
     return false;
   }
 };
@@ -358,243 +362,6 @@ var hasEmoji = (str) => {
   const regex = /[#*0-9]\uFE0F?\u20E3|[\xA9\xAE\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA\u231A\u231B\u2328\u23CF\u23ED-\u23EF\u23F1\u23F2\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC\u25FE\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u267F\u2692\u2694-\u2697\u2699\u269B\u269C\u26A0\u26A7\u26AA\u26B0\u26B1\u26BD\u26BE\u26C4\u26C8\u26CF\u26D1\u26E9\u26F0-\u26F5\u26F7\u26F8\u26FA\u2702\u2708\u2709\u270F\u2712\u2714\u2716\u271D\u2721\u2733\u2734\u2744\u2747\u2757\u2763\u27A1\u2934\u2935\u2B05-\u2B07\u2B1B\u2B1C\u2B55\u3030\u303D\u3297\u3299]\uFE0F?|[\u261D\u270C\u270D](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u23E9-\u23EC\u23F0\u23F3\u25FD\u2693\u26A1\u26AB\u26C5\u26CE\u26D4\u26EA\u26FD\u2705\u2728\u274C\u274E\u2753-\u2755\u2795-\u2797\u27B0\u27BF\u2B50]|\u26D3\uFE0F?(?:\u200D\uD83D\uDCA5)?|\u26F9(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|\u2764\uFE0F?(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?|\uD83C(?:[\uDC04\uDD70\uDD71\uDD7E\uDD7F\uDE02\uDE37\uDF21\uDF24-\uDF2C\uDF36\uDF7D\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F\uDFCD\uDFCE\uDFD4-\uDFDF\uDFF5\uDFF7]\uFE0F?|[\uDF85\uDFC2\uDFC7](?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC4\uDFCA](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDFCB\uDFCC](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDCCF\uDD8E\uDD91-\uDD9A\uDE01\uDE1A\uDE2F\uDE32-\uDE36\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20\uDF2D-\uDF35\uDF37-\uDF43\uDF45-\uDF4A\uDF4C-\uDF7C\uDF7E-\uDF84\uDF86-\uDF93\uDFA0-\uDFC1\uDFC5\uDFC6\uDFC8\uDFC9\uDFCF-\uDFD3\uDFE0-\uDFF0\uDFF8-\uDFFF]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDF44(?:\u200D\uD83D\uDFEB)?|\uDF4B(?:\u200D\uD83D\uDFE9)?|\uDFC3(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDFF3\uFE0F?(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?)|\uD83D(?:[\uDC3F\uDCFD\uDD49\uDD4A\uDD6F\uDD70\uDD73\uDD76-\uDD79\uDD87\uDD8A-\uDD8D\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA\uDECB\uDECD-\uDECF\uDEE0-\uDEE5\uDEE9\uDEF0\uDEF3]\uFE0F?|[\uDC42\uDC43\uDC46-\uDC50\uDC66\uDC67\uDC6B-\uDC6D\uDC72\uDC74-\uDC76\uDC78\uDC7C\uDC83\uDC85\uDC8F\uDC91\uDCAA\uDD7A\uDD95\uDD96\uDE4C\uDE4F\uDEC0\uDECC](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC6E\uDC70\uDC71\uDC73\uDC77\uDC81\uDC82\uDC86\uDC87\uDE45-\uDE47\uDE4B\uDE4D\uDE4E\uDEA3\uDEB4\uDEB5](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD74\uDD90](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\uDC00-\uDC07\uDC09-\uDC14\uDC16-\uDC25\uDC27-\uDC3A\uDC3C-\uDC3E\uDC40\uDC44\uDC45\uDC51-\uDC65\uDC6A\uDC79-\uDC7B\uDC7D-\uDC80\uDC84\uDC88-\uDC8E\uDC90\uDC92-\uDCA9\uDCAB-\uDCFC\uDCFF-\uDD3D\uDD4B-\uDD4E\uDD50-\uDD67\uDDA4\uDDFB-\uDE2D\uDE2F-\uDE34\uDE37-\uDE41\uDE43\uDE44\uDE48-\uDE4A\uDE80-\uDEA2\uDEA4-\uDEB3\uDEB7-\uDEBF\uDEC1-\uDEC5\uDED0-\uDED2\uDED5-\uDED7\uDEDC-\uDEDF\uDEEB\uDEEC\uDEF4-\uDEFC\uDFE0-\uDFEB\uDFF0]|\uDC08(?:\u200D\u2B1B)?|\uDC15(?:\u200D\uD83E\uDDBA)?|\uDC26(?:\u200D(?:\u2B1B|\uD83D\uDD25))?|\uDC3B(?:\u200D\u2744\uFE0F?)?|\uDC41\uFE0F?(?:\u200D\uD83D\uDDE8\uFE0F?)?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?))|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE])))?))?|\uDC6F(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDD75(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDE2E(?:\u200D\uD83D\uDCA8)?|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|\uDE42(?:\u200D[\u2194\u2195]\uFE0F?)?|\uDEB6(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?)|\uD83E(?:[\uDD0C\uDD0F\uDD18-\uDD1F\uDD30-\uDD34\uDD36\uDD77\uDDB5\uDDB6\uDDBB\uDDD2\uDDD3\uDDD5\uDEC3-\uDEC5\uDEF0\uDEF2-\uDEF8](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD26\uDD35\uDD37-\uDD39\uDD3D\uDD3E\uDDB8\uDDB9\uDDCD\uDDCF\uDDD4\uDDD6-\uDDDD](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD0D\uDD0E\uDD10-\uDD17\uDD20-\uDD25\uDD27-\uDD2F\uDD3A\uDD3F-\uDD45\uDD47-\uDD76\uDD78-\uDDB4\uDDB7\uDDBA\uDDBC-\uDDCC\uDDD0\uDDE0-\uDDFF\uDE70-\uDE7C\uDE80-\uDE89\uDE8F-\uDEC2\uDEC6\uDECE-\uDEDC\uDEDF-\uDEE9]|\uDD3C(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF])?|\uDDCE(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1|\uDDD1\u200D\uD83E\uDDD2(?:\u200D\uD83E\uDDD2)?|\uDDD2(?:\u200D\uD83E\uDDD2)?))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?))?|\uDEF1(?:\uD83C(?:\uDFFB(?:\u200D\uD83E\uDEF2\uD83C[\uDFFC-\uDFFF])?|\uDFFC(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFD-\uDFFF])?|\uDFFD(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])?|\uDFFE(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFD\uDFFF])?|\uDFFF(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFE])?))?)/g;
   return regex.test(str);
 };
-
-// lib/functions/tools.ts
-var import_child_process = require("child_process");
-function getRandom(options = {}) {
-  const { Alphabets = true, Numbers = true, Symbols = false, DateNow = false, length = 20, fileExtension = ".png", attachFileExtension = false } = options;
-  let characters = "";
-  if (Alphabets)
-    characters += "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  if (Numbers)
-    characters += "0123456789";
-  if (Symbols)
-    characters += "!@#$%^&*()_+-=[]{}|;:,<>?/~";
-  if (DateNow)
-    characters += String(Date.now());
-  if (characters === "") {
-    throw new Error("At least one type of character must be included.");
-  }
-  let randomString = "";
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    randomString += characters[randomIndex];
-  }
-  return attachFileExtension ? randomString + fileExtension : randomString;
-}
-function randomizeArray(arr) {
-  if (!isArray(arr)) {
-    throw new Error("Input must be an array");
-  }
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-function ReadMore(length = 4001) {
-  return "\u200E".repeat(length);
-}
-var buffertoJson = (buffer) => {
-  return JSON.parse(buffer.toString("utf-8"));
-};
-var jsontoBuffer = (json) => {
-  return Buffer.from(JSON.stringify(json));
-};
-var transformBuffer = (buffer, transformFn) => {
-  return transformFn(buffer);
-};
-var bufferToFile = (buffer, filePath) => {
-  import_fs.default.writeFileSync(filePath, buffer);
-};
-function toBuffer(data) {
-  if (data instanceof Buffer)
-    return data;
-  if (typeof data === "string")
-    return Buffer.from(data);
-  return Buffer.from(JSON.stringify(data));
-}
-var getBufferFromStream = async (stream) => {
-  if (!stream.readable) {
-    throw new Error("Stream is not readable");
-  }
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    stream.on("data", (chunk) => chunks.push(chunk));
-    stream.on("end", () => resolve(Buffer.concat(chunks)));
-    stream.on("error", reject);
-  });
-};
-var getStreamFromBuffer = (buffer) => {
-  const readable = new import_stream.Readable();
-  readable.push(buffer);
-  readable.push(null);
-  return readable;
-};
-var sleep = (ms = 3e3) => new Promise((resolve) => setTimeout(resolve, ms));
-var randomInt = (min2, max2) => Math.floor(Math.random() * (max2 - min2 + 1)) + min2;
-var truncate = (text, maxLength) => text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
-var timeAgo = (date) => {
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1e3);
-  const intervals = [
-    { label: "year", seconds: 31536e3 },
-    { label: "month", seconds: 2592e3 },
-    { label: "day", seconds: 86400 },
-    { label: "hour", seconds: 3600 },
-    { label: "minute", seconds: 60 }
-  ];
-  for (const { label, seconds: s } of intervals) {
-    const interval = Math.floor(seconds / s);
-    if (interval >= 1)
-      return `${interval} ${label}${interval > 1 ? "s" : ""} ago`;
-  }
-  return "Just now";
-};
-var uniqueArray = (arr) => [...new Set(arr)];
-var flattenArray = (arr) => {
-  return arr.reduce((acc, val) => acc.concat(Array.isArray(val) ? flattenArray(val) : val), []);
-};
-var randomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
-var toQueryString = (params) => new URLSearchParams(params).toString();
-var randomHexColor = () => `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0")}`;
-var formatNumber = (num) => num.toLocaleString();
-var formatBytes = (bytes, decimals = 2) => {
-  if (bytes === 0)
-    return "0 Bytes";
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(decimals)} ${sizes[i]}`;
-};
-var getTime = (date, options) => {
-  if (typeof date === "object" && !("getTime" in date)) {
-    options = date;
-    date = void 0;
-  }
-  const { utc = false, timezone, format12Hour = true } = options || {};
-  let dateObj = date ? new Date(date) : /* @__PURE__ */ new Date();
-  if (isNaN(dateObj.getTime()))
-    return null;
-  const formatOptions = {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: format12Hour,
-    timeZone: timezone || (utc ? "UTC" : void 0)
-  };
-  return new Intl.DateTimeFormat("en-US", formatOptions).format(dateObj);
-};
-var getDate = (date = /* @__PURE__ */ new Date(), options) => {
-  const { format = "YYYY-MM-DD", utc = false, timezone } = options || {};
-  const formatOptions = {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: timezone || (utc ? "UTC" : void 0)
-  };
-  const formattedDate = new Intl.DateTimeFormat("en-US", formatOptions).format(date);
-  const [month, day, year] = formattedDate.split("/");
-  switch (format) {
-    case "YYYY-MM-DD":
-      return `${year}-${month}-${day}`;
-    case "DD-MM-YYYY":
-      return `${day}-${month}-${year}`;
-    case "MM/DD/YYYY":
-      return `${month}/${day}/${year}`;
-    case "YYYY/MM/DD":
-      return `${year}/${month}/${day}`;
-    default:
-      return `${year}-${month}-${day}`;
-  }
-};
-var formatJSON = (data, spaces2 = 2) => {
-  try {
-    return JSON.stringify(data, null, spaces2);
-  } catch (error2) {
-    console.error("Failed to format JSON:", error2);
-    return null;
-  }
-};
-function runtime(seconds, capitalize = false, day = "day", hour = "hour", minute = "minute", second = "second") {
-  seconds = Number(seconds);
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor(seconds % 86400 / 3600);
-  const m = Math.floor(seconds % 3600 / 60);
-  const s = Math.floor(seconds % 60);
-  const dDisplay = d > 0 ? `${d} ${d === 1 ? day : day + "s"}` : "";
-  const hDisplay = h > 0 ? `${h} ${h === 1 ? hour : hour + "s"}` : "";
-  const mDisplay = m > 0 ? `${m} ${m === 1 ? minute : minute + "s"}` : "";
-  const sDisplay = s > 0 ? `${s} ${s === 1 ? second : second + "s"}` : "";
-  let result = [dDisplay, hDisplay, mDisplay, sDisplay].filter((part) => part !== "").join(", ");
-  if (capitalize && result.length > 0) {
-    result = result.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
-  }
-  return result;
-}
-async function getFileSize(path4) {
-  try {
-    if (!path4) {
-      console.error("Path is not provided.");
-      return "0";
-    }
-    if (typeof path4 === "string" && (path4.startsWith("http") || path4.startsWith("Http"))) {
-      try {
-        const response = await fetch(path4, { method: "HEAD" });
-        if (!response.ok) {
-          throw new Error(`Failed to fetch headers: ${response.status} ${response.statusText}`);
-        }
-        const contentLength = response.headers.get("content-length");
-        if (!contentLength) {
-          throw new Error("Content-Length header is missing.");
-        }
-        const length = parseInt(contentLength, 10);
-        if (isNaN(length)) {
-          throw new Error("Invalid Content-Length header.");
-        }
-        return formatBytes(length, 3);
-      } catch (error2) {
-        console.error(`Error fetching size from URL (${path4}):`, error2);
-        return "0";
-      }
-    }
-    if (typeof path4 === "string") {
-      try {
-        const stats = import_fs.default.statSync(path4);
-        return formatBytes(stats.size, 3);
-      } catch (error2) {
-        console.error(`Error reading local file (${path4}):`, error2);
-        return "0";
-      }
-    }
-    if (Buffer.isBuffer(path4)) {
-      const length = Buffer.byteLength(path4);
-      return formatBytes(length, 3);
-    }
-    throw new Error("Error: Couldn't fetch size of file. Invalid path type.");
-  } catch (error2) {
-    console.error("Failed to get file size:", error2);
-    return "0";
-  }
-}
-function ensurePackage(packageName, packageManager = "npm", shouldInstall = true) {
-  try {
-    return require(packageName);
-  } catch (e) {
-    console.log(`Package "${packageName}" is not installed.`);
-    if (!shouldInstall) {
-      return null;
-    }
-    console.log(`Installing "${packageName}" using ${packageManager}...`);
-    try {
-      const installCommand = packageManager === "yarn" ? `yarn add ${packageName}` : packageManager === "pnpm" ? `pnpm install ${packageName}` : `npm install ${packageName}`;
-      (0, import_child_process.execSync)(installCommand, { stdio: "inherit" });
-      console.log(`Successfully installed "${packageName}".`);
-      return require(packageName);
-    } catch (err) {
-      console.error(`Failed to install "${packageName}"`, err);
-      return null;
-    }
-  }
-}
 
 // lib/modules/axium/types.ts
 var FetchError = class extends Error {
@@ -817,13 +584,13 @@ var RequestHandler = class {
             config: options
           };
         }
-      } catch (error2) {
+      } catch (error) {
         if (timeoutId)
           clearTimeout(timeoutId);
         if (attempt === retries) {
           if (retries && retries !== 0) {
             console.error(`Fetch failed after ${retries + 1} attempts`);
-            throw new FetchError(error2.message || "Request failed");
+            throw new FetchError(error.message || "Request failed");
           }
         }
         if (retryDelay > 0) {
@@ -901,17 +668,259 @@ var Axium = class extends RequestHandler {
 var axium = new Axium();
 var axium_default = axium;
 
+// lib/functions/tools.ts
+var import_child_process = require("child_process");
+function getRandom(options = {}) {
+  const { Alphabets = true, Numbers = true, Symbols = false, DateNow = false, length = 20, fileExtension = ".png", attachFileExtension = false } = options;
+  let characters = "";
+  if (Alphabets)
+    characters += "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  if (Numbers)
+    characters += "0123456789";
+  if (Symbols)
+    characters += "!@#$%^&*()_+-=[]{}|;:,<>?/~";
+  if (DateNow)
+    characters += String(Date.now());
+  if (characters === "") {
+    throw new Error("At least one type of character must be included.");
+  }
+  let randomString = "";
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    randomString += characters[randomIndex];
+  }
+  return attachFileExtension ? randomString + fileExtension : randomString;
+}
+function randomizeArray(arr) {
+  if (!isArray(arr)) {
+    throw new Error("Input must be an array");
+  }
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function ReadMore(length = 4001) {
+  return "\u200E".repeat(length);
+}
+var buffertoJson = (buffer) => {
+  return JSON.parse(buffer.toString("utf-8"));
+};
+var jsontoBuffer = (json) => {
+  return Buffer.from(JSON.stringify(json));
+};
+var transformBuffer = (buffer, transformFn) => {
+  return transformFn(buffer);
+};
+var bufferToFile = (buffer, filePath) => {
+  import_fs.default.writeFileSync(filePath, buffer);
+};
+function toBuffer(data) {
+  if (data instanceof Buffer)
+    return data;
+  if (typeof data === "string")
+    return Buffer.from(data);
+  return Buffer.from(JSON.stringify(data));
+}
+var getBufferFromStream = async (stream) => {
+  if (!stream.readable) {
+    throw new Error("Stream is not readable");
+  }
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
+    stream.on("error", reject);
+  });
+};
+var getStreamFromBuffer = (buffer) => {
+  const readable = new import_stream.Readable();
+  readable.push(buffer);
+  readable.push(null);
+  return readable;
+};
+var sleep = (ms = 3e3) => new Promise((resolve) => setTimeout(resolve, ms));
+var randomInt = (min2, max2) => Math.floor(Math.random() * (max2 - min2 + 1)) + min2;
+var truncate = (text, maxLength) => text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+var timeAgo = (date) => {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1e3);
+  const intervals = [
+    { label: "year", seconds: 31536e3 },
+    { label: "month", seconds: 2592e3 },
+    { label: "day", seconds: 86400 },
+    { label: "hour", seconds: 3600 },
+    { label: "minute", seconds: 60 }
+  ];
+  for (const { label, seconds: s } of intervals) {
+    const interval = Math.floor(seconds / s);
+    if (interval >= 1)
+      return `${interval} ${label}${interval > 1 ? "s" : ""} ago`;
+  }
+  return "Just now";
+};
+var uniqueArray = (arr) => [...new Set(arr)];
+var flattenArray = (arr) => {
+  return arr.reduce((acc, val) => acc.concat(Array.isArray(val) ? flattenArray(val) : val), []);
+};
+var randomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
+var toQueryString = (params) => new URLSearchParams(params).toString();
+var randomHexColor = () => `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0")}`;
+var formatNumber = (num) => num.toLocaleString();
+var formatBytes = (bytes, decimals = 2) => {
+  if (bytes === 0)
+    return "0 Bytes";
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(decimals)} ${sizes[i]}`;
+};
+var getTime = (date, options) => {
+  if (typeof date === "object" && !("getTime" in date)) {
+    options = date;
+    date = void 0;
+  }
+  const { utc = false, timezone, format12Hour = true } = options || {};
+  let dateObj = date ? new Date(date) : /* @__PURE__ */ new Date();
+  if (isNaN(dateObj.getTime()))
+    return null;
+  const formatOptions = {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: format12Hour,
+    timeZone: timezone || (utc ? "UTC" : void 0)
+  };
+  return new Intl.DateTimeFormat("en-US", formatOptions).format(dateObj);
+};
+var getDate = (date, options) => {
+  if (typeof date === "object" && !("getTime" in date)) {
+    options = date;
+    date = void 0;
+  }
+  const { format = "DD-MM-YYYY", utc = false, timezone } = options || {};
+  let dateObj = date ? new Date(date) : /* @__PURE__ */ new Date();
+  if (isNaN(dateObj.getTime()))
+    throw new Error("Invalid date");
+  const formatOptions = {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: timezone || (utc ? "UTC" : void 0)
+  };
+  const formattedDate = new Intl.DateTimeFormat("en-US", formatOptions).format(dateObj);
+  const [month, day, year] = formattedDate.split("/");
+  switch (format) {
+    case "YYYY-MM-DD":
+      return `${year}-${month}-${day}`;
+    case "DD-MM-YYYY":
+      return `${day}-${month}-${year}`;
+    case "MM/DD/YYYY":
+      return `${month}/${day}/${year}`;
+    case "YYYY/MM/DD":
+      return `${year}/${month}/${day}`;
+    default:
+      return `${year}-${month}-${day}`;
+  }
+};
+var formatJSON = (data, spaces2 = 2) => {
+  try {
+    return JSON.stringify(data, null, spaces2);
+  } catch (error) {
+    console.error("Failed to format JSON:", error);
+    return null;
+  }
+};
+function runtime(seconds, capitalize = false, day = "day", hour = "hour", minute = "minute", second = "second") {
+  seconds = Number(seconds);
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor(seconds % 86400 / 3600);
+  const m = Math.floor(seconds % 3600 / 60);
+  const s = Math.floor(seconds % 60);
+  const dDisplay = d > 0 ? `${d} ${d === 1 ? day : day + "s"}` : "";
+  const hDisplay = h > 0 ? `${h} ${h === 1 ? hour : hour + "s"}` : "";
+  const mDisplay = m > 0 ? `${m} ${m === 1 ? minute : minute + "s"}` : "";
+  const sDisplay = s > 0 ? `${s} ${s === 1 ? second : second + "s"}` : "";
+  let result = [dDisplay, hDisplay, mDisplay, sDisplay].filter((part) => part !== "").join(", ");
+  if (capitalize && result.length > 0) {
+    result = result.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+  }
+  return result;
+}
+async function getFileSize(path4) {
+  try {
+    if (!path4) {
+      console.error("Path is not provided.");
+      return "0";
+    }
+    if (typeof path4 === "string" && (path4.startsWith("http") || path4.startsWith("Http"))) {
+      try {
+        const response = await axium_default.head(path4);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch headers: ${response.status} ${response.statusText}`);
+        }
+        const contentLength = response.headers.get("content-length");
+        if (!contentLength) {
+          throw new Error("Content-Length header is missing.");
+        }
+        const length = parseInt(contentLength, 10);
+        if (isNaN(length)) {
+          throw new Error("Invalid Content-Length header.");
+        }
+        return formatBytes(length, 3);
+      } catch (error) {
+        console.error(`Error fetching size from URL (${path4}):`, error);
+        return "0";
+      }
+    }
+    if (typeof path4 === "string") {
+      try {
+        const stats = import_fs.default.statSync(path4);
+        return formatBytes(stats.size, 3);
+      } catch (error) {
+        console.error(`Error reading local file (${path4}):`, error);
+        return "0";
+      }
+    }
+    if (Buffer.isBuffer(path4)) {
+      const length = Buffer.byteLength(path4);
+      return formatBytes(length, 3);
+    }
+    throw new Error("Error: Couldn't fetch size of file. Invalid path type.");
+  } catch (error) {
+    console.error("Failed to get file size:", error);
+    return "0";
+  }
+}
+function ensurePackage(packageName, packageManager = "npm", shouldInstall = true) {
+  try {
+    return require(packageName);
+  } catch (e) {
+    console.log(`Package "${packageName}" is not installed.`);
+    if (!shouldInstall) {
+      return null;
+    }
+    console.log(`Installing "${packageName}" using ${packageManager}...`);
+    try {
+      const installCommand = packageManager === "yarn" ? `yarn add ${packageName}` : packageManager === "pnpm" ? `pnpm install ${packageName}` : `npm install ${packageName}`;
+      (0, import_child_process.execSync)(installCommand, { stdio: "inherit" });
+      console.log(`Successfully installed "${packageName}".`);
+      return require(packageName);
+    } catch (err) {
+      console.error(`Failed to install "${packageName}"`, err);
+      return null;
+    }
+  }
+}
+
 // lib/modules/crypto.ts
 var Crypto = __toESM(require("crypto"), 1);
+var import_fs2 = __toESM(require("fs"), 1);
 var crypto = {
-  // Hashing functions
   sha256: (data) => Crypto.createHash("sha256").update(data).digest("hex"),
   sha512: (data) => Crypto.createHash("sha512").update(data).digest("hex"),
   md5: (data) => Crypto.createHash("md5").update(data).digest("hex"),
-  // Random generation
   randomBytes: (length = 16) => Crypto.randomBytes(length).toString("hex"),
   generateUUID: () => Crypto.randomUUID(),
-  // AES encryption/decryption
   encryptAES: (text, key, iv) => {
     const ivBuffer = iv ? Buffer.from(iv, "hex") : Buffer.alloc(16, 0);
     const cipher = Crypto.createCipheriv("aes-256-cbc", Buffer.from(key, "hex"), ivBuffer);
@@ -922,60 +931,144 @@ var crypto = {
     const decipher = Crypto.createDecipheriv("aes-256-cbc", Buffer.from(key, "hex"), ivBuffer);
     return decipher.update(encrypted, "hex", "utf8") + decipher.final("utf8");
   },
-  // HMAC (Hash-based Message Authentication Code)
   hmacSHA256: (data, secret) => Crypto.createHmac("sha256", secret).update(data).digest("hex"),
   hmacSHA512: (data, secret) => Crypto.createHmac("sha512", secret).update(data).digest("hex"),
-  // PBKDF2 (Password-Based Key Derivation Function)
   pbkdf2: (password, salt, iterations = 1e4, keylen = 64, digest = "sha512") => Crypto.pbkdf2Sync(password, salt, iterations, keylen, digest).toString("hex"),
-  // RSA/EC/ED25519/ED448/X25519/X448 key generation
-  generateKeyPair: (type = "rsa", options = {
-    modulusLength: 2048,
-    publicKeyEncoding: { type: "spki", format: "pem" },
-    privateKeyEncoding: { type: "pkcs8", format: "pem" }
-  }) => {
-    return Crypto.generateKeyPairSync(type, options);
+  generateKeyPair: (type = "rsa", options, saveToFile = false) => {
+    let defaultOptions;
+    switch (type) {
+      case "rsa":
+        defaultOptions = {
+          modulusLength: 2048,
+          publicKeyEncoding: { type: "spki", format: "pem" },
+          privateKeyEncoding: { type: "pkcs8", format: "pem" }
+        };
+        break;
+      case "ec":
+        defaultOptions = {
+          namedCurve: "secp256k1",
+          publicKeyEncoding: { type: "spki", format: "pem" },
+          privateKeyEncoding: { type: "pkcs8", format: "pem" }
+        };
+        break;
+      case "ed25519":
+      case "ed448":
+      case "x25519":
+      case "x448":
+        defaultOptions = {
+          publicKeyEncoding: { type: "spki", format: "pem" },
+          privateKeyEncoding: { type: "pkcs8", format: "pem" }
+        };
+        break;
+    }
+    const keyPair = Crypto.generateKeyPairSync(type, options || defaultOptions);
+    if (saveToFile) {
+      import_fs2.default.writeFileSync("public.pem", keyPair.publicKey);
+      import_fs2.default.writeFileSync("private.pem", keyPair.privateKey);
+    }
+    return keyPair;
   },
-  // RSA encryption/decryption
   encryptRSA: (text, publicKey) => Crypto.publicEncrypt(publicKey, Buffer.from(text, "utf8")).toString("base64"),
   decryptRSA: (encrypted, privateKey) => Crypto.privateDecrypt(privateKey, Buffer.from(encrypted, "base64")).toString("utf8"),
-  // Sign and verify (RSA/ECDSA)
   sign: (data, privateKey, algorithm = "RSA-SHA256") => Crypto.createSign(algorithm).update(data).sign(privateKey, "hex"),
   verify: (data, signature, publicKey, algorithm = "RSA-SHA256") => Crypto.createVerify(algorithm).update(data).verify(publicKey, signature, "hex")
 };
 
 // lib/modules/fs.ts
-var import_fs2 = __toESM(require("fs"), 1);
-var readFile = (path4) => {
+var import_fs3 = __toESM(require("fs"), 1);
+var import_path = __toESM(require("path"), 1);
+var readFile = (filePath) => {
   try {
-    return import_fs2.default.readFileSync(path4, "utf-8");
-  } catch (error2) {
-    console.error("File Read Error:", error2 instanceof Error ? error2.message : error2);
+    return import_fs3.default.readFileSync(filePath, "utf-8");
+  } catch (error) {
+    console.error("File Read Error:", error instanceof Error ? error.message : error);
     return null;
   }
 };
-var writeFile = (path4, data) => {
+var writeFile = (filePath, data) => {
   try {
-    import_fs2.default.writeFileSync(path4, data, "utf-8");
-  } catch (error2) {
-    console.error("File Write Error:", error2 instanceof Error ? error2.message : error2);
+    import_fs3.default.writeFileSync(filePath, data, "utf-8");
+  } catch (error) {
+    console.error("File Write Error:", error instanceof Error ? error.message : error);
   }
 };
-var appendToFile = (path4, data) => {
+var appendToFile = (filePath, data) => {
   try {
-    import_fs2.default.appendFileSync(path4, data + "\n", "utf-8");
-  } catch (error2) {
-    console.error("File Append Error:", error2 instanceof Error ? error2.message : error2);
+    import_fs3.default.appendFileSync(filePath, data + "\n", "utf-8");
+  } catch (error) {
+    console.error("File Append Error:", error instanceof Error ? error.message : error);
   }
 };
-var deleteFile = (path4) => {
+var deleteFile = (filePath) => {
   try {
-    import_fs2.default.unlinkSync(path4);
-  } catch (error2) {
-    console.error("File Delete Error:", error2 instanceof Error ? error2.message : error2);
+    import_fs3.default.unlinkSync(filePath);
+  } catch (error) {
+    console.error("File Delete Error:", error instanceof Error ? error.message : error);
   }
 };
-var fileExists = (path4) => {
-  return import_fs2.default.existsSync(path4);
+var fileExists = (filePath) => {
+  return import_fs3.default.existsSync(filePath);
+};
+var createDirectory = (dirPath) => {
+  try {
+    import_fs3.default.mkdirSync(dirPath, { recursive: true });
+  } catch (error) {
+    console.error("Directory Create Error:", error instanceof Error ? error.message : error);
+  }
+};
+var removeDirectory = (dirPath) => {
+  try {
+    import_fs3.default.rmdirSync(dirPath);
+  } catch (error) {
+    console.error("Directory Remove Error:", error instanceof Error ? error.message : error);
+  }
+};
+var listFiles = (dirPath) => {
+  try {
+    return import_fs3.default.readdirSync(dirPath);
+  } catch (error) {
+    console.error("Read Directory Error:", error instanceof Error ? error.message : error);
+    return null;
+  }
+};
+var getFileStats = (filePath) => {
+  try {
+    return import_fs3.default.statSync(filePath);
+  } catch (error) {
+    console.error("File Stats Error:", error instanceof Error ? error.message : error);
+    return null;
+  }
+};
+var renameFile = (oldPath, newPath) => {
+  try {
+    import_fs3.default.renameSync(oldPath, newPath);
+  } catch (error) {
+    console.error("File Rename Error:", error instanceof Error ? error.message : error);
+  }
+};
+var copyFile = (source, destination) => {
+  try {
+    import_fs3.default.copyFileSync(source, destination);
+  } catch (error) {
+    console.error("File Copy Error:", error instanceof Error ? error.message : error);
+  }
+};
+var watchFile = (filePath, callback) => {
+  try {
+    import_fs3.default.watchFile(filePath, callback);
+  } catch (error) {
+    console.error("File Watch Error:", error instanceof Error ? error.message : error);
+  }
+};
+var unwatchFile = (filePath) => {
+  try {
+    import_fs3.default.unwatchFile(filePath);
+  } catch (error) {
+    console.error("File Unwatch Error:", error instanceof Error ? error.message : error);
+  }
+};
+var getAbsolutePath = (relativePath) => {
+  return import_path.default.resolve(relativePath);
 };
 
 // lib/modules/os.ts
@@ -991,50 +1084,109 @@ var getSystemInfo = () => ({
   freeMemory: `${(import_os.default.freemem() / 1e9).toFixed(2)} GB`,
   uptime: `${(import_os.default.uptime() / 3600).toFixed(2)} hours`,
   homeDir: import_os.default.homedir(),
-  hostname: import_os.default.hostname()
+  hostname: import_os.default.hostname(),
+  tempDir: import_os.default.tmpdir(),
+  endianness: import_os.default.endianness(),
+  priority: import_os.default.getPriority(),
+  constants: import_os.default.constants
 });
 var getCpuLoad = () => import_os.default.loadavg();
 var getNetworkInterfaces = () => import_os.default.networkInterfaces();
 var getUserInfo = () => import_os.default.userInfo();
-
-// lib/modules/path.ts
-var import_path = __toESM(require("path"), 1);
-var getFileName = (filePath, withExt = true) => {
-  return withExt ? import_path.default.basename(filePath) : import_path.default.basename(filePath, import_path.default.extname(filePath));
+var getUptime = () => import_os.default.uptime();
+var getTempDirectory = () => import_os.default.tmpdir();
+var getProcessPriority = (pid = 0) => import_os.default.getPriority(pid);
+var setProcessPriority = (pid = 0, priority) => {
+  try {
+    import_os.default.setPriority(pid, priority);
+    return `Priority of process ${pid} set to ${priority}`;
+  } catch (error) {
+    return `Failed to set priority: ${error}`;
+  }
 };
-var getAbsolutePath = (relativePath) => import_path.default.resolve(relativePath);
-var normalizePath = (filePath) => import_path.default.normalize(filePath);
-var getFileExtension = (filePath, withDot = true) => {
-  const ext = import_path.default.extname(filePath);
-  return withDot ? ext : ext.replace(".", "");
-};
-var joinPath = (...paths) => import_path.default.join(...paths);
-var getRelativePath = (from, to) => import_path.default.relative(from, to);
 
 // lib/modules/url.ts
 var import_url2 = require("url");
 var import_querystring = __toESM(require("querystring"), 1);
-var pasrseURL = (urlString) => {
-  const urlObj = new import_url2.URL(urlString);
-  return {
-    protocol: urlObj.protocol,
-    hostname: urlObj.hostname,
-    pathname: urlObj.pathname,
-    query: import_querystring.default.parse(urlObj.search.substring(1))
-    // Convert query params to object
-  };
+var parseURL = (urlString) => {
+  try {
+    if (!/^[a-z]+:\/\//i.test(urlString)) {
+      urlString = "https://" + urlString;
+    }
+    const urlObj = new import_url2.URL(urlString);
+    const rawQuery = import_querystring.default.parse(urlObj.search.substring(1));
+    const query = {};
+    for (const [key, value] of Object.entries(rawQuery)) {
+      if (value !== void 0) {
+        query[key] = value;
+      }
+    }
+    return {
+      href: urlObj.href,
+      origin: urlObj.origin,
+      protocol: urlObj.protocol.replace(/:$/, ""),
+      username: urlObj.username,
+      password: urlObj.password,
+      host: urlObj.host,
+      hostname: urlObj.hostname,
+      port: urlObj.port || getDefaultPort(urlObj.protocol),
+      pathname: urlObj.pathname,
+      search: urlObj.search,
+      hash: urlObj.hash,
+      query,
+      searchParams: urlObj.searchParams,
+      fragment: urlObj.hash.substring(1),
+      isSecure: urlObj.protocol === "https:",
+      isLocal: ["localhost", "127.0.0.1", "::1"].includes(urlObj.hostname),
+      isAbsolute: urlObj.pathname.startsWith("/"),
+      hasAuth: !!urlObj.username || !!urlObj.password
+    };
+  } catch (error) {
+    console.error(`URL parsing failed: ${urlString}`, error);
+    return null;
+  }
 };
-var buildUrl = (baseUrl, params) => {
-  return `${baseUrl}?${import_querystring.default.stringify(params)}`;
+function getDefaultPort(protocol) {
+  const portMap = {
+    "http:": "80",
+    "https:": "443",
+    "ftp:": "21",
+    "ws:": "80",
+    "wss:": "443"
+  };
+  return portMap[protocol] || "";
+}
+var buildUrl = (baseUrl, options = {}) => {
+  if (!baseUrl)
+    return "";
+  try {
+    const urlObj = new import_url2.URL(baseUrl);
+    if (options.path) {
+      urlObj.pathname = options.path.startsWith("/") ? options.path : `/${options.path}`;
+    }
+    if (options.query) {
+      const filteredParams = Object.fromEntries(
+        Object.entries(options.query).filter(([_, value]) => value !== void 0 && value !== null).map(([key, value]) => [key, String(value)])
+      );
+      urlObj.search = import_querystring.default.stringify(filteredParams);
+    }
+    if (options.fragment) {
+      urlObj.hash = options.fragment.startsWith("#") ? options.fragment : `#${options.fragment}`;
+    }
+    return urlObj.toString();
+  } catch (error) {
+    console.error("Error building URL:", error);
+    return baseUrl;
+  }
 };
 
 // lib/modules/child_process.ts
 var import_child_process2 = require("child_process");
 var runCommand = (command, cwd, timeout = 5e3) => {
   return new Promise((resolve, reject) => {
-    const process2 = (0, import_child_process2.exec)(command, { cwd, timeout }, (error2, stdout, stderr) => {
-      if (error2)
-        return reject(`Error: ${error2.message}`);
+    const process2 = (0, import_child_process2.exec)(command, { cwd, timeout }, (error, stdout, stderr) => {
+      if (error)
+        return reject(`Error: ${error.message}`);
       if (stderr)
         return reject(`Stderr: ${stderr}`);
       resolve(stdout.trim());
@@ -1046,8 +1198,8 @@ var runCommand = (command, cwd, timeout = 5e3) => {
 var runCommandSync = (command, cwd) => {
   try {
     return (0, import_child_process2.execSync)(command, { cwd, encoding: "utf-8" }).trim();
-  } catch (error2) {
-    console.error(`Command Failed: ${error2 instanceof Error ? error2.message : error2}`);
+  } catch (error) {
+    console.error(`Command Failed: ${error instanceof Error ? error.message : error}`);
     return null;
   }
 };
@@ -1064,7 +1216,7 @@ var runSpawn = (command, args, cwd) => {
 // lib/modules/apex.ts
 var import_http2 = __toESM(require("http"), 1);
 var import_url3 = __toESM(require("url"), 1);
-var import_fs3 = __toESM(require("fs"), 1);
+var import_fs4 = __toESM(require("fs"), 1);
 var import_path2 = __toESM(require("path"), 1);
 var import_tls = __toESM(require("tls"), 1);
 
@@ -1515,7 +1667,7 @@ function get(extn) {
   let idx = tmp.lastIndexOf(".");
   return mimes[!~idx ? tmp : tmp.substring(++idx)];
 }
-var mime = { mimes, get };
+var mime = { all: () => mimes, get };
 
 // lib/modules/apex.ts
 var Router = class {
@@ -1570,7 +1722,7 @@ var Router = class {
     if (key === "view engine") {
       if (value === "ejs") {
         this.viewEngine = (filePath, data, callback) => {
-          import_fs3.default.readFile(filePath, "utf8", (err, template) => {
+          import_fs4.default.readFile(filePath, "utf8", (err, template) => {
             if (err)
               return callback(err);
             const rendered = template.replace(/<%=\s*(.*?)\s*%>/g, (_, key2) => data[key2] || "");
@@ -1775,7 +1927,7 @@ var Router = class {
     resMethod.sendFile = function(filePath) {
       const extname = import_path2.default.extname(filePath).toLowerCase();
       const contentType = mime.get(extname) || "application/octet-stream";
-      const stream = import_fs3.default.createReadStream(filePath);
+      const stream = import_fs4.default.createReadStream(filePath);
       stream.on("error", (err) => {
         if (err.code === "ENOENT") {
           this.status(404).send("File Not Found");
@@ -1965,7 +2117,7 @@ var apex = {
       }
       const relativePath = pathname.slice(prefix.length);
       const filePath = import_path2.default.join(staticPath, relativePath);
-      import_fs3.default.stat(filePath, (err, stats) => {
+      import_fs4.default.stat(filePath, (err, stats) => {
         if (err || !stats.isFile()) {
           next();
         } else {
@@ -1977,7 +2129,7 @@ var apex = {
   favicon(iconPath) {
     return (req, res, next) => {
       if (req.url === "/favicon.ico" && iconPath) {
-        import_fs3.default.stat(iconPath, (err, stats) => {
+        import_fs4.default.stat(iconPath, (err, stats) => {
           if (err || !stats.isFile()) {
             res.status(404).send("Favicon not found");
           } else {
@@ -2063,31 +2215,272 @@ function parseUrl(req) {
 }
 
 // lib/modules/console.ts
-function log(...args) {
-  console.log(...args);
-}
-function error(...args) {
-  console.error(...args);
-}
-function warn(...args) {
-  console.warn(...args);
-}
-function info(...args) {
-  console.info(...args);
-}
-function debug(...args) {
-  console.debug(...args);
-}
-function table(data, columns) {
-  console.table(data, columns);
-}
-function clear() {
-  console.clear();
-}
+var _CustomConsole = class _CustomConsole {
+  static applyStyles(text, options) {
+    if (!text.trim() && options.preserveWhitespace) {
+      return text;
+    }
+    if (options.styles?.includes("hidden")) {
+      return "";
+    }
+    const styles = [];
+    if (options.color) {
+      styles.push(this.colorCodes[options.color]);
+    }
+    if (options.bgColor) {
+      styles.push(this.bgColorCodes[options.bgColor]);
+    }
+    if (options.styles) {
+      options.styles.forEach((style) => {
+        if (style !== "hidden") {
+          styles.push(this.styleCodes[style]);
+        }
+      });
+    }
+    if (styles.length === 0) {
+      return text;
+    }
+    const styleStr = styles.join(";");
+    return `\x1B[${styleStr}m${text}\x1B[0m`;
+  }
+  static processArgs(args, options) {
+    return args.map((arg) => {
+      if (typeof arg === "string") {
+        if (arg.includes("\n")) {
+          return arg.split("\n").map((line) => {
+            let processed3 = line;
+            if (options.prefix)
+              processed3 = options.prefix + processed3;
+            if (options.suffix)
+              processed3 = processed3 + options.suffix;
+            return this.applyStyles(processed3, options);
+          }).join("\n");
+        }
+        let processed2 = arg;
+        if (options.prefix)
+          processed2 = options.prefix + processed2;
+        if (options.suffix)
+          processed2 = processed2 + options.suffix;
+        return this.applyStyles(processed2, options);
+      }
+      if (arg && typeof arg === "object") {
+        let objString;
+        try {
+          objString = JSON.stringify(arg, null, 2);
+        } catch {
+          try {
+            objString = arg.toString();
+          } catch {
+            objString = "[Object]";
+          }
+        }
+        let processed2 = objString;
+        if (options.prefix)
+          processed2 = options.prefix + processed2;
+        if (options.suffix)
+          processed2 = processed2 + options.suffix;
+        return this.applyStyles(processed2, options);
+      }
+      let processed = String(arg);
+      if (options.prefix)
+        processed = options.prefix + processed;
+      if (options.suffix)
+        processed = processed + options.suffix;
+      return this.applyStyles(processed, options);
+    });
+  }
+  static isOptionsObject(obj) {
+    return obj && typeof obj === "object" && !Array.isArray(obj) && (obj.color !== void 0 || obj.bgColor !== void 0 || obj.styles !== void 0 || obj.prefix !== void 0 || obj.suffix !== void 0 || obj.preserveWhitespace !== void 0);
+  }
+  static logWithOptions(level, args, options = {}) {
+    const consoleMethod = globalThis.console[level] || globalThis.console.log;
+    const processedArgs = this.processArgs(args, options);
+    consoleMethod(...processedArgs);
+  }
+  // Basic logging methods
+  static log(...args) {
+    if (args.length > 1 && this.isOptionsObject(args[args.length - 1])) {
+      const options = args.pop();
+      this.logWithOptions("log", args, options);
+    } else {
+      this.logWithOptions("log", args);
+    }
+  }
+  static error(...args) {
+    if (args.length > 1 && this.isOptionsObject(args[args.length - 1])) {
+      const options = args.pop();
+      this.logWithOptions("error", args, { color: "red", ...options });
+    } else {
+      this.logWithOptions("error", args, { color: "red" });
+    }
+  }
+  static warn(...args) {
+    if (args.length > 1 && this.isOptionsObject(args[args.length - 1])) {
+      const options = args.pop();
+      this.logWithOptions("warn", args, { color: "yellow", ...options });
+    } else {
+      this.logWithOptions("warn", args, { color: "yellow" });
+    }
+  }
+  static info(...args) {
+    if (args.length > 1 && this.isOptionsObject(args[args.length - 1])) {
+      const options = args.pop();
+      this.logWithOptions("info", args, { color: "cyan", ...options });
+    } else {
+      this.logWithOptions("info", args, { color: "cyan" });
+    }
+  }
+  static debug(...args) {
+    if (args.length > 1 && this.isOptionsObject(args[args.length - 1])) {
+      const options = args.pop();
+      this.logWithOptions("debug", args, { color: "gray", ...options });
+    } else {
+      this.logWithOptions("debug", args, { color: "gray" });
+    }
+  }
+  static table(data, columns) {
+    globalThis.console.table(data, columns);
+  }
+  static clear() {
+    globalThis.console.clear();
+  }
+  static time(label) {
+    globalThis.console.time(label);
+  }
+  static timeEnd(label) {
+    globalThis.console.timeEnd(label);
+  }
+  static group(...args) {
+    globalThis.console.group(...args);
+  }
+  static groupEnd() {
+    globalThis.console.groupEnd();
+  }
+  static count(label) {
+    globalThis.console.count(label);
+  }
+  static countReset(label) {
+    globalThis.console.countReset(label);
+  }
+  static trace(...args) {
+    globalThis.console.trace(...args);
+  }
+  static dir(item, options) {
+    globalThis.console.dir(item, options);
+  }
+  static dirxml(...data) {
+    globalThis.console.dirxml(...data);
+  }
+  static assert(condition, ...data) {
+    globalThis.console.assert(condition, ...data);
+  }
+  static style(text, options = {}) {
+    const styledText = this.applyStyles(text, options);
+    const chainable = {
+      color: (color) => _CustomConsole.style(text, { ...options, color }),
+      bg: (color) => _CustomConsole.style(text, { ...options, bgColor: color }),
+      bold: () => _CustomConsole.style(text, { ...options, styles: [...options.styles || [], "bold"] }),
+      dim: () => _CustomConsole.style(text, { ...options, styles: [...options.styles || [], "dim"] }),
+      italic: () => _CustomConsole.style(text, { ...options, styles: [...options.styles || [], "italic"] }),
+      underline: () => _CustomConsole.style(text, { ...options, styles: [...options.styles || [], "underline"] }),
+      inverse: () => _CustomConsole.style(text, { ...options, styles: [...options.styles || [], "inverse"] }),
+      strikethrough: () => _CustomConsole.style(text, { ...options, styles: [...options.styles || [], "strikethrough"] }),
+      hidden: () => _CustomConsole.style(text, { ...options, styles: [...options.styles || [], "hidden"] }),
+      log: () => _CustomConsole.log(styledText),
+      error: () => _CustomConsole.error(styledText),
+      warn: () => _CustomConsole.warn(styledText),
+      info: () => _CustomConsole.info(styledText),
+      debug: () => _CustomConsole.debug(styledText),
+      toString: () => styledText,
+      preserveWhitespace: () => _CustomConsole.style(text, { ...options, preserveWhitespace: true })
+    };
+    return chainable;
+  }
+};
+_CustomConsole.colorCodes = {
+  black: "30",
+  red: "31",
+  green: "32",
+  yellow: "33",
+  blue: "34",
+  magenta: "35",
+  cyan: "36",
+  white: "37",
+  gray: "90",
+  brightBlack: "90",
+  brightRed: "91",
+  brightGreen: "92",
+  brightYellow: "93",
+  brightBlue: "94",
+  brightMagenta: "95",
+  brightCyan: "96",
+  brightWhite: "97",
+  orange: "38;5;208",
+  purple: "38;5;129",
+  pink: "38;5;205",
+  brown: "38;5;130"
+};
+_CustomConsole.bgColorCodes = {
+  black: "40",
+  red: "41",
+  green: "42",
+  yellow: "43",
+  blue: "44",
+  magenta: "45",
+  cyan: "46",
+  white: "47",
+  gray: "100",
+  brightBlack: "100",
+  brightRed: "101",
+  brightGreen: "102",
+  brightYellow: "103",
+  brightBlue: "104",
+  brightMagenta: "105",
+  brightCyan: "106",
+  brightWhite: "107",
+  orange: "48;5;208",
+  purple: "48;5;129",
+  pink: "48;5;205",
+  brown: "48;5;130"
+};
+_CustomConsole.styleCodes = {
+  bold: "1",
+  dim: "2",
+  italic: "3",
+  underline: "4",
+  inverse: "7",
+  strikethrough: "9",
+  hidden: "8"
+};
+var CustomConsole = _CustomConsole;
+var customConsole = {
+  log: CustomConsole.log.bind(CustomConsole),
+  error: CustomConsole.error.bind(CustomConsole),
+  warn: CustomConsole.warn.bind(CustomConsole),
+  info: CustomConsole.info.bind(CustomConsole),
+  debug: CustomConsole.debug.bind(CustomConsole),
+  table: CustomConsole.table.bind(CustomConsole),
+  clear: CustomConsole.clear.bind(CustomConsole),
+  time: CustomConsole.time.bind(CustomConsole),
+  timeEnd: CustomConsole.timeEnd.bind(CustomConsole),
+  group: CustomConsole.group.bind(CustomConsole),
+  groupEnd: CustomConsole.groupEnd.bind(CustomConsole),
+  count: CustomConsole.count.bind(CustomConsole),
+  countReset: CustomConsole.countReset.bind(CustomConsole),
+  trace: CustomConsole.trace.bind(CustomConsole),
+  dir: CustomConsole.dir.bind(CustomConsole),
+  dirxml: CustomConsole.dirxml.bind(CustomConsole),
+  assert: CustomConsole.assert.bind(CustomConsole),
+  style: CustomConsole.style.bind(CustomConsole)
+};
 
 // lib/modules/tls.ts
 var import_tls2 = __toESM(require("tls"), 1);
-function checkTLSHandshake(host, port = 443) {
+function formatHostname(host) {
+  return host.replace(/^https?:\/\//i, "");
+}
+function checkTLSHandshake(hostname, port = 443) {
+  const host = formatHostname(hostname);
   return new Promise((resolve) => {
     const socket = import_tls2.default.connect(port, host, { rejectUnauthorized: false }, () => {
       resolve(true);
@@ -2096,7 +2489,8 @@ function checkTLSHandshake(host, port = 443) {
     socket.on("error", () => resolve(false));
   });
 }
-function getSSLCertificate(host, port = 443) {
+function getSSLCertificate(hostname, port = 443) {
+  const host = formatHostname(hostname);
   return new Promise((resolve) => {
     const socket = import_tls2.default.connect(port, host, { rejectUnauthorized: false }, () => {
       resolve(socket.getPeerCertificate());
@@ -2105,7 +2499,8 @@ function getSSLCertificate(host, port = 443) {
     socket.on("error", () => resolve(null));
   });
 }
-async function isTLSValid(host, port = 443) {
+async function isTLSValid(hostname, port = 443) {
+  const host = formatHostname(hostname);
   const cert = await getSSLCertificate(host, port);
   if (!cert || !cert.valid_to)
     return false;
@@ -2140,16 +2535,31 @@ function isDomainReachable(host) {
     import_dns.default.resolve(host, "A", (err) => resolve(!err));
   });
 }
+function getIPAddress(host) {
+  return new Promise((resolve, reject) => {
+    import_dns.default.resolve4(host, (err, addresses) => {
+      if (err)
+        reject(err);
+      else
+        resolve(addresses[0]);
+    });
+  });
+}
+function getAllIPs(host) {
+  return Promise.all([new Promise((resolve) => import_dns.default.resolve4(host, (err, addresses) => resolve(err ? [] : addresses))), new Promise((resolve) => import_dns.default.resolve6(host, (err, addresses) => resolve(err ? [] : addresses)))]).then(([ipv4, ipv6]) => ({ ipv4, ipv6 }));
+}
+function hasMXRecords(host) {
+  return new Promise((resolve) => {
+    import_dns.default.resolveMx(host, (err, addresses) => resolve(!err && addresses.length > 0));
+  });
+}
 
 // lib/modules/https.ts
 var import_https2 = __toESM(require("https"), 1);
-var import_fs4 = __toESM(require("fs"), 1);
-function logError(error2) {
-  console.error(`[HTTPS Error]: ${error2}`);
-}
+var import_fs5 = __toESM(require("fs"), 1);
 function downloadFile(url2, destination) {
   return new Promise((resolve, reject) => {
-    const file = import_fs4.default.createWriteStream(destination);
+    const file = import_fs5.default.createWriteStream(destination);
     import_https2.default.get(url2, (res) => {
       res.pipe(file);
       file.on("finish", () => {
@@ -2157,96 +2567,74 @@ function downloadFile(url2, destination) {
         resolve();
       });
     }).on("error", (err) => {
-      logError(err);
-      import_fs4.default.unlink(destination, () => reject(err));
+      console.error(err);
+      import_fs5.default.unlink(destination, () => reject(err));
     });
   });
 }
 function isURLAccessible(url2) {
   return new Promise((resolve) => {
     import_https2.default.get(url2, (res) => {
-      resolve(res.statusCode === 200);
+      const statusCode = res.statusCode ?? 0;
+      resolve(statusCode >= 200 && statusCode < 400);
     }).on("error", () => resolve(false));
   });
 }
 
 // lib/modules/perf_hooks.ts
 var import_perf_hooks = require("perf_hooks");
-var log2 = (message, error2 = null) => {
-  console.log(`[perf_hooks] ${message}`);
-  if (error2)
-    console.error(error2);
-};
 var perf_hooks = {
-  /**
-   * Get the current high-resolution timestamp in milliseconds
-   */
   now: () => {
     try {
       return import_perf_hooks.performance.now();
-    } catch (error2) {
-      log2("Error getting performance timestamp", error2);
+    } catch (error) {
+      console.error("Error getting performance timestamp", error);
       return -1;
     }
   },
-  /**
-   * Get the time origin (when the performance API started tracking)
-   */
   getTimeOrigin: () => {
     try {
       return import_perf_hooks.performance.timeOrigin;
-    } catch (error2) {
-      log2("Error getting time origin", error2);
+    } catch (error) {
+      console.error("Error getting time origin", error);
       return -1;
     }
   },
-  /**
-   * Measures the execution time of a function in milliseconds
-   */
   measureExecutionTime: (fn, ...args) => {
     try {
       const start = import_perf_hooks.performance.now();
       fn(...args);
       return import_perf_hooks.performance.now() - start;
-    } catch (error2) {
-      log2("Error measuring execution time", error2);
+    } catch (error) {
+      console.error("Error measuring execution time", error);
       return -1;
     }
   },
-  /**
-   * Tracks event loop delays (helps identify performance issues)
-   */
   monitorEventLoopDelay: () => {
     try {
       const histogram = (0, import_perf_hooks.monitorEventLoopDelay)();
       histogram.enable();
       return histogram;
-    } catch (error2) {
-      log2("Error monitoring event loop delay", error2);
+    } catch (error) {
+      console.error("Error monitoring event loop delay", error);
       return null;
     }
   },
-  /**
-   * Sets up a PerformanceObserver to watch for performance entries
-   */
   observePerformance: (entryTypes, callback) => {
     try {
       const observer = new import_perf_hooks.PerformanceObserver((list) => callback(list));
       observer.observe({ entryTypes });
       return observer;
-    } catch (error2) {
-      log2("Error setting up PerformanceObserver", error2);
+    } catch (error) {
+      console.error("Error setting up PerformanceObserver", error);
       return null;
     }
   },
-  /**
-   * Returns Node.js performance timings (including startup time)
-   */
   getNodePerformanceTiming: () => {
     try {
       return import_perf_hooks.performance.nodeTiming;
-    } catch (error2) {
-      log2("Error getting Node.js performance timing", error2);
+    } catch (error) {
+      console.error("Error getting Node.js performance timing", error);
       return null;
     }
   }
@@ -2522,9 +2910,9 @@ var Emoji = class _Emoji {
     return this.data.codepoints.split(" ");
   }
   twemoji(opts) {
-    const { format = "png", size = "72x72" } = opts ?? {};
+    const { format = "png", size = "120x120" } = opts ?? {};
     const code = this.toUnicode().toLowerCase();
-    return `https://twemoji.maxcdn.com/v/latest/${format === "svg" ? "svg" : size}/${code}.${format}`;
+    return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/${format === "svg" ? "svg" : size}/${code}.${format}`;
   }
   get fancyName() {
     return `:${this.name.replace(/\W/g, "_").toLowerCase()}:`;
@@ -2558,9 +2946,9 @@ var fetchEmojis = async () => {
     const response = await fetch("https://cdn.jsdelivr.net/gh/maher-xubair/emojiApi/emojis-data.json");
     emojiList = await response.json();
     return emojiList;
-  } catch (error2) {
-    console.error("Failed to fetch emoji data:", error2);
-    throw error2;
+  } catch (error) {
+    console.error("Failed to fetch emoji data:", error);
+    throw error;
   }
 };
 var emojiApi = {
@@ -2638,11 +3026,11 @@ var Task = class extends import_events.EventEmitter {
     let exec2;
     try {
       exec2 = this._execution(now);
-    } catch (error2) {
-      return this.emit("task-failed", error2);
+    } catch (error) {
+      return this.emit("task-failed", error);
     }
     if (exec2 instanceof Promise) {
-      return exec2.then(() => this.emit("task-finished")).catch((error2) => this.emit("task-failed", error2));
+      return exec2.then(() => this.emit("task-finished")).catch((error) => this.emit("task-failed", error));
     } else {
       this.emit("task-finished");
       return exec2;
@@ -2959,6 +3347,7 @@ var ScheduledTask = class extends import_events3.EventEmitter {
 var import_events4 = require("events");
 var import_path3 = __toESM(require("path"), 1);
 var import_child_process3 = require("child_process");
+var import_meta = {};
 var scheduledTask;
 function register(message) {
   const script = require(message.path);
@@ -2980,7 +3369,13 @@ if (process.send) {
     }
   });
 }
-var daemonPath = __filename;
+var daemonPath = (() => {
+  try {
+    return new URL(import_meta.url).pathname;
+  } catch {
+    return typeof __filename !== "undefined" ? __filename : "";
+  }
+})();
 var BackgroundScheduledTask = class extends import_events4.EventEmitter {
   constructor(cronExpression, taskPath, options) {
     super();
@@ -3190,15 +3585,15 @@ function generateApiKey(options = { method: "string" }) {
   buffertoJson,
   buildUrl,
   checkTLSHandshake,
-  clear,
+  console,
+  copyFile,
+  createDirectory,
   cron,
   crypto,
-  debug,
   deleteFile,
   downloadFile,
   emojiApi,
   ensurePackage,
-  error,
   fileExists,
   flattenArray,
   formatBytes,
@@ -3206,22 +3601,25 @@ function generateApiKey(options = { method: "string" }) {
   formatNumber,
   generateApiKey,
   getAbsolutePath,
+  getAllIPs,
   getBufferFromStream,
   getCpuLoad,
   getDate,
-  getFileExtension,
-  getFileName,
   getFileSize,
+  getFileStats,
+  getIPAddress,
   getNetworkInterfaces,
+  getProcessPriority,
   getRandom,
-  getRelativePath,
   getSSLCertificate,
   getStreamFromBuffer,
   getSystemInfo,
+  getTempDirectory,
   getTime,
+  getUptime,
   getUserInfo,
   hasEmoji,
-  info,
+  hasMXRecords,
   isArray,
   isBigInt,
   isBool,
@@ -3240,12 +3638,10 @@ function generateApiKey(options = { method: "string" }) {
   isTLSValid,
   isURLAccessible,
   isUndefined,
-  joinPath,
   jsontoBuffer,
-  log,
+  listFiles,
   mime,
-  normalizePath,
-  pasrseURL,
+  parseURL,
   passwordValidator,
   perf_hooks,
   randomElement,
@@ -3253,14 +3649,16 @@ function generateApiKey(options = { method: "string" }) {
   randomInt,
   randomizeArray,
   readFile,
+  removeDirectory,
+  renameFile,
   resolveDNS,
   reverseLookup,
   runCommand,
   runCommandSync,
   runSpawn,
   runtime,
+  setProcessPriority,
   sleep,
-  table,
   timeAgo,
   toBool,
   toBuffer,
@@ -3268,7 +3666,8 @@ function generateApiKey(options = { method: "string" }) {
   transformBuffer,
   truncate,
   uniqueArray,
+  unwatchFile,
   urlValidator,
-  warn,
+  watchFile,
   writeFile
 });
