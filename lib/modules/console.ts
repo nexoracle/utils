@@ -1,11 +1,7 @@
-type Color = 
-  | 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white' | 'gray'
-  | 'brightBlack' | 'brightRed' | 'brightGreen' | 'brightYellow' | 'brightBlue' 
-  | 'brightMagenta' | 'brightCyan' | 'brightWhite'
-  | 'orange' | 'purple' | 'pink' | 'brown';
+type Color = "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "gray" | "brightBlack" | "brightRed" | "brightGreen" | "brightYellow" | "brightBlue" | "brightMagenta" | "brightCyan" | "brightWhite" | "orange" | "purple" | "pink" | "brown" | { rgb: [number, number, number] } | { hex: string };
 
-type Style = 'bold' | 'dim' | 'italic' | 'underline' | 'inverse' | 'strikethrough' | 'hidden';
-type LogLevel = 'log' | 'error' | 'warn' | 'info' | 'debug';
+type Style = "bold" | "dim" | "italic" | "underline" | "inverse" | "strikethrough" | "hidden";
+type LogLevel = "log" | "error" | "warn" | "info" | "debug";
 
 interface LoggerOptions {
   color?: Color;
@@ -18,86 +14,131 @@ interface LoggerOptions {
 }
 
 class CustomConsole {
-  private static colorCodes: Record<Color, string> = {
-    black: '30',
-    red: '31',
-    green: '32',
-    yellow: '33',
-    blue: '34',
-    magenta: '35',
-    cyan: '36',
-    white: '37',
-    gray: '90',
-    brightBlack: '90',
-    brightRed: '91',
-    brightGreen: '92',
-    brightYellow: '93',
-    brightBlue: '94',
-    brightMagenta: '95',
-    brightCyan: '96',
-    brightWhite: '97',
-    orange: '38;5;208',
-    purple: '38;5;129',
-    pink: '38;5;205',
-    brown: '38;5;130',
+  private static colorCodes: Record<string, string> = {
+    black: "30",
+    red: "31",
+    green: "32",
+    yellow: "33",
+    blue: "34",
+    magenta: "35",
+    cyan: "36",
+    white: "37",
+    gray: "90",
+    brightBlack: "90",
+    brightRed: "91",
+    brightGreen: "92",
+    brightYellow: "93",
+    brightBlue: "94",
+    brightMagenta: "95",
+    brightCyan: "96",
+    brightWhite: "97",
+    orange: "38;5;208",
+    purple: "38;5;129",
+    pink: "38;5;205",
+    brown: "38;5;130",
   };
 
-  private static bgColorCodes: Record<Color, string> = {
-    black: '40',
-    red: '41',
-    green: '42',
-    yellow: '43',
-    blue: '44',
-    magenta: '45',
-    cyan: '46',
-    white: '47',
-    gray: '100',
-    brightBlack: '100',
-    brightRed: '101',
-    brightGreen: '102',
-    brightYellow: '103',
-    brightBlue: '104',
-    brightMagenta: '105',
-    brightCyan: '106',
-    brightWhite: '107',
-    orange: '48;5;208',
-    purple: '48;5;129',
-    pink: '48;5;205',
-    brown: '48;5;130',
+  private static bgColorCodes: Record<string, string> = {
+    black: "40",
+    red: "41",
+    green: "42",
+    yellow: "43",
+    blue: "44",
+    magenta: "45",
+    cyan: "46",
+    white: "47",
+    gray: "100",
+    brightBlack: "100",
+    brightRed: "101",
+    brightGreen: "102",
+    brightYellow: "103",
+    brightBlue: "104",
+    brightMagenta: "105",
+    brightCyan: "106",
+    brightWhite: "107",
+    orange: "48;5;208",
+    purple: "48;5;129",
+    pink: "48;5;205",
+    brown: "48;5;130",
   };
 
   private static styleCodes: Record<Style, string> = {
-    bold: '1',
-    dim: '2',
-    italic: '3',
-    underline: '4',
-    inverse: '7',
-    strikethrough: '9',
-    hidden: '8',
+    bold: "1",
+    dim: "2",
+    italic: "3",
+    underline: "4",
+    inverse: "7",
+    strikethrough: "9",
+    hidden: "8",
   };
+
+  private static hexToRgb(hex: string): [number, number, number] {
+    hex = hex.replace("#", "");
+
+    let r, g, b;
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6) {
+      r = parseInt(hex.substring(0, 2), 16);
+      g = parseInt(hex.substring(2, 4), 16);
+      b = parseInt(hex.substring(4, 6), 16);
+    } else {
+      throw new Error("Invalid HEX color format");
+    }
+
+    return [r, g, b];
+  }
+
+  private static getColorCode(color: Color): string {
+    if (typeof color === "string") {
+      return this.colorCodes[color] || "";
+    } else if ("rgb" in color) {
+      const [r, g, b] = color.rgb;
+      return `38;2;${r};${g};${b}`;
+    } else if ("hex" in color) {
+      const [r, g, b] = this.hexToRgb(color.hex);
+      return `38;2;${r};${g};${b}`;
+    }
+    return "";
+  }
+
+  private static getBgColorCode(color: Color): string {
+    if (typeof color === "string") {
+      return this.bgColorCodes[color] || "";
+    } else if ("rgb" in color) {
+      const [r, g, b] = color.rgb;
+      return `48;2;${r};${g};${b}`;
+    } else if ("hex" in color) {
+      const [r, g, b] = this.hexToRgb(color.hex);
+      return `48;2;${r};${g};${b}`;
+    }
+    return "";
+  }
 
   private static applyStyles(text: string, options: LoggerOptions): string {
     if (!text.trim() && options.preserveWhitespace) {
       return text;
     }
 
-    if (options.styles?.includes('hidden')) {
-      return '';
+    if (options.styles?.includes("hidden")) {
+      return "";
     }
 
     const styles: string[] = [];
 
     if (options.color) {
-      styles.push(this.colorCodes[options.color]);
+      styles.push(this.getColorCode(options.color));
     }
 
     if (options.bgColor) {
-      styles.push(this.bgColorCodes[options.bgColor]);
+      styles.push(this.getBgColorCode(options.bgColor));
     }
 
     if (options.styles) {
-      options.styles.forEach(style => {
-        if (style !== 'hidden') {
+      options.styles.forEach((style) => {
+        if (style !== "hidden") {
           styles.push(this.styleCodes[style]);
         }
       });
@@ -107,22 +148,23 @@ class CustomConsole {
       return text;
     }
 
-    const styleStr = styles.join(';');
+    const styleStr = styles.join(";");
     return `\x1b[${styleStr}m${text}\x1b[0m`;
   }
 
   private static processArgs(args: any[], options: LoggerOptions): any[] {
-    return args.map(arg => {
-      if (typeof arg === 'string') {
-        if (arg.includes('\n')) {
-          return arg.split('\n')
-            .map(line => {
+    return args.map((arg) => {
+      if (typeof arg === "string") {
+        if (arg.includes("\n")) {
+          return arg
+            .split("\n")
+            .map((line) => {
               let processed = line;
               if (options.prefix) processed = options.prefix + processed;
               if (options.suffix) processed = processed + options.suffix;
               return this.applyStyles(processed, options);
             })
-            .join('\n');
+            .join("\n");
         }
 
         let processed = arg;
@@ -130,8 +172,8 @@ class CustomConsole {
         if (options.suffix) processed = processed + options.suffix;
         return this.applyStyles(processed, options);
       }
-      
-      if (arg && typeof arg === 'object') {
+
+      if (arg && typeof arg === "object") {
         let objString;
         try {
           objString = JSON.stringify(arg, null, 2);
@@ -139,16 +181,16 @@ class CustomConsole {
           try {
             objString = arg.toString();
           } catch {
-            objString = '[Object]';
+            objString = "[Object]";
           }
         }
-        
+
         let processed = objString;
         if (options.prefix) processed = options.prefix + processed;
         if (options.suffix) processed = processed + options.suffix;
         return this.applyStyles(processed, options);
       }
-      
+
       let processed = String(arg);
       if (options.prefix) processed = options.prefix + processed;
       if (options.suffix) processed = processed + options.suffix;
@@ -157,9 +199,7 @@ class CustomConsole {
   }
 
   private static isOptionsObject(obj: any): obj is LoggerOptions {
-    return obj && typeof obj === 'object' && !Array.isArray(obj) &&
-      (obj.color !== undefined || obj.bgColor !== undefined || obj.styles !== undefined ||
-       obj.prefix !== undefined || obj.suffix !== undefined || obj.preserveWhitespace !== undefined);
+    return obj && typeof obj === "object" && !Array.isArray(obj) && (obj.color !== undefined || obj.bgColor !== undefined || obj.styles !== undefined || obj.prefix !== undefined || obj.suffix !== undefined || obj.preserveWhitespace !== undefined);
   }
 
   private static logWithOptions(level: LogLevel, args: any[], options: LoggerOptions = {}) {
@@ -168,49 +208,48 @@ class CustomConsole {
     consoleMethod(...processedArgs);
   }
 
-  // Basic logging methods
   static log(...args: any[]): void {
     if (args.length > 1 && this.isOptionsObject(args[args.length - 1])) {
       const options = args.pop() as LoggerOptions;
-      this.logWithOptions('log', args, options);
+      this.logWithOptions("log", args, options);
     } else {
-      this.logWithOptions('log', args);
+      this.logWithOptions("log", args);
     }
   }
 
   static error(...args: any[]): void {
     if (args.length > 1 && this.isOptionsObject(args[args.length - 1])) {
       const options = args.pop() as LoggerOptions;
-      this.logWithOptions('error', args, { color: 'red', ...options });
+      this.logWithOptions("error", args, { color: "red", ...options });
     } else {
-      this.logWithOptions('error', args, { color: 'red' });
+      this.logWithOptions("error", args, { color: "red" });
     }
   }
 
   static warn(...args: any[]): void {
     if (args.length > 1 && this.isOptionsObject(args[args.length - 1])) {
       const options = args.pop() as LoggerOptions;
-      this.logWithOptions('warn', args, { color: 'yellow', ...options });
+      this.logWithOptions("warn", args, { color: "yellow", ...options });
     } else {
-      this.logWithOptions('warn', args, { color: 'yellow' });
+      this.logWithOptions("warn", args, { color: "yellow" });
     }
   }
 
   static info(...args: any[]): void {
     if (args.length > 1 && this.isOptionsObject(args[args.length - 1])) {
       const options = args.pop() as LoggerOptions;
-      this.logWithOptions('info', args, { color: 'cyan', ...options });
+      this.logWithOptions("info", args, { color: "cyan", ...options });
     } else {
-      this.logWithOptions('info', args, { color: 'cyan' });
+      this.logWithOptions("info", args, { color: "cyan" });
     }
   }
 
   static debug(...args: any[]): void {
     if (args.length > 1 && this.isOptionsObject(args[args.length - 1])) {
       const options = args.pop() as LoggerOptions;
-      this.logWithOptions('debug', args, { color: 'gray', ...options });
+      this.logWithOptions("debug", args, { color: "gray", ...options });
     } else {
-      this.logWithOptions('debug', args, { color: 'gray' });
+      this.logWithOptions("debug", args, { color: "gray" });
     }
   }
 
@@ -262,7 +301,10 @@ class CustomConsole {
     globalThis.console.assert(condition, ...data);
   }
 
-  static style(text: string, options: LoggerOptions = {}): {
+  static style(
+    text: string,
+    options: LoggerOptions = {}
+  ): {
     color: (color: Color) => any;
     bg: (color: Color) => any;
     bold: () => any;
@@ -279,19 +321,23 @@ class CustomConsole {
     debug: () => void;
     toString: () => string;
     preserveWhitespace: () => any;
+    rgb: (r: number, g: number, b: number) => any;
+    hex: (hex: string) => any;
+    bgRgb: (r: number, g: number, b: number) => any;
+    bgHex: (hex: string) => any;
   } {
     const styledText = this.applyStyles(text, options);
 
     const chainable = {
       color: (color: Color) => CustomConsole.style(text, { ...options, color }),
       bg: (color: Color) => CustomConsole.style(text, { ...options, bgColor: color }),
-      bold: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), 'bold'] }),
-      dim: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), 'dim'] }),
-      italic: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), 'italic'] }),
-      underline: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), 'underline'] }),
-      inverse: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), 'inverse'] }),
-      strikethrough: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), 'strikethrough'] }),
-      hidden: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), 'hidden'] }),
+      bold: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), "bold"] }),
+      dim: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), "dim"] }),
+      italic: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), "italic"] }),
+      underline: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), "underline"] }),
+      inverse: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), "inverse"] }),
+      strikethrough: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), "strikethrough"] }),
+      hidden: () => CustomConsole.style(text, { ...options, styles: [...(options.styles || []), "hidden"] }),
       log: () => CustomConsole.log(styledText),
       error: () => CustomConsole.error(styledText),
       warn: () => CustomConsole.warn(styledText),
@@ -299,13 +345,17 @@ class CustomConsole {
       debug: () => CustomConsole.debug(styledText),
       toString: () => styledText,
       preserveWhitespace: () => CustomConsole.style(text, { ...options, preserveWhitespace: true }),
+      rgb: (r: number, g: number, b: number) => CustomConsole.style(text, { ...options, color: { rgb: [r, g, b] } }),
+      hex: (hex: string) => CustomConsole.style(text, { ...options, color: { hex } }),
+      bgRgb: (r: number, g: number, b: number) => CustomConsole.style(text, { ...options, bgColor: { rgb: [r, g, b] } }),
+      bgHex: (hex: string) => CustomConsole.style(text, { ...options, bgColor: { hex } }),
     };
 
     return chainable;
   }
 }
 
-const customConsole = {
+const Console = {
   log: CustomConsole.log.bind(CustomConsole),
   error: CustomConsole.error.bind(CustomConsole),
   warn: CustomConsole.warn.bind(CustomConsole),
@@ -326,5 +376,5 @@ const customConsole = {
   style: CustomConsole.style.bind(CustomConsole),
 };
 
-export { customConsole as console };
-export default customConsole;
+export { Console as console };
+export default Console;

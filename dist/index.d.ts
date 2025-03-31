@@ -372,9 +372,13 @@ declare const apex: {
     rateLimit: (options?: RateLimiterOptions) => Middleware;
 };
 
-type Color = 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white' | 'gray' | 'brightBlack' | 'brightRed' | 'brightGreen' | 'brightYellow' | 'brightBlue' | 'brightMagenta' | 'brightCyan' | 'brightWhite' | 'orange' | 'purple' | 'pink' | 'brown';
-type Style = 'bold' | 'dim' | 'italic' | 'underline' | 'inverse' | 'strikethrough' | 'hidden';
-type LogLevel = 'log' | 'error' | 'warn' | 'info' | 'debug';
+type Color = "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "gray" | "brightBlack" | "brightRed" | "brightGreen" | "brightYellow" | "brightBlue" | "brightMagenta" | "brightCyan" | "brightWhite" | "orange" | "purple" | "pink" | "brown" | {
+    rgb: [number, number, number];
+} | {
+    hex: string;
+};
+type Style = "bold" | "dim" | "italic" | "underline" | "inverse" | "strikethrough" | "hidden";
+type LogLevel = "log" | "error" | "warn" | "info" | "debug";
 interface LoggerOptions {
     color?: Color;
     bgColor?: Color;
@@ -388,6 +392,9 @@ declare class CustomConsole {
     private static colorCodes;
     private static bgColorCodes;
     private static styleCodes;
+    private static hexToRgb;
+    private static getColorCode;
+    private static getBgColorCode;
     private static applyStyles;
     private static processArgs;
     private static isOptionsObject;
@@ -426,9 +433,13 @@ declare class CustomConsole {
         debug: () => void;
         toString: () => string;
         preserveWhitespace: () => any;
+        rgb: (r: number, g: number, b: number) => any;
+        hex: (hex: string) => any;
+        bgRgb: (r: number, g: number, b: number) => any;
+        bgHex: (hex: string) => any;
     };
 }
-declare const customConsole: {
+declare const Console: {
     log: typeof CustomConsole.log;
     error: typeof CustomConsole.error;
     warn: typeof CustomConsole.warn;
@@ -660,4 +671,4 @@ type Options = StringOptions | BytesOptions | Base32Options | Base64Options | Uu
 
 declare function generateApiKey(options?: Options): string | string[];
 
-export { ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, customConsole as console, copyFile, createDirectory, cron, crypto, deleteFile, downloadFile, emojiApi, ensurePackage, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getAllIPs, getBufferFromStream, getCpuLoad, getDate, getFileSize, getFileStats, getIPAddress, getNetworkInterfaces, getProcessPriority, getRandom, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTempDirectory, getTime, getUptime, getUserInfo, hasEmoji, hasMXRecords, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, jsontoBuffer, listFiles, mime, parseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, removeDirectory, renameFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, runtime, setProcessPriority, sleep, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, unwatchFile, urlValidator, watchFile, writeFile };
+export { ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, Console as console, copyFile, createDirectory, cron, crypto, deleteFile, downloadFile, emojiApi, ensurePackage, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getAllIPs, getBufferFromStream, getCpuLoad, getDate, getFileSize, getFileStats, getIPAddress, getNetworkInterfaces, getProcessPriority, getRandom, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTempDirectory, getTime, getUptime, getUserInfo, hasEmoji, hasMXRecords, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, jsontoBuffer, listFiles, mime, parseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, removeDirectory, renameFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, runtime, setProcessPriority, sleep, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, unwatchFile, urlValidator, watchFile, writeFile };

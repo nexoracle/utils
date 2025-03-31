@@ -38,7 +38,7 @@ __export(lib_exports, {
   buffertoJson: () => buffertoJson,
   buildUrl: () => buildUrl,
   checkTLSHandshake: () => checkTLSHandshake,
-  console: () => customConsole,
+  console: () => Console,
   copyFile: () => copyFile,
   createDirectory: () => createDirectory,
   cron: () => cron,
@@ -2216,6 +2216,46 @@ function parseUrl(req) {
 
 // lib/modules/console.ts
 var _CustomConsole = class _CustomConsole {
+  static hexToRgb(hex) {
+    hex = hex.replace("#", "");
+    let r, g, b;
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6) {
+      r = parseInt(hex.substring(0, 2), 16);
+      g = parseInt(hex.substring(2, 4), 16);
+      b = parseInt(hex.substring(4, 6), 16);
+    } else {
+      throw new Error("Invalid HEX color format");
+    }
+    return [r, g, b];
+  }
+  static getColorCode(color) {
+    if (typeof color === "string") {
+      return this.colorCodes[color] || "";
+    } else if ("rgb" in color) {
+      const [r, g, b] = color.rgb;
+      return `38;2;${r};${g};${b}`;
+    } else if ("hex" in color) {
+      const [r, g, b] = this.hexToRgb(color.hex);
+      return `38;2;${r};${g};${b}`;
+    }
+    return "";
+  }
+  static getBgColorCode(color) {
+    if (typeof color === "string") {
+      return this.bgColorCodes[color] || "";
+    } else if ("rgb" in color) {
+      const [r, g, b] = color.rgb;
+      return `48;2;${r};${g};${b}`;
+    } else if ("hex" in color) {
+      const [r, g, b] = this.hexToRgb(color.hex);
+      return `48;2;${r};${g};${b}`;
+    }
+    return "";
+  }
   static applyStyles(text, options) {
     if (!text.trim() && options.preserveWhitespace) {
       return text;
@@ -2225,10 +2265,10 @@ var _CustomConsole = class _CustomConsole {
     }
     const styles = [];
     if (options.color) {
-      styles.push(this.colorCodes[options.color]);
+      styles.push(this.getColorCode(options.color));
     }
     if (options.bgColor) {
-      styles.push(this.bgColorCodes[options.bgColor]);
+      styles.push(this.getBgColorCode(options.bgColor));
     }
     if (options.styles) {
       options.styles.forEach((style) => {
@@ -2297,7 +2337,6 @@ var _CustomConsole = class _CustomConsole {
     const processedArgs = this.processArgs(args, options);
     consoleMethod(...processedArgs);
   }
-  // Basic logging methods
   static log(...args) {
     if (args.length > 1 && this.isOptionsObject(args[args.length - 1])) {
       const options = args.pop();
@@ -2392,7 +2431,11 @@ var _CustomConsole = class _CustomConsole {
       info: () => _CustomConsole.info(styledText),
       debug: () => _CustomConsole.debug(styledText),
       toString: () => styledText,
-      preserveWhitespace: () => _CustomConsole.style(text, { ...options, preserveWhitespace: true })
+      preserveWhitespace: () => _CustomConsole.style(text, { ...options, preserveWhitespace: true }),
+      rgb: (r, g, b) => _CustomConsole.style(text, { ...options, color: { rgb: [r, g, b] } }),
+      hex: (hex) => _CustomConsole.style(text, { ...options, color: { hex } }),
+      bgRgb: (r, g, b) => _CustomConsole.style(text, { ...options, bgColor: { rgb: [r, g, b] } }),
+      bgHex: (hex) => _CustomConsole.style(text, { ...options, bgColor: { hex } })
     };
     return chainable;
   }
@@ -2453,7 +2496,7 @@ _CustomConsole.styleCodes = {
   hidden: "8"
 };
 var CustomConsole = _CustomConsole;
-var customConsole = {
+var Console = {
   log: CustomConsole.log.bind(CustomConsole),
   error: CustomConsole.error.bind(CustomConsole),
   warn: CustomConsole.warn.bind(CustomConsole),
