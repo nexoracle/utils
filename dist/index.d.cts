@@ -246,18 +246,13 @@ interface BuildUrlOptions {
 }
 declare const buildUrl: (baseUrl: string, options?: BuildUrlOptions) => string;
 
-/**
- * Run a command asynchronously and return the output
- */
 declare const runCommand: (command: string, cwd?: string, timeout?: number) => Promise<string>;
-/**
- * Run a command synchronously and return output
- */
 declare const runCommandSync: (command: string, cwd?: string) => string | null;
-/**
- * Run a command with arguments using spawn
- */
-declare const runSpawn: (command: string, args: string[], cwd?: string) => Promise<string>;
+declare const runSpawn: (command: string, args: string[], cwd?: string, timeout?: number) => Promise<string>;
+declare const runCommandDetached: (command: string, args: string[], cwd?: string) => void;
+declare const runCommandInteractive: (command: string, args: string[], cwd?: string) => void;
+declare const checkCommandExists: (command: string) => boolean;
+declare const killProcess: (pid: number, signal?: string) => boolean;
 
 interface Request extends IncomingMessage {
     body?: any;
@@ -671,4 +666,4 @@ type Options = StringOptions | BytesOptions | Base32Options | Base64Options | Uu
 
 declare function generateApiKey(options?: Options): string | string[];
 
-export { ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkTLSHandshake, Console as console, copyFile, createDirectory, cron, crypto, deleteFile, downloadFile, emojiApi, ensurePackage, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getAllIPs, getBufferFromStream, getCpuLoad, getDate, getFileSize, getFileStats, getIPAddress, getNetworkInterfaces, getProcessPriority, getRandom, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTempDirectory, getTime, getUptime, getUserInfo, hasEmoji, hasMXRecords, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, jsontoBuffer, listFiles, mime, parseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, removeDirectory, renameFile, resolveDNS, reverseLookup, runCommand, runCommandSync, runSpawn, runtime, setProcessPriority, sleep, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, unwatchFile, urlValidator, watchFile, writeFile };
+export { Axium, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkCommandExists, checkTLSHandshake, Console as console, copyFile, createDirectory, cron, crypto, deleteFile, downloadFile, emojiApi, ensurePackage, fileExists, flattenArray, formatBytes, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getAllIPs, getBufferFromStream, getCpuLoad, getDate, getFileSize, getFileStats, getIPAddress, getNetworkInterfaces, getProcessPriority, getRandom, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTempDirectory, getTime, getUptime, getUserInfo, hasEmoji, hasMXRecords, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, jsontoBuffer, killProcess, listFiles, mime, parseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, removeDirectory, renameFile, resolveDNS, reverseLookup, runCommand, runCommandDetached, runCommandInteractive, runCommandSync, runSpawn, runtime, setProcessPriority, sleep, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, unwatchFile, urlValidator, watchFile, writeFile };

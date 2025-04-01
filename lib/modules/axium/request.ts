@@ -215,15 +215,15 @@ export class RequestHandler {
       } catch (error) {
         if (timeoutId) clearTimeout(timeoutId);
 
-        if (attempt === retries) {
-          if (retries && retries !== 0) {
-            console.error(`Fetch failed after ${retries + 1} attempts`);
+        if (attempt >= retries) {
+          if (retries > 0) {
+            console.error(`Fetch failed after ${retries} attempts`);
             throw new FetchError((error as Error).message || "Request failed");
           }
         }
 
-        if (retryDelay > 0) {
-          console.warn(`Retrying... (${attempt + 1}/${retries + 1})`);
+        if (retryDelay > 0 && attempt < retries) {
+          console.warn(`Retrying... (${attempt + 1}/${retries})`);
           await new Promise((resolve) => setTimeout(resolve, retryDelay));
         }
       }

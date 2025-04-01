@@ -30,6 +30,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // lib/index.ts
 var lib_exports = {};
 __export(lib_exports, {
+  Axium: () => Axium,
   ReadMore: () => ReadMore,
   apex: () => apex,
   appendToFile: () => appendToFile,
@@ -37,6 +38,7 @@ __export(lib_exports, {
   bufferToFile: () => bufferToFile,
   buffertoJson: () => buffertoJson,
   buildUrl: () => buildUrl,
+  checkCommandExists: () => checkCommandExists,
   checkTLSHandshake: () => checkTLSHandshake,
   console: () => Console,
   copyFile: () => copyFile,
@@ -92,6 +94,7 @@ __export(lib_exports, {
   isURLAccessible: () => isURLAccessible,
   isUndefined: () => isUndefined,
   jsontoBuffer: () => jsontoBuffer,
+  killProcess: () => killProcess,
   listFiles: () => listFiles,
   mime: () => mime,
   parseURL: () => parseURL,
@@ -107,6 +110,8 @@ __export(lib_exports, {
   resolveDNS: () => resolveDNS,
   reverseLookup: () => reverseLookup,
   runCommand: () => runCommand,
+  runCommandDetached: () => runCommandDetached,
+  runCommandInteractive: () => runCommandInteractive,
   runCommandSync: () => runCommandSync,
   runSpawn: () => runSpawn,
   runtime: () => runtime,
@@ -587,14 +592,14 @@ var RequestHandler = class {
       } catch (error) {
         if (timeoutId)
           clearTimeout(timeoutId);
-        if (attempt === retries) {
-          if (retries && retries !== 0) {
-            console.error(`Fetch failed after ${retries + 1} attempts`);
+        if (attempt >= retries) {
+          if (retries > 0) {
+            console.error(`Fetch failed after ${retries} attempts`);
             throw new FetchError(error.message || "Request failed");
           }
         }
-        if (retryDelay > 0) {
-          console.warn(`Retrying... (${attempt + 1}/${retries + 1})`);
+        if (retryDelay > 0 && attempt < retries) {
+          console.warn(`Retrying... (${attempt + 1}/${retries})`);
           await new Promise((resolve) => setTimeout(resolve, retryDelay));
         }
       }
@@ -1203,14 +1208,54 @@ var runCommandSync = (command, cwd) => {
     return null;
   }
 };
-var runSpawn = (command, args, cwd) => {
+var runSpawn = (command, args, cwd, timeout = 5e3) => {
   return new Promise((resolve, reject) => {
     const process2 = (0, import_child_process2.spawn)(command, args, { cwd, shell: true });
     let output = "";
+    const timer = setTimeout(() => {
+      process2.kill();
+      reject("Process timeout");
+    }, timeout);
     process2.stdout.on("data", (data) => output += data.toString());
     process2.stderr.on("data", (data) => console.error(`Stderr: ${data.toString()}`));
-    process2.on("close", (code) => code === 0 ? resolve(output.trim()) : reject(`Exited with code ${code}`));
+    process2.on("close", (code) => {
+      clearTimeout(timer);
+      code === 0 ? resolve(output.trim()) : reject(`Exited with code ${code}`);
+    });
   });
+};
+var runCommandDetached = (command, args, cwd) => {
+  const process2 = (0, import_child_process2.spawn)(command, args, {
+    cwd,
+    shell: true,
+    detached: true,
+    stdio: "ignore"
+  });
+  process2.unref();
+};
+var runCommandInteractive = (command, args, cwd) => {
+  (0, import_child_process2.spawn)(command, args, {
+    cwd,
+    shell: true,
+    stdio: "inherit"
+  });
+};
+var checkCommandExists = (command) => {
+  try {
+    (0, import_child_process2.execSync)(`command -v ${command} || where ${command}`, { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+};
+var killProcess = (pid, signal = "SIGTERM") => {
+  try {
+    process.kill(pid, signal);
+    return true;
+  } catch (error) {
+    console.error(`Failed to kill process ${pid}: ${error instanceof Error ? error.message : error}`);
+    return false;
+  }
 };
 
 // lib/modules/apex.ts
@@ -3620,6 +3665,7 @@ function generateApiKey(options = { method: "string" }) {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  Axium,
   ReadMore,
   apex,
   appendToFile,
@@ -3627,6 +3673,7 @@ function generateApiKey(options = { method: "string" }) {
   bufferToFile,
   buffertoJson,
   buildUrl,
+  checkCommandExists,
   checkTLSHandshake,
   console,
   copyFile,
@@ -3682,6 +3729,7 @@ function generateApiKey(options = { method: "string" }) {
   isURLAccessible,
   isUndefined,
   jsontoBuffer,
+  killProcess,
   listFiles,
   mime,
   parseURL,
@@ -3697,6 +3745,8 @@ function generateApiKey(options = { method: "string" }) {
   resolveDNS,
   reverseLookup,
   runCommand,
+  runCommandDetached,
+  runCommandInteractive,
   runCommandSync,
   runSpawn,
   runtime,

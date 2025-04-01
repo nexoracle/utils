@@ -467,14 +467,14 @@ var RequestHandler = class {
       } catch (error) {
         if (timeoutId)
           clearTimeout(timeoutId);
-        if (attempt === retries) {
-          if (retries && retries !== 0) {
-            console.error(`Fetch failed after ${retries + 1} attempts`);
+        if (attempt >= retries) {
+          if (retries > 0) {
+            console.error(`Fetch failed after ${retries} attempts`);
             throw new FetchError(error.message || "Request failed");
           }
         }
-        if (retryDelay > 0) {
-          console.warn(`Retrying... (${attempt + 1}/${retries + 1})`);
+        if (retryDelay > 0 && attempt < retries) {
+          console.warn(`Retrying... (${attempt + 1}/${retries})`);
           await new Promise((resolve) => setTimeout(resolve, retryDelay));
         }
       }
@@ -1083,14 +1083,54 @@ var runCommandSync = (command, cwd) => {
     return null;
   }
 };
-var runSpawn = (command, args, cwd) => {
+var runSpawn = (command, args, cwd, timeout = 5e3) => {
   return new Promise((resolve, reject) => {
     const process2 = spawn(command, args, { cwd, shell: true });
     let output = "";
+    const timer = setTimeout(() => {
+      process2.kill();
+      reject("Process timeout");
+    }, timeout);
     process2.stdout.on("data", (data) => output += data.toString());
     process2.stderr.on("data", (data) => console.error(`Stderr: ${data.toString()}`));
-    process2.on("close", (code) => code === 0 ? resolve(output.trim()) : reject(`Exited with code ${code}`));
+    process2.on("close", (code) => {
+      clearTimeout(timer);
+      code === 0 ? resolve(output.trim()) : reject(`Exited with code ${code}`);
+    });
   });
+};
+var runCommandDetached = (command, args, cwd) => {
+  const process2 = spawn(command, args, {
+    cwd,
+    shell: true,
+    detached: true,
+    stdio: "ignore"
+  });
+  process2.unref();
+};
+var runCommandInteractive = (command, args, cwd) => {
+  spawn(command, args, {
+    cwd,
+    shell: true,
+    stdio: "inherit"
+  });
+};
+var checkCommandExists = (command) => {
+  try {
+    execSync2(`command -v ${command} || where ${command}`, { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+};
+var killProcess = (pid, signal = "SIGTERM") => {
+  try {
+    process.kill(pid, signal);
+    return true;
+  } catch (error) {
+    console.error(`Failed to kill process ${pid}: ${error instanceof Error ? error.message : error}`);
+    return false;
+  }
 };
 
 // lib/modules/apex.ts
@@ -3498,6 +3538,7 @@ function generateApiKey(options = { method: "string" }) {
   return prefix ? `${prefix}.${key}` : key;
 }
 export {
+  Axium,
   ReadMore,
   apex,
   appendToFile,
@@ -3505,6 +3546,7 @@ export {
   bufferToFile,
   buffertoJson,
   buildUrl,
+  checkCommandExists,
   checkTLSHandshake,
   Console as console,
   copyFile,
@@ -3560,6 +3602,7 @@ export {
   isURLAccessible,
   isUndefined,
   jsontoBuffer,
+  killProcess,
   listFiles,
   mime,
   parseURL,
@@ -3575,6 +3618,8 @@ export {
   resolveDNS,
   reverseLookup,
   runCommand,
+  runCommandDetached,
+  runCommandInteractive,
   runCommandSync,
   runSpawn,
   runtime,
