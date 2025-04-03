@@ -198,6 +198,17 @@ export const getDate = (date?: Date | string | number | { format?: string; utc?:
       return `${year}-${month}-${day}`;
   }
 };
+
+export function getTimeZone(): string | null {
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return timeZone || null;
+  } catch (error) {
+    console.error("Error detecting timezone:", error);
+    return null;
+  }
+}
+
 export const formatJSON = (data: unknown, spaces: number = 2): string | null => {
   try {
     return JSON.stringify(data, null, spaces);

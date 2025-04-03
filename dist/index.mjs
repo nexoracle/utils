@@ -702,6 +702,15 @@ var getDate = (date, options) => {
       return `${year}-${month}-${day}`;
   }
 };
+function getTimeZone() {
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return timeZone || null;
+  } catch (error) {
+    console.error("Error detecting timezone:", error);
+    return null;
+  }
+}
 var formatJSON = (data, spaces2 = 2) => {
   try {
     return JSON.stringify(data, null, spaces2);
@@ -3579,6 +3588,7 @@ export {
   getSystemInfo,
   getTempDirectory,
   getTime,
+  getTimeZone,
   getUptime,
   getUserInfo,
   hasEmoji,

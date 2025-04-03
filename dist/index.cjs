@@ -71,6 +71,7 @@ __export(lib_exports, {
   getSystemInfo: () => getSystemInfo,
   getTempDirectory: () => getTempDirectory,
   getTime: () => getTime,
+  getTimeZone: () => getTimeZone,
   getUptime: () => getUptime,
   getUserInfo: () => getUserInfo,
   hasEmoji: () => hasEmoji,
@@ -827,6 +828,15 @@ var getDate = (date, options) => {
       return `${year}-${month}-${day}`;
   }
 };
+function getTimeZone() {
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return timeZone || null;
+  } catch (error) {
+    console.error("Error detecting timezone:", error);
+    return null;
+  }
+}
 var formatJSON = (data, spaces2 = 2) => {
   try {
     return JSON.stringify(data, null, spaces2);
@@ -3706,6 +3716,7 @@ function generateApiKey(options = { method: "string" }) {
   getSystemInfo,
   getTempDirectory,
   getTime,
+  getTimeZone,
   getUptime,
   getUserInfo,
   hasEmoji,

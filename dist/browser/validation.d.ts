@@ -1,0 +1,40 @@
+declare const urlValidator: {
+    isURL(url: string): boolean;
+    mediafire(url: string): boolean;
+    gdrive(url: string): boolean;
+    spotify(url: string): boolean;
+    tiktok(url: string): boolean;
+    threads(url: string): boolean;
+    twitter(url: string): boolean;
+    youtube(url: string): boolean;
+    snapchat(url: string): boolean;
+    terabox(url: string): boolean;
+    instagram(url: string): boolean;
+    facebook(url: string): boolean;
+    linkedin(url: string): boolean;
+    reddit(url: string): boolean;
+    pinterest(url: string): boolean;
+    whatsapp(url: string): boolean;
+    discord(url: string): boolean;
+    twitch(url: string): boolean;
+    stackoverflow(url: string): boolean;
+    medium(url: string): boolean;
+    extractUrlFromString(str: string): string | null;
+    extractAllUrlFromString(str: string): string[] | null;
+    hasProtocol(url: string, protocol: string): boolean;
+    hasDomain(url: string, domain: string): boolean;
+    hasPath(url: string, path: string): boolean;
+    hasQueryParam(url: string, param: string): boolean;
+    hasFragment(url: string, fragment: string): boolean;
+    extractComponents(url: string): {
+        protocol: string;
+        domain: string;
+        path: string;
+        query: string;
+        fragment: string;
+    } | null;
+    isWithinLength(url: string, maxLength: number): boolean;
+    hasValidCharacters(url: string): boolean;
+};
+
+export { urlValidator };
