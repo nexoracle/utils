@@ -10,12 +10,11 @@
     ".": {
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs",
-      "types": "./dist/index.d.ts",
-      "browser": "./dist/browser/validation.js"
+      "types": "./dist/index.d.ts"
     }
   },
   "scripts": {
-    "build": "tsup lib/index.ts --format cjs,esm --dts --out-dir dist && tsup lib/browser/validation.ts --format iife --out-dir dist/browser",
+    "build": "tsup lib/index.ts --format cjs,esm --dts --out-dir dist",
     "dev": "tsup lib/index.ts --format cjs,esm --dts --out-dir dist --watch",
     "clean": "rm -rf dist .tsbuildinfo",
     "release": "npm version patch && npm publish"
