@@ -83,6 +83,20 @@ interface RateLimitStore {
   };
 }
 
+type CorsOriginCallback = (err: Error | null, origin?: boolean | string) => void;
+type CorsOrigin = boolean | string | RegExp | (string | RegExp)[] | ((req: Request, callback: CorsOriginCallback) => void);
+
+interface CorsOptions {
+  origin?: CorsOrigin;
+  methods?: string | string[];
+  allowedHeaders?: string | string[];
+  exposedHeaders?: string | string[];
+  credentials?: boolean;
+  maxAge?: number;
+  preflightContinue?: boolean;
+  optionsSuccessStatus?: number;
+}
+
 type Middleware = (req: Request, res: Response, next: () => void) => void;
 
 class Router {
@@ -93,7 +107,6 @@ class Router {
   private viewEngine: ((filePath: string, data: { [key: string]: any }, callback: (err: Error | null, html?: string) => void) => void) | null = null;
   private trustProxy: boolean | string | string[] | number = false;
   private jsonSpaces: number = 0;
-  private flashMessages: { [key: string]: string[] } = {};
 
   // Add middleware
   use(path: string | Middleware, middleware?: Middleware): void {
@@ -114,28 +127,42 @@ class Router {
   }
 
   // Routes Handling
-  get(path: string, handler: (req: Request, res: Response) => void): void {
-    this.addRoute(path, "GET", handler);
+  get(path: string, ...handlers: ((req: Request, res: Response, next?: () => void) => void)[]): void {
+    this.addRoute(path, "GET", ...handlers);
   }
 
-  post(path: string, handler: (req: Request, res: Response) => void): void {
-    this.addRoute(path, "POST", handler);
+  post(path: string, ...handlers: ((req: Request, res: Response, next?: () => void) => void)[]): void {
+    this.addRoute(path, "POST", ...handlers);
   }
 
-  put(path: string, handler: (req: Request, res: Response) => void): void {
-    this.addRoute(path, "PUT", handler);
+  put(path: string, ...handlers: ((req: Request, res: Response, next?: () => void) => void)[]): void {
+    this.addRoute(path, "PUT", ...handlers);
   }
 
-  delete(path: string, handler: (req: Request, res: Response) => void): void {
-    this.addRoute(path, "DELETE", handler);
+  delete(path: string, ...handlers: ((req: Request, res: Response, next?: () => void) => void)[]): void {
+    this.addRoute(path, "DELETE", ...handlers);
   }
 
   // Add a route with a handler for a specific HTTP method
-  private addRoute(path: string, method: string, handler: (req: Request, res: Response) => void): void {
+  private addRoute(path: string, method: string, ...handlers: ((req: Request, res: Response, next?: () => void) => void)[]): void {
     if (!this.routes[path]) {
       this.routes[path] = {};
     }
-    this.routes[path][method.toUpperCase()] = handler;
+    this.routes[path][method.toUpperCase()] = (req, res) => {
+      const executeHandler = (index: number) => {
+        if (index < handlers.length) {
+          const handler = handlers[index];
+          if (handler.length === 3) {
+            // Middleware with next
+            handler(req, res, () => executeHandler(index + 1));
+          } else {
+            // Final handler
+            handler(req, res);
+          }
+        }
+      };
+      executeHandler(0);
+    };
   }
 
   // Set configuration
@@ -175,7 +202,6 @@ class Router {
   // Get client IP address considering trust proxy
   private getClientIp(req: Request): string {
     if (!this.trustProxy) {
-      console.log("getClientIP 1", req.socket?.remoteAddress);
       return req.socket?.remoteAddress || "";
     }
 
@@ -197,7 +223,6 @@ class Router {
   // Get all IPS if behind reverse proxy
   private getClientIps(req: Request): string[] {
     if (!this.trustProxy) {
-      console.log("getClientIPS 1", req.socket?.remoteAddress);
       return [req.socket?.remoteAddress || ""];
     }
 
@@ -215,26 +240,6 @@ class Router {
       throw new Error("jsonSpaces must be a non-negative number");
     }
     this.jsonSpaces = spaces;
-  }
-
-  // Flash middleware
-  useFlash(): Middleware {
-    return (req: Request, res: Response, next: () => void) => {
-      req.flash = (type: string, message?: string): string[] | void => {
-        if (!this.flashMessages[type]) {
-          this.flashMessages[type] = [];
-        }
-        if (message) {
-          this.flashMessages[type].push(message);
-        }
-        return this.flashMessages[type];
-      };
-
-      res.locals = res.locals || {};
-      res.locals.messages = this.flashMessages;
-
-      next();
-    };
   }
 
   // Render a view
@@ -527,7 +532,7 @@ class Router {
           if (match && this.routes[route][reqMethod.method!]) {
             const paramNames = this.extractParamNames(route);
             paramNames.forEach((name, index) => {
-              reqMethod.params[name] = match[index + 1];
+              reqMethod.params[name] = decodeURIComponent(match[index + 1]);
             });
 
             return this.routes[route][reqMethod.method!](reqMethod, resMethod);
@@ -603,6 +608,123 @@ const apex = {
         }
         next();
       });
+    };
+  },
+  useFlash: (): Middleware => {
+    return (req: Request, res: Response, next: () => void) => {
+      const flashMessages: { [key: string]: string[] } = {};
+
+      req.flash = (type: string, message?: string): string[] | void => {
+        if (!flashMessages[type]) {
+          flashMessages[type] = [];
+        }
+        if (message) {
+          flashMessages[type].push(message);
+        }
+        return flashMessages[type];
+      };
+
+      res.locals = res.locals || {};
+      res.locals.messages = flashMessages;
+
+      next();
+    };
+  },
+  cors: (options: CorsOptions = {}): Middleware => {
+    const defaults = {
+      origin: "*",
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    };
+
+    const opts = { ...defaults, ...options };
+
+    return (req: Request, res: Response, next: () => void) => {
+      const origin = req.headers.origin as string;
+
+      // Handle preflight requests
+      if (req.method === "OPTIONS" && req.headers["access-control-request-method"]) {
+        // Set methods
+        if (opts.methods) {
+          res.setHeader("Access-Control-Allow-Methods", Array.isArray(opts.methods) ? opts.methods.join(",") : opts.methods);
+        }
+
+        // Set allowed headers
+        if (opts.allowedHeaders) {
+          res.setHeader("Access-Control-Allow-Headers", Array.isArray(opts.allowedHeaders) ? opts.allowedHeaders.join(",") : opts.allowedHeaders);
+        } else if (req.headers["access-control-request-headers"]) {
+          res.setHeader("Access-Control-Allow-Headers", req.headers["access-control-request-headers"]);
+        }
+
+        // Set max age if specified
+        if (opts.maxAge) {
+          res.setHeader("Access-Control-Max-Age", String(opts.maxAge));
+        }
+
+        // Set credentials if enabled
+        if (opts.credentials) {
+          res.setHeader("Access-Control-Allow-Credentials", "true");
+        }
+
+        // Either continue or end the response
+        if (opts.preflightContinue) {
+          next();
+          return;
+        }
+
+        res.statusCode = opts.optionsSuccessStatus || 204;
+        res.setHeader("Content-Length", "0");
+        res.end();
+        return;
+      }
+
+      // Handle actual requests
+      const setOrigin = () => {
+        if (opts.origin === true) {
+          res.setHeader("Access-Control-Allow-Origin", origin || "*");
+          if (opts.credentials) {
+            res.setHeader("Vary", "Origin");
+          }
+        } else if (typeof opts.origin === "string") {
+          res.setHeader("Access-Control-Allow-Origin", opts.origin);
+        } else if (opts.origin instanceof RegExp && origin && opts.origin.test(origin)) {
+          res.setHeader("Access-Control-Allow-Origin", origin);
+        } else if (Array.isArray(opts.origin)) {
+          const allowed = opts.origin.some((o) => (o instanceof RegExp ? origin && o.test(origin) : o === origin));
+          if (allowed && origin) {
+            res.setHeader("Access-Control-Allow-Origin", origin);
+          }
+        } else if (typeof opts.origin === "function") {
+          opts.origin(req, (err: Error | null, allowOrigin?: boolean | string) => {
+            if (err || !allowOrigin) {
+              next();
+              return;
+            }
+            const finalOrigin = allowOrigin === true ? origin || "*" : allowOrigin;
+            if (finalOrigin) {
+              res.setHeader("Access-Control-Allow-Origin", finalOrigin);
+            }
+            if (opts.credentials) {
+              res.setHeader("Access-Control-Allow-Credentials", "true");
+            }
+            next();
+          });
+          return;
+        }
+
+        if (opts.credentials) {
+          res.setHeader("Access-Control-Allow-Credentials", "true");
+        }
+        next();
+      };
+
+      // Set exposed headers if specified
+      if (opts.exposedHeaders) {
+        res.setHeader("Access-Control-Expose-Headers", Array.isArray(opts.exposedHeaders) ? opts.exposedHeaders.join(",") : opts.exposedHeaders);
+      }
+
+      setOrigin();
     };
   },
   static(prefix: string, staticPath?: string): Middleware {

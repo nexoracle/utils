@@ -1734,7 +1734,6 @@ var Router = class {
     this.viewEngine = null;
     this.trustProxy = false;
     this.jsonSpaces = 0;
-    this.flashMessages = {};
   }
   // Add middleware
   use(path4, middleware) {
@@ -1753,24 +1752,36 @@ var Router = class {
     }
   }
   // Routes Handling
-  get(path4, handler) {
-    this.addRoute(path4, "GET", handler);
+  get(path4, ...handlers) {
+    this.addRoute(path4, "GET", ...handlers);
   }
-  post(path4, handler) {
-    this.addRoute(path4, "POST", handler);
+  post(path4, ...handlers) {
+    this.addRoute(path4, "POST", ...handlers);
   }
-  put(path4, handler) {
-    this.addRoute(path4, "PUT", handler);
+  put(path4, ...handlers) {
+    this.addRoute(path4, "PUT", ...handlers);
   }
-  delete(path4, handler) {
-    this.addRoute(path4, "DELETE", handler);
+  delete(path4, ...handlers) {
+    this.addRoute(path4, "DELETE", ...handlers);
   }
   // Add a route with a handler for a specific HTTP method
-  addRoute(path4, method, handler) {
+  addRoute(path4, method, ...handlers) {
     if (!this.routes[path4]) {
       this.routes[path4] = {};
     }
-    this.routes[path4][method.toUpperCase()] = handler;
+    this.routes[path4][method.toUpperCase()] = (req, res) => {
+      const executeHandler = (index) => {
+        if (index < handlers.length) {
+          const handler = handlers[index];
+          if (handler.length === 3) {
+            handler(req, res, () => executeHandler(index + 1));
+          } else {
+            handler(req, res);
+          }
+        }
+      };
+      executeHandler(0);
+    };
   }
   // Set configuration
   set(key, value) {
@@ -1807,7 +1818,6 @@ var Router = class {
   // Get client IP address considering trust proxy
   getClientIp(req) {
     if (!this.trustProxy) {
-      console.log("getClientIP 1", req.socket?.remoteAddress);
       return req.socket?.remoteAddress || "";
     }
     const forwardedFor = req.headers["x-forwarded-for"];
@@ -1825,7 +1835,6 @@ var Router = class {
   // Get all IPS if behind reverse proxy
   getClientIps(req) {
     if (!this.trustProxy) {
-      console.log("getClientIPS 1", req.socket?.remoteAddress);
       return [req.socket?.remoteAddress || ""];
     }
     const forwardedFor = req.headers["x-forwarded-for"];
@@ -1840,23 +1849,6 @@ var Router = class {
       throw new Error("jsonSpaces must be a non-negative number");
     }
     this.jsonSpaces = spaces2;
-  }
-  // Flash middleware
-  useFlash() {
-    return (req, res, next) => {
-      req.flash = (type, message) => {
-        if (!this.flashMessages[type]) {
-          this.flashMessages[type] = [];
-        }
-        if (message) {
-          this.flashMessages[type].push(message);
-        }
-        return this.flashMessages[type];
-      };
-      res.locals = res.locals || {};
-      res.locals.messages = this.flashMessages;
-      next();
-    };
   }
   // Render a view
   render(res, viewName, data = {}) {
@@ -2094,7 +2086,7 @@ var Router = class {
           if (match && this.routes[route][reqMethod.method]) {
             const paramNames = this.extractParamNames(route);
             paramNames.forEach((name, index2) => {
-              reqMethod.params[name] = match[index2 + 1];
+              reqMethod.params[name] = decodeURIComponent(match[index2 + 1]);
             });
             return this.routes[route][reqMethod.method](reqMethod, resMethod);
           }
@@ -2158,6 +2150,111 @@ var apex = {
         }
         next();
       });
+    };
+  },
+  useFlash: () => {
+    return (req, res, next) => {
+      const flashMessages = {};
+      req.flash = (type, message) => {
+        if (!flashMessages[type]) {
+          flashMessages[type] = [];
+        }
+        if (message) {
+          flashMessages[type].push(message);
+        }
+        return flashMessages[type];
+      };
+      res.locals = res.locals || {};
+      res.locals.messages = flashMessages;
+      next();
+    };
+  },
+  cors: (options = {}) => {
+    const defaults = {
+      origin: "*",
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      preflightContinue: false,
+      optionsSuccessStatus: 204
+    };
+    const opts = { ...defaults, ...options };
+    return (req, res, next) => {
+      const origin = req.headers.origin;
+      if (req.method === "OPTIONS" && req.headers["access-control-request-method"]) {
+        if (opts.methods) {
+          res.setHeader(
+            "Access-Control-Allow-Methods",
+            Array.isArray(opts.methods) ? opts.methods.join(",") : opts.methods
+          );
+        }
+        if (opts.allowedHeaders) {
+          res.setHeader(
+            "Access-Control-Allow-Headers",
+            Array.isArray(opts.allowedHeaders) ? opts.allowedHeaders.join(",") : opts.allowedHeaders
+          );
+        } else if (req.headers["access-control-request-headers"]) {
+          res.setHeader("Access-Control-Allow-Headers", req.headers["access-control-request-headers"]);
+        }
+        if (opts.maxAge) {
+          res.setHeader("Access-Control-Max-Age", String(opts.maxAge));
+        }
+        if (opts.credentials) {
+          res.setHeader("Access-Control-Allow-Credentials", "true");
+        }
+        if (opts.preflightContinue) {
+          next();
+          return;
+        }
+        res.statusCode = opts.optionsSuccessStatus || 204;
+        res.setHeader("Content-Length", "0");
+        res.end();
+        return;
+      }
+      const setOrigin = () => {
+        if (opts.origin === true) {
+          res.setHeader("Access-Control-Allow-Origin", origin || "*");
+          if (opts.credentials) {
+            res.setHeader("Vary", "Origin");
+          }
+        } else if (typeof opts.origin === "string") {
+          res.setHeader("Access-Control-Allow-Origin", opts.origin);
+        } else if (opts.origin instanceof RegExp && origin && opts.origin.test(origin)) {
+          res.setHeader("Access-Control-Allow-Origin", origin);
+        } else if (Array.isArray(opts.origin)) {
+          const allowed = opts.origin.some(
+            (o) => o instanceof RegExp ? origin && o.test(origin) : o === origin
+          );
+          if (allowed && origin) {
+            res.setHeader("Access-Control-Allow-Origin", origin);
+          }
+        } else if (typeof opts.origin === "function") {
+          opts.origin(req, (err, allowOrigin) => {
+            if (err || !allowOrigin) {
+              next();
+              return;
+            }
+            const finalOrigin = allowOrigin === true ? origin || "*" : allowOrigin;
+            if (finalOrigin) {
+              res.setHeader("Access-Control-Allow-Origin", finalOrigin);
+            }
+            if (opts.credentials) {
+              res.setHeader("Access-Control-Allow-Credentials", "true");
+            }
+            next();
+          });
+          return;
+        }
+        if (opts.credentials) {
+          res.setHeader("Access-Control-Allow-Credentials", "true");
+        }
+        next();
+      };
+      if (opts.exposedHeaders) {
+        res.setHeader(
+          "Access-Control-Expose-Headers",
+          Array.isArray(opts.exposedHeaders) ? opts.exposedHeaders.join(",") : opts.exposedHeaders
+        );
+      }
+      setOrigin();
     };
   },
   static(prefix, staticPath) {

@@ -327,6 +327,18 @@ interface RateLimiterOptions {
     keyGenerator?: (req: Request) => string;
     handler?: (req: Request, res: Response$1) => void;
 }
+type CorsOriginCallback = (err: Error | null, origin?: boolean | string) => void;
+type CorsOrigin = boolean | string | RegExp | (string | RegExp)[] | ((req: Request, callback: CorsOriginCallback) => void);
+interface CorsOptions {
+    origin?: CorsOrigin;
+    methods?: string | string[];
+    allowedHeaders?: string | string[];
+    exposedHeaders?: string | string[];
+    credentials?: boolean;
+    maxAge?: number;
+    preflightContinue?: boolean;
+    optionsSuccessStatus?: number;
+}
 type Middleware = (req: Request, res: Response$1, next: () => void) => void;
 declare class Router {
     private routes;
@@ -336,12 +348,11 @@ declare class Router {
     private viewEngine;
     private trustProxy;
     private jsonSpaces;
-    private flashMessages;
     use(path: string | Middleware, middleware?: Middleware): void;
-    get(path: string, handler: (req: Request, res: Response$1) => void): void;
-    post(path: string, handler: (req: Request, res: Response$1) => void): void;
-    put(path: string, handler: (req: Request, res: Response$1) => void): void;
-    delete(path: string, handler: (req: Request, res: Response$1) => void): void;
+    get(path: string, ...handlers: ((req: Request, res: Response$1, next?: () => void) => void)[]): void;
+    post(path: string, ...handlers: ((req: Request, res: Response$1, next?: () => void) => void)[]): void;
+    put(path: string, ...handlers: ((req: Request, res: Response$1, next?: () => void) => void)[]): void;
+    delete(path: string, ...handlers: ((req: Request, res: Response$1, next?: () => void) => void)[]): void;
     private addRoute;
     set(key: string, value: any): void;
     getSetting(key: string): any;
@@ -349,7 +360,6 @@ declare class Router {
     private getClientIp;
     private getClientIps;
     setJsonSpaces(spaces: number): void;
-    useFlash(): Middleware;
     render(res: ServerResponse, viewName: string, data?: {
         [key: string]: any;
     }): void;
@@ -363,6 +373,8 @@ declare const apex: {
     Router: typeof Router;
     createServer: typeof createServer;
     bodyParser: () => Middleware;
+    useFlash: () => Middleware;
+    cors: (options?: CorsOptions) => Middleware;
     static(prefix: string, staticPath?: string): Middleware;
     favicon(iconPath?: string): Middleware;
     rateLimit: (options?: RateLimiterOptions) => Middleware;
