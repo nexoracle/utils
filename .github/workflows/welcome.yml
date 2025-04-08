@@ -7,7 +7,7 @@ on:
 jobs:
   welcome:
     runs-on: ubuntu-latest
-    steps:
+    steps: 
       - name: Welcome Comment
         uses: actions-ecosystem/action-create-comment@v1
         with:
