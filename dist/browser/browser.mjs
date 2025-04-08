@@ -1,3 +1,10 @@
+// lib/functions/validation.ts
+var isEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+var isGmail = (email) => {
+  const regex = /^[a-zA-Z0-9._%+-]+@(gmail|google|googlemail)\.com$/i;
+  return regex.test(email);
+};
+
 // lib/modules/axium/types.ts
 var FetchError = class extends Error {
   constructor(message, status, response) {
@@ -302,10 +309,8 @@ var Axium = class extends RequestHandler {
 };
 var axium = new Axium();
 var axium_default = axium;
-
-// lib/functions/validation.ts
-var isEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
 export {
   axium_default as axium,
-  isEmail
+  isEmail,
+  isGmail
 };

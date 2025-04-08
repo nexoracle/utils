@@ -21,9 +21,17 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var browser_exports = {};
 __export(browser_exports, {
   axium: () => axium_default,
-  isEmail: () => isEmail
+  isEmail: () => isEmail,
+  isGmail: () => isGmail
 });
 module.exports = __toCommonJS(browser_exports);
+
+// lib/functions/validation.ts
+var isEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+var isGmail = (email) => {
+  const regex = /^[a-zA-Z0-9._%+-]+@(gmail|google|googlemail)\.com$/i;
+  return regex.test(email);
+};
 
 // lib/modules/axium/types.ts
 var FetchError = class extends Error {
@@ -329,11 +337,9 @@ var Axium = class extends RequestHandler {
 };
 var axium = new Axium();
 var axium_default = axium;
-
-// lib/functions/validation.ts
-var isEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   axium,
-  isEmail
+  isEmail,
+  isGmail
 });

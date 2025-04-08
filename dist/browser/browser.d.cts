@@ -1,3 +1,6 @@
+declare const isEmail: (email: string) => boolean;
+declare const isGmail: (email: string) => boolean;
+
 interface FetchOptions extends RequestInit {
     retries?: number;
     retryDelay?: number;
@@ -43,6 +46,4 @@ declare class Axium extends RequestHandler {
 }
 declare const axium: Axium;
 
-declare const isEmail: (email: string) => boolean;
-
-export { axium, isEmail };
+export { axium, isEmail, isGmail };
