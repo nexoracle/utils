@@ -1,2 +1,2 @@
-export { console } from '../modules/console';
+export { axium } from '../modules/axium';
 export { isEmail } from '../functions/validation';
