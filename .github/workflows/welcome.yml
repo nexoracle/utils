@@ -1,6 +1,8 @@
 name: Welcome New Contributor
 
-on: [pull_request_target]
+on: 
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   welcome:
@@ -15,4 +17,4 @@ jobs:
             _Thanks for your first contribution 💖_  
             _Welcome to the **NexOracle dojo** 🥋, where we code like true warriors!_  
             _May your commits be bug-free 😜 and your merges faster than a ninja in the night! 🚀_  
-            _🍜 We’re excited to have you with us!_ 
+            _🍜 We’re excited to have you with us!_
