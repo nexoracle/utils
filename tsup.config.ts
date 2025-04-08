@@ -14,9 +14,7 @@ export default defineConfig([
     },
   },
   {
-    entry: {
-      browser: 'lib/browser/index.ts',
-    },
+    entry: ['lib/browser/index.ts'],
     format: ['cjs', 'esm'],
     dts: true,
     outDir: 'dist/browser',
@@ -28,9 +26,7 @@ export default defineConfig([
     },
   },
   {
-    entry: {
-      'browser': 'lib/browser/index.ts',
-    },
+    entry: ['lib/browser/index.ts'],
     format: ['iife'],
     globalName: 'utils',
     outDir: 'dist/browser',

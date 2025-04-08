@@ -12,16 +12,16 @@
       "import": "./dist/index.mjs",
       "types": "./dist/index.d.ts"
     },
-"./browser": {
-  "import": "./dist/browser/index.mjs",
-  "require": "./dist/browser/index.cjs",
-  "types": "./dist/browser/index.d.ts"
-}
+    "./browser": {
+      "import": "./dist/browser/index.mjs",
+      "require": "./dist/browser/index.cjs",
+      "types": "./dist/browser/index.d.ts"
+    }
   },
-"browser": {
-  "./dist/index.cjs": "./dist/browser/index.cjs",
-  "./dist/index.mjs": "./dist/browser/index.mjs"
-},
+  "browser": {
+    "./dist/index.cjs": "./dist/browser/index.cjs",
+    "./dist/index.mjs": "./dist/browser/index.mjs"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
