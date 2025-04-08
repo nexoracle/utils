@@ -1,5 +1,23 @@
-## Under Active Development
-### This Project is Under Active Development. A Good ReadMe, Installation, Usage, Guide, and Credits will Given When the Development is Completed. Thanks For Your Support and Patience.
-### Pre Installation: npm install @nexoracle/utils
-### This Project is Licensed Under [Apache-2.0](https://github.com/maher-xubair/utils/blob/main/LICENSE) License
-For any concerns please mail us: support@nexoracle.com
+<div align="center">
+
+# @nexoracle/utils
+
+[![npm downloads](https://img.shields.io/npm/dm/@nexoracle/utils?style=flat&color=blue)](https://www.npmjs.com/package/@nexoracle/utils)
+[![npm version](https://img.shields.io/npm/v/@nexoracle/utils?style=flat&color=blue)](https://www.npmjs.com/package/@nexoracle/utils)
+[![Maintenance](https://img.shields.io/badge/Maintained-Yes-blue?style=flat)](https://github.com/maher-xubair/utils)
+[![Size](https://img.shields.io/github/languages/code-size/maher-xubair/utils?style=flat)](https://github.com/maher-xubair/utils)
+
+<p align="center">
+  <h4>A comprehensive utility library containing a wide range of helpers, functions, modules, an HTTP client, and a lightweight web framework — all in one package.</h4>
+</p>
+
+</div>
+
+# 📚 Documentation
+
+Full detailed documentation is available at  
+👉 **[https://nexoracle-utils.vercel.app](https://nexoracle-utils.vercel.app)**
+
+# 📝 License
+
+Licensed under the **[Apache-2.0 License](https://github.com/maher-xubair/utils/blob/main/LICENSE)**

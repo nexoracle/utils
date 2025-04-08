@@ -243,8 +243,8 @@ var urlValidator = {
     const regex = new RegExp(`^https?:\\/\\/(www\\.)?${domain}(\\/|$)`, "i");
     return regex.test(url2);
   },
-  hasPath(url2, path4) {
-    const regex = new RegExp(`^https?:\\/\\/[^\\/]+\\/${path4}`, "i");
+  hasPath(url2, path5) {
+    const regex = new RegExp(`^https?:\\/\\/[^\\/]+\\/${path5}`, "i");
     return regex.test(url2);
   },
   hasQueryParam(url2, param) {
@@ -389,7 +389,7 @@ var ProgressEvent = class {
   }
 };
 
-// lib/modules/axium/interceptors.ts
+// lib/modules/axium/interceptor.ts
 var InterceptorManager = class {
   constructor() {
     this.interceptors = [];
@@ -861,15 +861,15 @@ function runtime(seconds, capitalize = false, day = "day", hour = "hour", minute
   }
   return result;
 }
-async function getFileSize(path4) {
+async function getFileSize(path5) {
   try {
-    if (!path4) {
+    if (!path5) {
       console.error("Path is not provided.");
       return "0";
     }
-    if (typeof path4 === "string" && (path4.startsWith("http") || path4.startsWith("Http"))) {
+    if (typeof path5 === "string" && (path5.startsWith("http") || path5.startsWith("Http"))) {
       try {
-        const response = await axium_default.head(path4);
+        const response = await axium_default.head(path5);
         if (!response.ok) {
           throw new Error(`Failed to fetch headers: ${response.status} ${response.statusText}`);
         }
@@ -883,21 +883,21 @@ async function getFileSize(path4) {
         }
         return formatBytes(length, 3);
       } catch (error) {
-        console.error(`Error fetching size from URL (${path4}):`, error);
+        console.error(`Error fetching size from URL (${path5}):`, error);
         return "0";
       }
     }
-    if (typeof path4 === "string") {
+    if (typeof path5 === "string") {
       try {
-        const stats = import_fs.default.statSync(path4);
+        const stats = import_fs.default.statSync(path5);
         return formatBytes(stats.size, 3);
       } catch (error) {
-        console.error(`Error reading local file (${path4}):`, error);
+        console.error(`Error reading local file (${path5}):`, error);
         return "0";
       }
     }
-    if (Buffer.isBuffer(path4)) {
-      const length = Buffer.byteLength(path4);
+    if (Buffer.isBuffer(path5)) {
+      const length = Buffer.byteLength(path5);
       return formatBytes(length, 3);
     }
     throw new Error("Error: Couldn't fetch size of file. Invalid path type.");
@@ -1268,11 +1268,282 @@ var killProcess = (pid, signal = "SIGTERM") => {
   }
 };
 
-// lib/modules/apex.ts
+// lib/modules/apex/middlewares/bodyParser.ts
+function bodyParser() {
+  return (req, res, next) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+    req.on("end", () => {
+      if (!body) {
+        req.body = {};
+        return next();
+      }
+      if (req.headers["content-type"] === "application/json") {
+        try {
+          req.body = JSON.parse(body);
+        } catch (err) {
+          console.error("Error parsing JSON body:", err);
+          req.body = {};
+        }
+      } else if (req.headers["content-type"] === "application/x-www-form-urlencoded") {
+        req.body = Object.fromEntries(new URLSearchParams(body));
+      } else if (req.headers["content-type"] === "text/plain") {
+        req.body = body;
+      } else {
+        req.body = {};
+      }
+      next();
+    });
+  };
+}
+
+// lib/modules/apex/middlewares/cors.ts
+function cors(options = {}) {
+  const defaults = {
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+  };
+  const opts = { ...defaults, ...options };
+  return (req, res, next) => {
+    const origin = req.headers.origin;
+    if (req.method === "OPTIONS" && req.headers["access-control-request-method"]) {
+      if (opts.methods) {
+        res.setHeader("Access-Control-Allow-Methods", Array.isArray(opts.methods) ? opts.methods.join(",") : opts.methods);
+      }
+      if (opts.allowedHeaders) {
+        res.setHeader("Access-Control-Allow-Headers", Array.isArray(opts.allowedHeaders) ? opts.allowedHeaders.join(",") : opts.allowedHeaders);
+      } else if (req.headers["access-control-request-headers"]) {
+        res.setHeader("Access-Control-Allow-Headers", req.headers["access-control-request-headers"]);
+      }
+      if (opts.maxAge) {
+        res.setHeader("Access-Control-Max-Age", String(opts.maxAge));
+      }
+      if (opts.credentials) {
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+      }
+      if (opts.preflightContinue) {
+        next();
+        return;
+      }
+      res.statusCode = opts.optionsSuccessStatus || 204;
+      res.setHeader("Content-Length", "0");
+      res.end();
+      return;
+    }
+    const setOrigin = () => {
+      if (opts.origin === true) {
+        res.setHeader("Access-Control-Allow-Origin", origin || "*");
+        if (opts.credentials) {
+          res.setHeader("Vary", "Origin");
+        }
+      } else if (typeof opts.origin === "string") {
+        res.setHeader("Access-Control-Allow-Origin", opts.origin);
+      } else if (opts.origin instanceof RegExp && origin && opts.origin.test(origin)) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+      } else if (Array.isArray(opts.origin)) {
+        const allowed = opts.origin.some((o) => o instanceof RegExp ? origin && o.test(origin) : o === origin);
+        if (allowed && origin) {
+          res.setHeader("Access-Control-Allow-Origin", origin);
+        }
+      } else if (typeof opts.origin === "function") {
+        opts.origin(req, (err, allowOrigin) => {
+          if (err || !allowOrigin) {
+            next();
+            return;
+          }
+          const finalOrigin = allowOrigin === true ? origin || "*" : allowOrigin;
+          if (finalOrigin) {
+            res.setHeader("Access-Control-Allow-Origin", finalOrigin);
+          }
+          if (opts.credentials) {
+            res.setHeader("Access-Control-Allow-Credentials", "true");
+          }
+          next();
+        });
+        return;
+      }
+      if (opts.credentials) {
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+      }
+      next();
+    };
+    if (opts.exposedHeaders) {
+      res.setHeader("Access-Control-Expose-Headers", Array.isArray(opts.exposedHeaders) ? opts.exposedHeaders.join(",") : opts.exposedHeaders);
+    }
+    setOrigin();
+  };
+}
+
+// lib/modules/apex/middlewares/createServer.ts
 var import_http2 = __toESM(require("http"), 1);
-var import_url3 = __toESM(require("url"), 1);
+function createServer(router) {
+  return import_http2.default.createServer((req, res) => {
+    router.handleRequest(req, res);
+  });
+}
+
+// lib/modules/apex/middlewares/favicon.ts
 var import_fs4 = __toESM(require("fs"), 1);
+function favicon(iconPath) {
+  return (req, res, next) => {
+    if (req.url === "/favicon.ico" && iconPath) {
+      import_fs4.default.stat(iconPath, (err, stats) => {
+        if (err || !stats.isFile()) {
+          res.status(404).send("Favicon not found");
+        } else {
+          res.sendFile(iconPath);
+        }
+      });
+    } else {
+      next();
+    }
+  };
+}
+
+// lib/modules/apex/middlewares/rateLimit.ts
+function rateLimit(options = {}) {
+  const {
+    windowMs = 60 * 1e3,
+    // 1 minute
+    max: max2 = 100,
+    // 100 requests per window
+    message = "Too many requests, please try again later.",
+    statusCode = 429,
+    // 429 Too Many Requests
+    skip = () => false,
+    // Skip rate limiting for certain requests
+    keyGenerator = (req) => req.ip || "global",
+    // Default key generator (IP-based)
+    handler = (req, res) => {
+      const key = keyGenerator(req);
+      const remainingTime = store[key] ? Math.ceil((store[key].resetTime - Date.now()) / 1e3) : 0;
+      res.setHeader("RateLimit-Limit", max2);
+      res.setHeader("RateLimit-Remaining", 0);
+      res.setHeader("RateLimit-Reset", remainingTime);
+      res.setHeader("RateLimit-Policy", `${max2};w=${windowMs / 1e3}`);
+      res.status(statusCode).json({ message });
+    }
+  } = options;
+  const store = {};
+  setInterval(() => {
+    const now = Date.now();
+    for (const key in store) {
+      if (store[key].resetTime <= now) {
+        delete store[key];
+      }
+    }
+  }, windowMs);
+  return (req, res, next) => {
+    if (skip(req)) {
+      return next();
+    }
+    const key = keyGenerator(req);
+    const now = Date.now();
+    if (!store[key]) {
+      store[key] = {
+        count: 1,
+        resetTime: now + windowMs
+      };
+    } else {
+      store[key].count++;
+    }
+    const remainingTime = Math.ceil((store[key].resetTime - now) / 1e3);
+    res.setHeader("RateLimit-Limit", max2);
+    res.setHeader("RateLimit-Remaining", Math.max(0, max2 - store[key].count));
+    res.setHeader("RateLimit-Reset", remainingTime);
+    res.setHeader("RateLimit-Policy", `${max2};w=${windowMs / 1e3}`);
+    if (store[key].count > max2) {
+      return handler(req, res);
+    }
+    next();
+  };
+}
+
+// lib/modules/apex/middlewares/static.ts
+var import_fs5 = __toESM(require("fs"), 1);
 var import_path2 = __toESM(require("path"), 1);
+
+// lib/modules/apex/utils.ts
+var import_url3 = __toESM(require("url"), 1);
+function parseUrl(req) {
+  const parsedUrl = import_url3.default.parse(req.url || "", true);
+  const query = {};
+  for (const key in parsedUrl.query) {
+    const value = parsedUrl.query[key];
+    if (value !== void 0) {
+      query[key] = Array.isArray(value) ? value : value.toString();
+    }
+  }
+  return {
+    pathname: parsedUrl.pathname || "",
+    query
+  };
+}
+function convertRouteToRegex(route) {
+  const pattern = route.replace(/:\w+/g, "([^/]+)");
+  return new RegExp(`^${pattern}$`);
+}
+function extractParamNames(route) {
+  const paramNames = [];
+  route.replace(/:\w+/g, (match) => {
+    paramNames.push(match.slice(1));
+    return match;
+  });
+  return paramNames;
+}
+function notFoundHandler(req, res) {
+  res.status(404).send("404 Not Found");
+}
+
+// lib/modules/apex/middlewares/static.ts
+function serveStatic(prefix, staticPath) {
+  if (!staticPath) {
+    staticPath = prefix;
+    prefix = "/";
+  }
+  return (req, res, next) => {
+    const { pathname } = parseUrl(req);
+    if (!pathname.startsWith(prefix)) {
+      return next();
+    }
+    const relativePath = pathname.slice(prefix.length);
+    const filePath = import_path2.default.join(staticPath, relativePath);
+    import_fs5.default.stat(filePath, (err, stats) => {
+      if (err || !stats.isFile()) {
+        next();
+      } else {
+        res.sendFile(filePath);
+      }
+    });
+  };
+}
+
+// lib/modules/apex/middlewares/useFlush.ts
+function useFlash() {
+  return (req, res, next) => {
+    const flashMessages = {};
+    req.flash = (type, message) => {
+      if (!flashMessages[type]) {
+        flashMessages[type] = [];
+      }
+      if (message) {
+        flashMessages[type].push(message);
+      }
+      return flashMessages[type];
+    };
+    res.locals = res.locals || {};
+    res.locals.messages = flashMessages;
+    next();
+  };
+}
+
+// lib/modules/apex/router.ts
+var import_fs6 = __toESM(require("fs"), 1);
+var import_path3 = __toESM(require("path"), 1);
 var import_tls = __toESM(require("tls"), 1);
 
 // lib/modules/mime.ts
@@ -1724,7 +1995,7 @@ function get(extn) {
 }
 var mime = { all: () => mimes, get };
 
-// lib/modules/apex.ts
+// lib/modules/apex/router.ts
 var Router = class {
   constructor() {
     this.routes = {};
@@ -1736,40 +2007,40 @@ var Router = class {
     this.jsonSpaces = 0;
   }
   // Add middleware
-  use(path4, middleware) {
-    if (typeof path4 === "string" && middleware) {
+  use(path5, middleware) {
+    if (typeof path5 === "string" && middleware) {
       this.middlewares.push((req, res, next) => {
         const { pathname } = parseUrl(req);
-        if (pathname.startsWith(path4)) {
-          req.url = pathname.slice(path4.length) || "/";
+        if (pathname.startsWith(path5)) {
+          req.url = pathname.slice(path5.length) || "/";
           middleware(req, res, next);
         } else {
           next();
         }
       });
-    } else if (typeof path4 === "function") {
-      this.middlewares.push(path4);
+    } else if (typeof path5 === "function") {
+      this.middlewares.push(path5);
     }
   }
   // Routes Handling
-  get(path4, ...handlers) {
-    this.addRoute(path4, "GET", ...handlers);
+  get(path5, ...handlers) {
+    this.addRoute(path5, "GET", ...handlers);
   }
-  post(path4, ...handlers) {
-    this.addRoute(path4, "POST", ...handlers);
+  post(path5, ...handlers) {
+    this.addRoute(path5, "POST", ...handlers);
   }
-  put(path4, ...handlers) {
-    this.addRoute(path4, "PUT", ...handlers);
+  put(path5, ...handlers) {
+    this.addRoute(path5, "PUT", ...handlers);
   }
-  delete(path4, ...handlers) {
-    this.addRoute(path4, "DELETE", ...handlers);
+  delete(path5, ...handlers) {
+    this.addRoute(path5, "DELETE", ...handlers);
   }
   // Add a route with a handler for a specific HTTP method
-  addRoute(path4, method, ...handlers) {
-    if (!this.routes[path4]) {
-      this.routes[path4] = {};
+  addRoute(path5, method, ...handlers) {
+    if (!this.routes[path5]) {
+      this.routes[path5] = {};
     }
-    this.routes[path4][method.toUpperCase()] = (req, res) => {
+    this.routes[path5][method.toUpperCase()] = (req, res) => {
       const executeHandler = (index) => {
         if (index < handlers.length) {
           const handler = handlers[index];
@@ -1788,7 +2059,7 @@ var Router = class {
     if (key === "view engine") {
       if (value === "ejs") {
         this.viewEngine = (filePath, data, callback) => {
-          import_fs4.default.readFile(filePath, "utf8", (err, template) => {
+          import_fs6.default.readFile(filePath, "utf8", (err, template) => {
             if (err)
               return callback(err);
             const rendered = template.replace(/<%=\s*(.*?)\s*%>/g, (_, key2) => data[key2] || "");
@@ -1859,7 +2130,7 @@ var Router = class {
     if (!viewExtension) {
       throw new Error('View engine not set. Use router.set("view engine", "ejs") to configure a view engine.');
     }
-    const viewPath = import_path2.default.join(this.viewsDir, `${viewName}.${viewExtension}`);
+    const viewPath = import_path3.default.join(this.viewsDir, `${viewName}.${viewExtension}`);
     const resMethod = res;
     this.viewEngine(viewPath, data, (err, html) => {
       if (err) {
@@ -1972,9 +2243,9 @@ var Router = class {
       }
     };
     resMethod.sendFile = function(filePath) {
-      const extname = import_path2.default.extname(filePath).toLowerCase();
+      const extname = import_path3.default.extname(filePath).toLowerCase();
       const contentType = mime.get(extname) || "application/octet-stream";
-      const stream = import_fs4.default.createReadStream(filePath);
+      const stream = import_fs6.default.createReadStream(filePath);
       stream.on("error", (err) => {
         if (err.code === "ENOENT") {
           this.status(404).send("File Not Found");
@@ -2081,290 +2352,34 @@ var Router = class {
           return this.routes[pathname][reqMethod.method](reqMethod, resMethod);
         }
         for (const route in this.routes) {
-          const routeRegex = this.convertRouteToRegex(route);
+          const routeRegex = convertRouteToRegex(route);
           const match = pathname.match(routeRegex);
           if (match && this.routes[route][reqMethod.method]) {
-            const paramNames = this.extractParamNames(route);
+            const paramNames = extractParamNames(route);
             paramNames.forEach((name, index2) => {
               reqMethod.params[name] = decodeURIComponent(match[index2 + 1]);
             });
             return this.routes[route][reqMethod.method](reqMethod, resMethod);
           }
         }
-        this.notFoundHandler(reqMethod, resMethod);
+        notFoundHandler(reqMethod, resMethod);
       }
     };
     executeMiddlewares(0);
   }
-  // Convert route path to regex for parameter matching
-  convertRouteToRegex(route) {
-    const pattern = route.replace(/:\w+/g, "([^/]+)");
-    return new RegExp(`^${pattern}$`);
-  }
-  // Extract parameter names from route path
-  extractParamNames(route) {
-    const paramNames = [];
-    route.replace(/:\w+/g, (match) => {
-      paramNames.push(match.slice(1));
-      return match;
-    });
-    return paramNames;
-  }
-  // Default 404 handler
-  notFoundHandler(req, res) {
-    res.status(404).send("404 Not Found");
-  }
 };
-function createServer(router) {
-  return import_http2.default.createServer((req, res) => {
-    router.handleRequest(req, res);
-  });
-}
+
+// lib/modules/apex/index.ts
 var apex = {
   Router,
   createServer,
-  bodyParser: () => {
-    return (req, res, next) => {
-      let body = "";
-      req.on("data", (chunk) => {
-        body += chunk.toString();
-      });
-      req.on("end", () => {
-        if (!body) {
-          req.body = {};
-          return next();
-        }
-        if (req.headers["content-type"] === "application/json") {
-          try {
-            req.body = JSON.parse(body);
-          } catch (err) {
-            console.error("Error parsing JSON body:", err);
-            req.body = {};
-          }
-        } else if (req.headers["content-type"] === "application/x-www-form-urlencoded") {
-          req.body = Object.fromEntries(new URLSearchParams(body));
-        } else if (req.headers["content-type"] === "text/plain") {
-          req.body = body;
-        } else {
-          req.body = {};
-        }
-        next();
-      });
-    };
-  },
-  useFlash: () => {
-    return (req, res, next) => {
-      const flashMessages = {};
-      req.flash = (type, message) => {
-        if (!flashMessages[type]) {
-          flashMessages[type] = [];
-        }
-        if (message) {
-          flashMessages[type].push(message);
-        }
-        return flashMessages[type];
-      };
-      res.locals = res.locals || {};
-      res.locals.messages = flashMessages;
-      next();
-    };
-  },
-  cors: (options = {}) => {
-    const defaults = {
-      origin: "*",
-      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-      preflightContinue: false,
-      optionsSuccessStatus: 204
-    };
-    const opts = { ...defaults, ...options };
-    return (req, res, next) => {
-      const origin = req.headers.origin;
-      if (req.method === "OPTIONS" && req.headers["access-control-request-method"]) {
-        if (opts.methods) {
-          res.setHeader(
-            "Access-Control-Allow-Methods",
-            Array.isArray(opts.methods) ? opts.methods.join(",") : opts.methods
-          );
-        }
-        if (opts.allowedHeaders) {
-          res.setHeader(
-            "Access-Control-Allow-Headers",
-            Array.isArray(opts.allowedHeaders) ? opts.allowedHeaders.join(",") : opts.allowedHeaders
-          );
-        } else if (req.headers["access-control-request-headers"]) {
-          res.setHeader("Access-Control-Allow-Headers", req.headers["access-control-request-headers"]);
-        }
-        if (opts.maxAge) {
-          res.setHeader("Access-Control-Max-Age", String(opts.maxAge));
-        }
-        if (opts.credentials) {
-          res.setHeader("Access-Control-Allow-Credentials", "true");
-        }
-        if (opts.preflightContinue) {
-          next();
-          return;
-        }
-        res.statusCode = opts.optionsSuccessStatus || 204;
-        res.setHeader("Content-Length", "0");
-        res.end();
-        return;
-      }
-      const setOrigin = () => {
-        if (opts.origin === true) {
-          res.setHeader("Access-Control-Allow-Origin", origin || "*");
-          if (opts.credentials) {
-            res.setHeader("Vary", "Origin");
-          }
-        } else if (typeof opts.origin === "string") {
-          res.setHeader("Access-Control-Allow-Origin", opts.origin);
-        } else if (opts.origin instanceof RegExp && origin && opts.origin.test(origin)) {
-          res.setHeader("Access-Control-Allow-Origin", origin);
-        } else if (Array.isArray(opts.origin)) {
-          const allowed = opts.origin.some(
-            (o) => o instanceof RegExp ? origin && o.test(origin) : o === origin
-          );
-          if (allowed && origin) {
-            res.setHeader("Access-Control-Allow-Origin", origin);
-          }
-        } else if (typeof opts.origin === "function") {
-          opts.origin(req, (err, allowOrigin) => {
-            if (err || !allowOrigin) {
-              next();
-              return;
-            }
-            const finalOrigin = allowOrigin === true ? origin || "*" : allowOrigin;
-            if (finalOrigin) {
-              res.setHeader("Access-Control-Allow-Origin", finalOrigin);
-            }
-            if (opts.credentials) {
-              res.setHeader("Access-Control-Allow-Credentials", "true");
-            }
-            next();
-          });
-          return;
-        }
-        if (opts.credentials) {
-          res.setHeader("Access-Control-Allow-Credentials", "true");
-        }
-        next();
-      };
-      if (opts.exposedHeaders) {
-        res.setHeader(
-          "Access-Control-Expose-Headers",
-          Array.isArray(opts.exposedHeaders) ? opts.exposedHeaders.join(",") : opts.exposedHeaders
-        );
-      }
-      setOrigin();
-    };
-  },
-  static(prefix, staticPath) {
-    if (!staticPath) {
-      staticPath = prefix;
-      prefix = "/";
-    }
-    return (req, res, next) => {
-      const { pathname } = parseUrl(req);
-      if (!pathname.startsWith(prefix)) {
-        return next();
-      }
-      const relativePath = pathname.slice(prefix.length);
-      const filePath = import_path2.default.join(staticPath, relativePath);
-      import_fs4.default.stat(filePath, (err, stats) => {
-        if (err || !stats.isFile()) {
-          next();
-        } else {
-          res.sendFile(filePath);
-        }
-      });
-    };
-  },
-  favicon(iconPath) {
-    return (req, res, next) => {
-      if (req.url === "/favicon.ico" && iconPath) {
-        import_fs4.default.stat(iconPath, (err, stats) => {
-          if (err || !stats.isFile()) {
-            res.status(404).send("Favicon not found");
-          } else {
-            res.sendFile(iconPath);
-          }
-        });
-      } else {
-        next();
-      }
-    };
-  },
-  rateLimit: (options = {}) => {
-    const {
-      windowMs = 60 * 1e3,
-      // 1 minute
-      max: max2 = 100,
-      // 100 requests per window
-      message = "Too many requests, please try again later.",
-      statusCode = 429,
-      // 429 Too Many Requests
-      skip = () => false,
-      // Skip rate limiting for certain requests
-      keyGenerator = (req) => req.ip || "global",
-      // Default key generator (IP-based)
-      handler = (req, res) => {
-        const key = keyGenerator(req);
-        const remainingTime = store[key] ? Math.ceil((store[key].resetTime - Date.now()) / 1e3) : 0;
-        res.setHeader("RateLimit-Limit", max2);
-        res.setHeader("RateLimit-Remaining", 0);
-        res.setHeader("RateLimit-Reset", remainingTime);
-        res.setHeader("RateLimit-Policy", `${max2};w=${windowMs / 1e3}`);
-        res.status(statusCode).json({ message });
-      }
-    } = options;
-    const store = {};
-    setInterval(() => {
-      const now = Date.now();
-      for (const key in store) {
-        if (store[key].resetTime <= now) {
-          delete store[key];
-        }
-      }
-    }, windowMs);
-    return (req, res, next) => {
-      if (skip(req)) {
-        return next();
-      }
-      const key = keyGenerator(req);
-      const now = Date.now();
-      if (!store[key]) {
-        store[key] = {
-          count: 1,
-          resetTime: now + windowMs
-        };
-      } else {
-        store[key].count++;
-      }
-      const remainingTime = Math.ceil((store[key].resetTime - now) / 1e3);
-      res.setHeader("RateLimit-Limit", max2);
-      res.setHeader("RateLimit-Remaining", Math.max(0, max2 - store[key].count));
-      res.setHeader("RateLimit-Reset", remainingTime);
-      res.setHeader("RateLimit-Policy", `${max2};w=${windowMs / 1e3}`);
-      if (store[key].count > max2) {
-        return handler(req, res);
-      }
-      next();
-    };
-  }
+  bodyParser,
+  useFlash,
+  cors,
+  static: serveStatic,
+  favicon,
+  rateLimit
 };
-function parseUrl(req) {
-  const parsedUrl = import_url3.default.parse(req.url || "", true);
-  const query = {};
-  for (const key in parsedUrl.query) {
-    const value = parsedUrl.query[key];
-    if (value !== void 0) {
-      query[key] = Array.isArray(value) ? value : value.toString();
-    }
-  }
-  return {
-    pathname: parsedUrl.pathname || "",
-    query
-  };
-}
 
 // lib/modules/console.ts
 var _CustomConsole = class _CustomConsole {
@@ -2751,10 +2766,10 @@ function hasMXRecords(host) {
 
 // lib/modules/https.ts
 var import_https2 = __toESM(require("https"), 1);
-var import_fs5 = __toESM(require("fs"), 1);
+var import_fs7 = __toESM(require("fs"), 1);
 function downloadFile(url2, destination) {
   return new Promise((resolve, reject) => {
-    const file = import_fs5.default.createWriteStream(destination);
+    const file = import_fs7.default.createWriteStream(destination);
     import_https2.default.get(url2, (res) => {
       res.pipe(file);
       file.on("finish", () => {
@@ -2763,7 +2778,7 @@ function downloadFile(url2, destination) {
       });
     }).on("error", (err) => {
       console.error(err);
-      import_fs5.default.unlink(destination, () => reject(err));
+      import_fs7.default.unlink(destination, () => reject(err));
     });
   });
 }
@@ -3540,7 +3555,7 @@ var ScheduledTask = class extends import_events3.EventEmitter {
 
 // lib/modules/cron/backgroundScheduledTask.ts
 var import_events4 = require("events");
-var import_path3 = __toESM(require("path"), 1);
+var import_path4 = __toESM(require("path"), 1);
 var import_child_process3 = require("child_process");
 var import_meta = {};
 var scheduledTask;
@@ -3603,7 +3618,7 @@ var BackgroundScheduledTask = class extends import_events4.EventEmitter {
     options.scheduled = true;
     this.forkProcess.send({
       type: "register",
-      path: import_path3.default.resolve(this.taskPath),
+      path: import_path4.default.resolve(this.taskPath),
       cron: this.cronExpression,
       options
     });

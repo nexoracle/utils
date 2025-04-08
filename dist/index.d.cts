@@ -2,7 +2,7 @@ import { Readable } from 'stream';
 import * as Crypto from 'crypto';
 import fs from 'fs';
 import os from 'os';
-import http, { ServerResponse, IncomingMessage } from 'http';
+import http, { IncomingMessage, IncomingHttpHeaders, ServerResponse } from 'http';
 import tls from 'tls';
 import { EntryType, PerformanceObserver, PerformanceNodeTiming } from 'perf_hooks';
 import { EventEmitter } from 'events';
@@ -283,7 +283,7 @@ interface Request extends IncomingMessage {
     };
     session?: any;
     hostname?: string;
-    headers: http.IncomingHttpHeaders;
+    headers: IncomingHttpHeaders;
     get?: (headerName: string) => string | undefined;
     accepts: (type: string | string[]) => string | boolean | string[];
     is: (type: string) => string | boolean;
@@ -291,6 +291,7 @@ interface Request extends IncomingMessage {
     stale: boolean;
     xhr: boolean;
 }
+
 interface Response$1 extends ServerResponse {
     text: (data: any) => void;
     html: (data: any) => void;
@@ -318,17 +319,14 @@ interface Response$1 extends ServerResponse {
     jsonSpaces: number;
     app: any;
 }
-interface RateLimiterOptions {
-    windowMs?: number;
-    max?: number;
-    message?: string;
-    statusCode?: number;
-    skip?: (req: Request) => boolean;
-    keyGenerator?: (req: Request) => string;
-    handler?: (req: Request, res: Response$1) => void;
-}
+
+type Middleware = (req: Request, res: Response$1, next: () => void) => void;
+
+declare function bodyParser(): Middleware;
+
 type CorsOriginCallback = (err: Error | null, origin?: boolean | string) => void;
 type CorsOrigin = boolean | string | RegExp | (string | RegExp)[] | ((req: Request, callback: CorsOriginCallback) => void);
+
 interface CorsOptions {
     origin?: CorsOrigin;
     methods?: string | string[];
@@ -339,7 +337,9 @@ interface CorsOptions {
     preflightContinue?: boolean;
     optionsSuccessStatus?: number;
 }
-type Middleware = (req: Request, res: Response$1, next: () => void) => void;
+
+declare function cors(options?: CorsOptions): Middleware;
+
 declare class Router {
     private routes;
     private middlewares;
@@ -364,20 +364,37 @@ declare class Router {
         [key: string]: any;
     }): void;
     handleRequest(req: IncomingMessage, res: ServerResponse): void;
-    private convertRouteToRegex;
-    private extractParamNames;
-    private notFoundHandler;
 }
+
 declare function createServer(router: Router): http.Server;
+
+declare function favicon(iconPath?: string): Middleware;
+
+interface RateLimiterOptions {
+    windowMs?: number;
+    max?: number;
+    message?: string;
+    statusCode?: number;
+    skip?: (req: Request) => boolean;
+    keyGenerator?: (req: Request) => string;
+    handler?: (req: Request, res: Response$1) => void;
+}
+
+declare function rateLimit(options?: RateLimiterOptions): Middleware;
+
+declare function serveStatic(prefix: string, staticPath?: string): Middleware;
+
+declare function useFlash(): Middleware;
+
 declare const apex: {
     Router: typeof Router;
     createServer: typeof createServer;
-    bodyParser: () => Middleware;
-    useFlash: () => Middleware;
-    cors: (options?: CorsOptions) => Middleware;
-    static(prefix: string, staticPath?: string): Middleware;
-    favicon(iconPath?: string): Middleware;
-    rateLimit: (options?: RateLimiterOptions) => Middleware;
+    bodyParser: typeof bodyParser;
+    useFlash: typeof useFlash;
+    cors: typeof cors;
+    static: typeof serveStatic;
+    favicon: typeof favicon;
+    rateLimit: typeof rateLimit;
 };
 
 type Color = "black" | "red" | "green" | "yellow" | "blue" | "magenta" | "cyan" | "white" | "gray" | "brightBlack" | "brightRed" | "brightGreen" | "brightYellow" | "brightBlue" | "brightMagenta" | "brightCyan" | "brightWhite" | "orange" | "purple" | "pink" | "brown" | {

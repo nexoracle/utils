@@ -1,5 +1,5 @@
 import { FetchOptions, FetchError, ProgressEvent, Interceptor } from "./types";
-import { InterceptorManager } from "./interceptors";
+import { InterceptorManager } from "./interceptor";
 
 export class RequestHandler {
   private requestInterceptors = new InterceptorManager<FetchOptions>();
