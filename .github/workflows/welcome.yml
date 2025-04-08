@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Check if the user has opened any PR before
       - name: Check previous PRs
         id: check_prs
         run: |
@@ -19,7 +18,6 @@ jobs:
           echo "Number of PRs by the user: $pr_count"
           echo "::set-output name=pr_count::$pr_count"
 
-      # If it's the first PR, send a welcome comment
       - name: Welcome Comment
         if: steps.check_prs.outputs.pr_count == '1'
         uses: actions-ecosystem/action-create-comment@v1
