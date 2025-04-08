@@ -1,19 +1,32 @@
 name: Welcome New Contributor
 
 on: 
-  pull_request:
-    types: [opened, synchronize, reopened]
+  pull_request_target:
+    types: [opened]
 
 jobs:
   welcome:
     runs-on: ubuntu-latest
+
     steps:
+      # Check if the user has opened any PR before
+      - name: Check previous PRs
+        id: check_prs
+        run: |
+          user_prs=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls?state=all&creator=${{ github.actor }}")
+          pr_count=$(echo $user_prs | jq length)
+          echo "Number of PRs by the user: $pr_count"
+          echo "::set-output name=pr_count::$pr_count"
+
+      # If it's the first PR, send a welcome comment
       - name: Welcome Comment
+        if: steps.check_prs.outputs.pr_count == '1'
         uses: actions-ecosystem/action-create-comment@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           body: |
-            ✨ **_Kon'nichiwa, senpai!_**  
+            ***✨ Kon'nichiwa, senpai!***  
             _Thanks for your first contribution 💖_  
             _Welcome to the **NexOracle dojo** 🥋, where we code like true warriors!_  
             _May your commits be bug-free 😜 and your merges faster than a ninja in the night! 🚀_  
