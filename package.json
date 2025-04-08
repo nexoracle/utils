@@ -11,11 +11,20 @@
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs",
       "types": "./dist/index.d.ts"
-    }
+    },
+"./browser": {
+  "import": "./dist/browser/index.mjs",
+  "require": "./dist/browser/index.cjs",
+  "types": "./dist/browser/index.d.ts"
+}
   },
+"browser": {
+  "./dist/index.cjs": "./dist/browser/index.cjs",
+  "./dist/index.mjs": "./dist/browser/index.mjs"
+},
   "scripts": {
-    "build": "tsup lib/index.ts --format cjs,esm --dts --out-dir dist",
-    "dev": "tsup lib/index.ts --format cjs,esm --dts --out-dir dist --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "clean": "rm -rf dist .tsbuildinfo",
     "release": "npm version patch && npm publish"
   },
