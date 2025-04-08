@@ -1,0 +1,19 @@
+name: Welcome New Contributor
+
+on: [pull_request_target]
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Welcome Comment
+        uses: actions-ecosystem/action-create-comment@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+body: |
+  ✨ **_Kon'nichiwa, senpai!_**  
+  _Thanks for your first contribution 💖_  
+  _Welcome to the **NexOracle dojo** 🥋, where we code like true warriors!_  
+  _May your commits be bug-free 😜 and your merges faster than a ninja in the night! 🚀_  
+  _🍜 We’re excited to have you with us!_
+
