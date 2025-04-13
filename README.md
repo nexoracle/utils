@@ -16,7 +16,7 @@
 # 📚 Documentation
 
 Full detailed documentation is available at  
-👉 **[https://nexoracle-utils.vercel.app](https://nexoracle-utils.vercel.app)**
+👉 **[https://utils.nexoracle.com](https://utils.nexoracle.com)**
 
 # 📝 License
 
