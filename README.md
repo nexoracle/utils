@@ -4,8 +4,8 @@
 
 [![npm downloads](https://img.shields.io/npm/dm/@nexoracle/utils?style=flat&color=blue)](https://www.npmjs.com/package/@nexoracle/utils)
 [![npm version](https://img.shields.io/npm/v/@nexoracle/utils?style=flat&color=blue)](https://www.npmjs.com/package/@nexoracle/utils)
-[![Maintenance](https://img.shields.io/badge/Maintained-Yes-blue?style=flat)](https://github.com/maher-xubair/utils)
-[![Size](https://img.shields.io/github/languages/code-size/maher-xubair/utils?style=flat)](https://github.com/maher-xubair/utils)
+[![Maintenance](https://img.shields.io/badge/Maintained-Yes-blue?style=flat)](https://github.com/nexoracle/utils)
+[![Size](https://img.shields.io/github/languages/code-size/nexoracle/utils?style=flat)](https://github.com/nexoracle/utils)
 
 <p align="center">
   <h4>A comprehensive utility library containing a wide range of helpers, functions, modules, an HTTP client, and a lightweight web framework — all in one package.</h4>
@@ -20,4 +20,4 @@ Full detailed documentation is available at
 
 # 📝 License
 
-Licensed under the **[Apache-2.0 License](https://github.com/maher-xubair/utils/blob/main/LICENSE)**
+Licensed under the **[Apache-2.0 License](https://github.com/nexoracle/utils/blob/main/LICENSE)**

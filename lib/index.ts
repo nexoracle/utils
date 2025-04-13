@@ -17,3 +17,4 @@ export * from "./modules/password-validator";
 export * from "./modules/emoji-api";
 export * from "./modules/cron";
 export * from "./modules/generate-apikey";
+export * from "./modules/env";

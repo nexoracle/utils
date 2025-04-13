@@ -209,21 +209,21 @@ var isImageURL = async (url2) => {
       protocol: parsedUrl.protocol
     };
     const makeRequest = async (method) => {
-      return new Promise((resolve) => {
+      return new Promise((resolve2) => {
         const req = requestModule({ ...options, method }, (res) => {
           res.on("data", () => {
           });
           res.on("end", () => {
             const contentType = res.headers["content-type"];
             if (contentType && contentType.startsWith("image/")) {
-              resolve(true);
+              resolve2(true);
             } else {
-              resolve(false);
+              resolve2(false);
             }
           });
         });
         req.on("error", () => {
-          resolve(false);
+          resolve2(false);
         });
         req.end();
       });
@@ -475,7 +475,7 @@ var RequestHandler = class {
         }
         if (retryDelay > 0 && attempt < retries) {
           console.warn(`Retrying... (${attempt + 1}/${retries})`);
-          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+          await new Promise((resolve2) => setTimeout(resolve2, retryDelay));
         }
       }
     }
@@ -607,10 +607,10 @@ var getBufferFromStream = async (stream) => {
   if (!stream.readable) {
     throw new Error("Stream is not readable");
   }
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve2, reject) => {
     const chunks = [];
     stream.on("data", (chunk) => chunks.push(chunk));
-    stream.on("end", () => resolve(Buffer.concat(chunks)));
+    stream.on("end", () => resolve2(Buffer.concat(chunks)));
     stream.on("error", reject);
   });
 };
@@ -620,7 +620,7 @@ var getStreamFromBuffer = (buffer) => {
   readable.push(null);
   return readable;
 };
-var sleep = (ms = 3e3) => new Promise((resolve) => setTimeout(resolve, ms));
+var sleep = (ms = 3e3) => new Promise((resolve2) => setTimeout(resolve2, ms));
 var randomInt = (min2, max2) => Math.floor(Math.random() * (max2 - min2 + 1)) + min2;
 var truncate = (text, maxLength) => text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
 var timeAgo = (date) => {
@@ -1072,13 +1072,13 @@ var buildUrl = (baseUrl, options = {}) => {
 // lib/modules/child_process.ts
 import { exec, execSync as execSync2, spawn } from "child_process";
 var runCommand = (command, cwd, timeout = 5e3) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve2, reject) => {
     const process2 = exec(command, { cwd, timeout }, (error, stdout, stderr) => {
       if (error)
         return reject(`Error: ${error.message}`);
       if (stderr)
         return reject(`Stderr: ${stderr}`);
-      resolve(stdout.trim());
+      resolve2(stdout.trim());
     });
     process2.stdout?.on("data", (data) => console.log(data.toString()));
     process2.stderr?.on("data", (data) => console.error(data.toString()));
@@ -1093,7 +1093,7 @@ var runCommandSync = (command, cwd) => {
   }
 };
 var runSpawn = (command, args, cwd, timeout = 5e3) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve2, reject) => {
     const process2 = spawn(command, args, { cwd, shell: true });
     let output = "";
     const timer = setTimeout(() => {
@@ -1104,7 +1104,7 @@ var runSpawn = (command, args, cwd, timeout = 5e3) => {
     process2.stderr.on("data", (data) => console.error(`Stderr: ${data.toString()}`));
     process2.on("close", (code) => {
       clearTimeout(timer);
-      code === 0 ? resolve(output.trim()) : reject(`Exited with code ${code}`);
+      code === 0 ? resolve2(output.trim()) : reject(`Exited with code ${code}`);
     });
   });
 };
@@ -2565,22 +2565,22 @@ function formatHostname(host) {
 }
 function checkTLSHandshake(hostname, port = 443) {
   const host = formatHostname(hostname);
-  return new Promise((resolve) => {
+  return new Promise((resolve2) => {
     const socket = tls2.connect(port, host, { rejectUnauthorized: false }, () => {
-      resolve(true);
+      resolve2(true);
       socket.end();
     });
-    socket.on("error", () => resolve(false));
+    socket.on("error", () => resolve2(false));
   });
 }
 function getSSLCertificate(hostname, port = 443) {
   const host = formatHostname(hostname);
-  return new Promise((resolve) => {
+  return new Promise((resolve2) => {
     const socket = tls2.connect(port, host, { rejectUnauthorized: false }, () => {
-      resolve(socket.getPeerCertificate());
+      resolve2(socket.getPeerCertificate());
       socket.end();
     });
-    socket.on("error", () => resolve(null));
+    socket.on("error", () => resolve2(null));
   });
 }
 async function isTLSValid(hostname, port = 443) {
@@ -2595,46 +2595,46 @@ async function isTLSValid(hostname, port = 443) {
 // lib/modules/dns.ts
 import dns from "dns";
 function resolveDNS(host, recordType) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve2, reject) => {
     dns.resolve(host, recordType, (err, records) => {
       if (err)
         reject(err);
       else
-        resolve(records);
+        resolve2(records);
     });
   });
 }
 function reverseLookup(ip) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve2, reject) => {
     dns.reverse(ip, (err, hostnames) => {
       if (err)
         reject(err);
       else
-        resolve(hostnames);
+        resolve2(hostnames);
     });
   });
 }
 function isDomainReachable(host) {
-  return new Promise((resolve) => {
-    dns.resolve(host, "A", (err) => resolve(!err));
+  return new Promise((resolve2) => {
+    dns.resolve(host, "A", (err) => resolve2(!err));
   });
 }
 function getIPAddress(host) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve2, reject) => {
     dns.resolve4(host, (err, addresses) => {
       if (err)
         reject(err);
       else
-        resolve(addresses[0]);
+        resolve2(addresses[0]);
     });
   });
 }
 function getAllIPs(host) {
-  return Promise.all([new Promise((resolve) => dns.resolve4(host, (err, addresses) => resolve(err ? [] : addresses))), new Promise((resolve) => dns.resolve6(host, (err, addresses) => resolve(err ? [] : addresses)))]).then(([ipv4, ipv6]) => ({ ipv4, ipv6 }));
+  return Promise.all([new Promise((resolve2) => dns.resolve4(host, (err, addresses) => resolve2(err ? [] : addresses))), new Promise((resolve2) => dns.resolve6(host, (err, addresses) => resolve2(err ? [] : addresses)))]).then(([ipv4, ipv6]) => ({ ipv4, ipv6 }));
 }
 function hasMXRecords(host) {
-  return new Promise((resolve) => {
-    dns.resolveMx(host, (err, addresses) => resolve(!err && addresses.length > 0));
+  return new Promise((resolve2) => {
+    dns.resolveMx(host, (err, addresses) => resolve2(!err && addresses.length > 0));
   });
 }
 
@@ -2642,13 +2642,13 @@ function hasMXRecords(host) {
 import https from "https";
 import fs7 from "fs";
 function downloadFile(url2, destination) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve2, reject) => {
     const file = fs7.createWriteStream(destination);
     https.get(url2, (res) => {
       res.pipe(file);
       file.on("finish", () => {
         file.close();
-        resolve();
+        resolve2();
       });
     }).on("error", (err) => {
       console.error(err);
@@ -2657,11 +2657,11 @@ function downloadFile(url2, destination) {
   });
 }
 function isURLAccessible(url2) {
-  return new Promise((resolve) => {
+  return new Promise((resolve2) => {
     https.get(url2, (res) => {
       const statusCode = res.statusCode ?? 0;
-      resolve(statusCode >= 200 && statusCode < 400);
-    }).on("error", () => resolve(false));
+      resolve2(statusCode >= 200 && statusCode < 400);
+    }).on("error", () => resolve2(false));
   });
 }
 
@@ -3658,6 +3658,42 @@ function generateApiKey(options = { method: "string" }) {
   const key = generateKey();
   return prefix ? `${prefix}.${key}` : key;
 }
+
+// lib/modules/env.ts
+import { existsSync, readFileSync } from "fs";
+import { resolve } from "path";
+function unescapeValue(value) {
+  return value.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "	").replace(/\\b/g, "\b").replace(/\\f/g, "\f").replace(/\\\\/g, "\\").replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\//g, "/").replace(/\\=/g, "=");
+}
+var env = {
+  load: (customPath) => {
+    const envPath = customPath ? resolve(customPath) : resolve(process.cwd(), ".env");
+    if (!existsSync(envPath)) {
+      return;
+    }
+    try {
+      const content = readFileSync(envPath, "utf8");
+      content.split(/\r?\n/).forEach((line) => {
+        line = line.trim();
+        if (!line || line.startsWith("#"))
+          return;
+        const firstEqualIndex = line.indexOf("=");
+        if (firstEqualIndex === -1)
+          return;
+        const key = line.slice(0, firstEqualIndex).trim();
+        let value = line.slice(firstEqualIndex + 1).trim();
+        if (value.startsWith('"') && value.endsWith('"') || value.startsWith("'") && value.endsWith("'")) {
+          value = value.slice(1, -1);
+        }
+        if (key) {
+          process.env[key.trim()] = unescapeValue(value);
+        }
+      });
+    } catch (err) {
+      console.error(`[ENV] Failed to load:`, err);
+    }
+  }
+};
 export {
   Axium,
   ReadMore,
@@ -3678,6 +3714,7 @@ export {
   downloadFile,
   emoji_default as emojiApi,
   ensurePackage,
+  env,
   fileExists,
   flattenArray,
   formatBytes,
