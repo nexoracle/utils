@@ -3677,6 +3677,26 @@ var env = {
         line = line.trim();
         if (!line || line.startsWith("#"))
           return;
+        let inQuotes = false;
+        let quoteChar = "";
+        let commentIndex = -1;
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if ((char === '"' || char === "'") && (i === 0 || line[i - 1] !== "\\")) {
+            if (!inQuotes) {
+              inQuotes = true;
+              quoteChar = char;
+            } else if (char === quoteChar) {
+              inQuotes = false;
+            }
+          } else if (char === "#" && !inQuotes) {
+            commentIndex = i;
+            break;
+          }
+        }
+        if (commentIndex !== -1) {
+          line = line.substring(0, commentIndex).trim();
+        }
         const firstEqualIndex = line.indexOf("=");
         if (firstEqualIndex === -1)
           return;
