@@ -2659,9 +2659,20 @@ function downloadFile(url2, destination) {
 function isURLAccessible(url2) {
   return new Promise((resolve2) => {
     https.get(url2, (res) => {
-      const statusCode = res.statusCode ?? 0;
-      resolve2(statusCode >= 200 && statusCode < 400);
-    }).on("error", () => resolve2(false));
+      const success = (res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 400;
+      resolve2({
+        success,
+        status: res.statusCode,
+        statusText: res.statusMessage || "None"
+      });
+      res.on("data", () => {
+      });
+    }).on("error", (err) => {
+      resolve2({
+        success: false,
+        error: err.message || "An Error Occured"
+      });
+    });
   });
 }
 

@@ -506,7 +506,12 @@ declare function getAllIPs(host: string): Promise<{
 declare function hasMXRecords(host: string): Promise<boolean>;
 
 declare function downloadFile(url: string, destination: string): Promise<void>;
-declare function isURLAccessible(url: string): Promise<boolean>;
+declare function isURLAccessible(url: string): Promise<{
+    success: boolean;
+    status?: number;
+    statusText?: string;
+    error?: string;
+}>;
 
 declare const perf_hooks: {
     now: () => number;

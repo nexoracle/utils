@@ -20,13 +20,29 @@ export function downloadFile(url: string, destination: string): Promise<void> {
   });
 }
 
-export function isURLAccessible(url: string): Promise<boolean> {
+export function isURLAccessible(url: string): Promise<{
+  success: boolean;
+  status?: number;
+  statusText?: string;
+  error?: string;
+}> {
   return new Promise((resolve) => {
     https
       .get(url, (res) => {
-        const statusCode = res.statusCode ?? 0;
-        resolve(statusCode >= 200 && statusCode < 400);
+        const success = (res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 400;
+        resolve({
+          success,
+          status: res.statusCode,
+          statusText: res.statusMessage || "None",
+        });
+
+        res.on("data", () => {});
       })
-      .on("error", () => resolve(false));
+      .on("error", (err) => {
+        resolve({
+          success: false,
+          error: err.message || "An Error Occured",
+        });
+      });
   });
 }
