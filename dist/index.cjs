@@ -817,10 +817,14 @@ var getDate = (date, options) => {
   const formattedDate = new Intl.DateTimeFormat("en-US", formatOptions).format(dateObj);
   const [month, day, year] = formattedDate.split("/");
   switch (format) {
-    case "YYYY-MM-DD":
-      return `${year}-${month}-${day}`;
     case "DD-MM-YYYY":
       return `${day}-${month}-${year}`;
+    case "MM-DD-YYYY":
+      return `${month}-${day}-${year}`;
+    case "YYYY-MM-DD":
+      return `${year}-${month}-${day}`;
+    case "DD/MM/YYYY":
+      return `${day}/${month}/${year}`;
     case "MM/DD/YYYY":
       return `${month}/${day}/${year}`;
     case "YYYY/MM/DD":
