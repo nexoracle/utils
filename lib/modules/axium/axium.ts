@@ -1,6 +1,5 @@
 import { FetchOptions } from "./types";
 import { RequestHandler } from "./request";
-import fs from "fs";
 import { urlValidator } from "../../functions/validation";
 
 export class Axium extends RequestHandler {
@@ -90,12 +89,6 @@ export class Axium extends RequestHandler {
 
         const arrayBuffer = await response.arrayBuffer();
         return Buffer.from(arrayBuffer);
-      } else {
-        if (fs.existsSync(url)) {
-          return fs.readFileSync(url);
-        } else {
-          return url;
-        }
       }
     } catch (e) {
       console.error("Error while getting buffer:\n", e);

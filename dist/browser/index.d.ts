@@ -139,7 +139,7 @@ declare class Axium extends RequestHandler {
     postFormData(url: string, data: FormData, options?: FetchOptions): Promise<any>;
     postUrlEncoded(url: string, data: Record<string, string>, options?: FetchOptions): Promise<any>;
     all(requests: Promise<any>[]): Promise<any[]>;
-    getBuffer(url: string, options?: FetchOptions, method?: string): Promise<string | false | Buffer<ArrayBuffer>>;
+    getBuffer(url: string, options?: FetchOptions, method?: string): Promise<false | Buffer<ArrayBuffer> | undefined>;
     fetchJson(url: string, options?: FetchOptions, method?: string): Promise<any>;
     head(url: string, options?: FetchOptions): Promise<any>;
 }

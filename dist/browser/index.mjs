@@ -460,7 +460,6 @@ var RequestHandler = class {
 };
 
 // lib/modules/axium/axium.ts
-import fs from "fs";
 var Axium = class extends RequestHandler {
   constructor(defaults) {
     super({
@@ -536,12 +535,6 @@ var Axium = class extends RequestHandler {
         }
         const arrayBuffer = await response.arrayBuffer();
         return Buffer.from(arrayBuffer);
-      } else {
-        if (fs.existsSync(url)) {
-          return fs.readFileSync(url);
-        } else {
-          return url;
-        }
       }
     } catch (e) {
       console.error("Error while getting buffer:\n", e);

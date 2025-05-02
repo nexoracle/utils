@@ -136,7 +136,7 @@ __export(lib_exports, {
 module.exports = __toCommonJS(lib_exports);
 
 // lib/functions/tools.ts
-var import_fs2 = __toESM(require("fs"), 1);
+var import_fs = __toESM(require("fs"), 1);
 var import_stream = require("stream");
 
 // lib/functions/validation.ts
@@ -644,7 +644,6 @@ var RequestHandler = class {
 };
 
 // lib/modules/axium/axium.ts
-var import_fs = __toESM(require("fs"), 1);
 var Axium = class extends RequestHandler {
   constructor(defaults) {
     super({
@@ -720,12 +719,6 @@ var Axium = class extends RequestHandler {
         }
         const arrayBuffer = await response.arrayBuffer();
         return Buffer.from(arrayBuffer);
-      } else {
-        if (import_fs.default.existsSync(url2)) {
-          return import_fs.default.readFileSync(url2);
-        } else {
-          return url2;
-        }
       }
     } catch (e) {
       console.error("Error while getting buffer:\n", e);
@@ -805,7 +798,7 @@ var transformBuffer = (buffer, transformFn) => {
   return transformFn(buffer);
 };
 var bufferToFile = (buffer, filePath) => {
-  import_fs2.default.writeFileSync(filePath, buffer);
+  import_fs.default.writeFileSync(filePath, buffer);
 };
 function toBuffer(data) {
   if (data instanceof Buffer)
@@ -1010,7 +1003,7 @@ async function getFileSize(path5) {
     }
     if (typeof path5 === "string") {
       try {
-        const stats = import_fs2.default.statSync(path5);
+        const stats = import_fs.default.statSync(path5);
         return formatBytes(stats.size, 3);
       } catch (error) {
         console.error(`Error reading local file (${path5}):`, error);
@@ -1051,7 +1044,7 @@ function ensurePackage(packageName, packageManager = "npm", shouldInstall = true
 
 // lib/modules/crypto.ts
 var Crypto = __toESM(require("crypto"), 1);
-var import_fs3 = __toESM(require("fs"), 1);
+var import_fs2 = __toESM(require("fs"), 1);
 var crypto = {
   sha256: (data) => Crypto.createHash("sha256").update(data).digest("hex"),
   sha512: (data) => Crypto.createHash("sha512").update(data).digest("hex"),
@@ -1100,8 +1093,8 @@ var crypto = {
     }
     const keyPair = Crypto.generateKeyPairSync(type, options || defaultOptions);
     if (saveToFile) {
-      import_fs3.default.writeFileSync("public.pem", keyPair.publicKey);
-      import_fs3.default.writeFileSync("private.pem", keyPair.privateKey);
+      import_fs2.default.writeFileSync("public.pem", keyPair.publicKey);
+      import_fs2.default.writeFileSync("private.pem", keyPair.privateKey);
     }
     return keyPair;
   },
@@ -1112,11 +1105,11 @@ var crypto = {
 };
 
 // lib/modules/fs.ts
-var import_fs4 = __toESM(require("fs"), 1);
+var import_fs3 = __toESM(require("fs"), 1);
 var import_path = __toESM(require("path"), 1);
 var readFile = (filePath) => {
   try {
-    return import_fs4.default.readFileSync(filePath, "utf-8");
+    return import_fs3.default.readFileSync(filePath, "utf-8");
   } catch (error) {
     console.error("File Read Error:", error instanceof Error ? error.message : error);
     return null;
@@ -1124,45 +1117,45 @@ var readFile = (filePath) => {
 };
 var writeFile = (filePath, data) => {
   try {
-    import_fs4.default.writeFileSync(filePath, data, "utf-8");
+    import_fs3.default.writeFileSync(filePath, data, "utf-8");
   } catch (error) {
     console.error("File Write Error:", error instanceof Error ? error.message : error);
   }
 };
 var appendToFile = (filePath, data) => {
   try {
-    import_fs4.default.appendFileSync(filePath, data + "\n", "utf-8");
+    import_fs3.default.appendFileSync(filePath, data + "\n", "utf-8");
   } catch (error) {
     console.error("File Append Error:", error instanceof Error ? error.message : error);
   }
 };
 var deleteFile = (filePath) => {
   try {
-    import_fs4.default.unlinkSync(filePath);
+    import_fs3.default.unlinkSync(filePath);
   } catch (error) {
     console.error("File Delete Error:", error instanceof Error ? error.message : error);
   }
 };
 var fileExists = (filePath) => {
-  return import_fs4.default.existsSync(filePath);
+  return import_fs3.default.existsSync(filePath);
 };
 var createDirectory = (dirPath) => {
   try {
-    import_fs4.default.mkdirSync(dirPath, { recursive: true });
+    import_fs3.default.mkdirSync(dirPath, { recursive: true });
   } catch (error) {
     console.error("Directory Create Error:", error instanceof Error ? error.message : error);
   }
 };
 var removeDirectory = (dirPath) => {
   try {
-    import_fs4.default.rmdirSync(dirPath);
+    import_fs3.default.rmdirSync(dirPath);
   } catch (error) {
     console.error("Directory Remove Error:", error instanceof Error ? error.message : error);
   }
 };
 var listFiles = (dirPath) => {
   try {
-    return import_fs4.default.readdirSync(dirPath);
+    return import_fs3.default.readdirSync(dirPath);
   } catch (error) {
     console.error("Read Directory Error:", error instanceof Error ? error.message : error);
     return null;
@@ -1170,7 +1163,7 @@ var listFiles = (dirPath) => {
 };
 var getFileStats = (filePath) => {
   try {
-    return import_fs4.default.statSync(filePath);
+    return import_fs3.default.statSync(filePath);
   } catch (error) {
     console.error("File Stats Error:", error instanceof Error ? error.message : error);
     return null;
@@ -1178,28 +1171,28 @@ var getFileStats = (filePath) => {
 };
 var renameFile = (oldPath, newPath) => {
   try {
-    import_fs4.default.renameSync(oldPath, newPath);
+    import_fs3.default.renameSync(oldPath, newPath);
   } catch (error) {
     console.error("File Rename Error:", error instanceof Error ? error.message : error);
   }
 };
 var copyFile = (source, destination) => {
   try {
-    import_fs4.default.copyFileSync(source, destination);
+    import_fs3.default.copyFileSync(source, destination);
   } catch (error) {
     console.error("File Copy Error:", error instanceof Error ? error.message : error);
   }
 };
 var watchFile = (filePath, callback) => {
   try {
-    import_fs4.default.watchFile(filePath, callback);
+    import_fs3.default.watchFile(filePath, callback);
   } catch (error) {
     console.error("File Watch Error:", error instanceof Error ? error.message : error);
   }
 };
 var unwatchFile = (filePath) => {
   try {
-    import_fs4.default.unwatchFile(filePath);
+    import_fs3.default.unwatchFile(filePath);
   } catch (error) {
     console.error("File Unwatch Error:", error instanceof Error ? error.message : error);
   }
@@ -1509,11 +1502,11 @@ function createServer(router) {
 }
 
 // lib/modules/apex/middlewares/favicon.ts
-var import_fs5 = __toESM(require("fs"), 1);
+var import_fs4 = __toESM(require("fs"), 1);
 function favicon(iconPath) {
   return (req, res, next) => {
     if (req.url === "/favicon.ico" && iconPath) {
-      import_fs5.default.stat(iconPath, (err, stats) => {
+      import_fs4.default.stat(iconPath, (err, stats) => {
         if (err || !stats.isFile()) {
           res.status(404).send("Favicon not found");
         } else {
@@ -1586,7 +1579,7 @@ function rateLimit(options = {}) {
 }
 
 // lib/modules/apex/middlewares/static.ts
-var import_fs6 = __toESM(require("fs"), 1);
+var import_fs5 = __toESM(require("fs"), 1);
 var import_path2 = __toESM(require("path"), 1);
 
 // lib/modules/apex/utils.ts
@@ -1634,7 +1627,7 @@ function serveStatic(prefix, staticPath) {
     }
     const relativePath = pathname.slice(prefix.length);
     const filePath = import_path2.default.join(staticPath, relativePath);
-    import_fs6.default.stat(filePath, (err, stats) => {
+    import_fs5.default.stat(filePath, (err, stats) => {
       if (err || !stats.isFile()) {
         next();
       } else {
@@ -1664,7 +1657,7 @@ function useFlash() {
 }
 
 // lib/modules/apex/router.ts
-var import_fs7 = __toESM(require("fs"), 1);
+var import_fs6 = __toESM(require("fs"), 1);
 var import_path3 = __toESM(require("path"), 1);
 var import_tls = __toESM(require("tls"), 1);
 
@@ -2181,7 +2174,7 @@ var Router = class {
     if (key === "view engine") {
       if (value === "ejs") {
         this.viewEngine = (filePath, data, callback) => {
-          import_fs7.default.readFile(filePath, "utf8", (err, template) => {
+          import_fs6.default.readFile(filePath, "utf8", (err, template) => {
             if (err)
               return callback(err);
             const rendered = template.replace(/<%=\s*(.*?)\s*%>/g, (_, key2) => data[key2] || "");
@@ -2367,7 +2360,7 @@ var Router = class {
     resMethod.sendFile = function(filePath) {
       const extname = import_path3.default.extname(filePath).toLowerCase();
       const contentType = mime.get(extname) || "application/octet-stream";
-      const stream = import_fs7.default.createReadStream(filePath);
+      const stream = import_fs6.default.createReadStream(filePath);
       stream.on("error", (err) => {
         if (err.code === "ENOENT") {
           this.status(404).send("File Not Found");
@@ -2888,10 +2881,10 @@ function hasMXRecords(host) {
 
 // lib/modules/https.ts
 var import_https2 = __toESM(require("https"), 1);
-var import_fs8 = __toESM(require("fs"), 1);
+var import_fs7 = __toESM(require("fs"), 1);
 function downloadFile(url2, destination) {
   return new Promise((resolve2, reject) => {
-    const file = import_fs8.default.createWriteStream(destination);
+    const file = import_fs7.default.createWriteStream(destination);
     import_https2.default.get(url2, (res) => {
       res.pipe(file);
       file.on("finish", () => {
@@ -2900,7 +2893,7 @@ function downloadFile(url2, destination) {
       });
     }).on("error", (err) => {
       console.error(err);
-      import_fs8.default.unlink(destination, () => reject(err));
+      import_fs7.default.unlink(destination, () => reject(err));
     });
   });
 }
@@ -3920,7 +3913,7 @@ function generateApiKey(options = { method: "string" }) {
 }
 
 // lib/modules/env.ts
-var import_fs9 = require("fs");
+var import_fs8 = require("fs");
 var import_path5 = require("path");
 function unescapeValue(value) {
   return value.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "	").replace(/\\b/g, "\b").replace(/\\f/g, "\f").replace(/\\\\/g, "\\").replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\//g, "/").replace(/\\=/g, "=");
@@ -3928,11 +3921,11 @@ function unescapeValue(value) {
 var env = {
   load: (customPath) => {
     const envPath = customPath ? (0, import_path5.resolve)(customPath) : (0, import_path5.resolve)(process.cwd(), ".env");
-    if (!(0, import_fs9.existsSync)(envPath)) {
+    if (!(0, import_fs8.existsSync)(envPath)) {
       return;
     }
     try {
-      const content = (0, import_fs9.readFileSync)(envPath, "utf8");
+      const content = (0, import_fs8.readFileSync)(envPath, "utf8");
       content.split(/\r?\n/).forEach((line) => {
         line = line.trim();
         if (!line || line.startsWith("#"))

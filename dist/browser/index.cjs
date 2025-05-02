@@ -1,9 +1,7 @@
 "use strict";
-var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -17,14 +15,6 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // lib/browser/index.ts
@@ -538,7 +528,6 @@ var RequestHandler = class {
 };
 
 // lib/modules/axium/axium.ts
-var import_fs = __toESM(require("fs"), 1);
 var Axium = class extends RequestHandler {
   constructor(defaults) {
     super({
@@ -614,12 +603,6 @@ var Axium = class extends RequestHandler {
         }
         const arrayBuffer = await response.arrayBuffer();
         return Buffer.from(arrayBuffer);
-      } else {
-        if (import_fs.default.existsSync(url)) {
-          return import_fs.default.readFileSync(url);
-        } else {
-          return url;
-        }
       }
     } catch (e) {
       console.error("Error while getting buffer:\n", e);

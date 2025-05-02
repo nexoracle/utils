@@ -7,7 +7,7 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
 });
 
 // lib/functions/tools.ts
-import fs2 from "fs";
+import fs from "fs";
 import { Readable } from "stream";
 
 // lib/functions/validation.ts
@@ -515,7 +515,6 @@ var RequestHandler = class {
 };
 
 // lib/modules/axium/axium.ts
-import fs from "fs";
 var Axium = class extends RequestHandler {
   constructor(defaults) {
     super({
@@ -591,12 +590,6 @@ var Axium = class extends RequestHandler {
         }
         const arrayBuffer = await response.arrayBuffer();
         return Buffer.from(arrayBuffer);
-      } else {
-        if (fs.existsSync(url2)) {
-          return fs.readFileSync(url2);
-        } else {
-          return url2;
-        }
       }
     } catch (e) {
       console.error("Error while getting buffer:\n", e);
@@ -676,7 +669,7 @@ var transformBuffer = (buffer, transformFn) => {
   return transformFn(buffer);
 };
 var bufferToFile = (buffer, filePath) => {
-  fs2.writeFileSync(filePath, buffer);
+  fs.writeFileSync(filePath, buffer);
 };
 function toBuffer(data) {
   if (data instanceof Buffer)
@@ -881,7 +874,7 @@ async function getFileSize(path5) {
     }
     if (typeof path5 === "string") {
       try {
-        const stats = fs2.statSync(path5);
+        const stats = fs.statSync(path5);
         return formatBytes(stats.size, 3);
       } catch (error) {
         console.error(`Error reading local file (${path5}):`, error);
@@ -922,7 +915,7 @@ function ensurePackage(packageName, packageManager = "npm", shouldInstall = true
 
 // lib/modules/crypto.ts
 import * as Crypto from "crypto";
-import fs3 from "fs";
+import fs2 from "fs";
 var crypto = {
   sha256: (data) => Crypto.createHash("sha256").update(data).digest("hex"),
   sha512: (data) => Crypto.createHash("sha512").update(data).digest("hex"),
@@ -971,8 +964,8 @@ var crypto = {
     }
     const keyPair = Crypto.generateKeyPairSync(type, options || defaultOptions);
     if (saveToFile) {
-      fs3.writeFileSync("public.pem", keyPair.publicKey);
-      fs3.writeFileSync("private.pem", keyPair.privateKey);
+      fs2.writeFileSync("public.pem", keyPair.publicKey);
+      fs2.writeFileSync("private.pem", keyPair.privateKey);
     }
     return keyPair;
   },
@@ -983,11 +976,11 @@ var crypto = {
 };
 
 // lib/modules/fs.ts
-import fs4 from "fs";
+import fs3 from "fs";
 import path from "path";
 var readFile = (filePath) => {
   try {
-    return fs4.readFileSync(filePath, "utf-8");
+    return fs3.readFileSync(filePath, "utf-8");
   } catch (error) {
     console.error("File Read Error:", error instanceof Error ? error.message : error);
     return null;
@@ -995,45 +988,45 @@ var readFile = (filePath) => {
 };
 var writeFile = (filePath, data) => {
   try {
-    fs4.writeFileSync(filePath, data, "utf-8");
+    fs3.writeFileSync(filePath, data, "utf-8");
   } catch (error) {
     console.error("File Write Error:", error instanceof Error ? error.message : error);
   }
 };
 var appendToFile = (filePath, data) => {
   try {
-    fs4.appendFileSync(filePath, data + "\n", "utf-8");
+    fs3.appendFileSync(filePath, data + "\n", "utf-8");
   } catch (error) {
     console.error("File Append Error:", error instanceof Error ? error.message : error);
   }
 };
 var deleteFile = (filePath) => {
   try {
-    fs4.unlinkSync(filePath);
+    fs3.unlinkSync(filePath);
   } catch (error) {
     console.error("File Delete Error:", error instanceof Error ? error.message : error);
   }
 };
 var fileExists = (filePath) => {
-  return fs4.existsSync(filePath);
+  return fs3.existsSync(filePath);
 };
 var createDirectory = (dirPath) => {
   try {
-    fs4.mkdirSync(dirPath, { recursive: true });
+    fs3.mkdirSync(dirPath, { recursive: true });
   } catch (error) {
     console.error("Directory Create Error:", error instanceof Error ? error.message : error);
   }
 };
 var removeDirectory = (dirPath) => {
   try {
-    fs4.rmdirSync(dirPath);
+    fs3.rmdirSync(dirPath);
   } catch (error) {
     console.error("Directory Remove Error:", error instanceof Error ? error.message : error);
   }
 };
 var listFiles = (dirPath) => {
   try {
-    return fs4.readdirSync(dirPath);
+    return fs3.readdirSync(dirPath);
   } catch (error) {
     console.error("Read Directory Error:", error instanceof Error ? error.message : error);
     return null;
@@ -1041,7 +1034,7 @@ var listFiles = (dirPath) => {
 };
 var getFileStats = (filePath) => {
   try {
-    return fs4.statSync(filePath);
+    return fs3.statSync(filePath);
   } catch (error) {
     console.error("File Stats Error:", error instanceof Error ? error.message : error);
     return null;
@@ -1049,28 +1042,28 @@ var getFileStats = (filePath) => {
 };
 var renameFile = (oldPath, newPath) => {
   try {
-    fs4.renameSync(oldPath, newPath);
+    fs3.renameSync(oldPath, newPath);
   } catch (error) {
     console.error("File Rename Error:", error instanceof Error ? error.message : error);
   }
 };
 var copyFile = (source, destination) => {
   try {
-    fs4.copyFileSync(source, destination);
+    fs3.copyFileSync(source, destination);
   } catch (error) {
     console.error("File Copy Error:", error instanceof Error ? error.message : error);
   }
 };
 var watchFile = (filePath, callback) => {
   try {
-    fs4.watchFile(filePath, callback);
+    fs3.watchFile(filePath, callback);
   } catch (error) {
     console.error("File Watch Error:", error instanceof Error ? error.message : error);
   }
 };
 var unwatchFile = (filePath) => {
   try {
-    fs4.unwatchFile(filePath);
+    fs3.unwatchFile(filePath);
   } catch (error) {
     console.error("File Unwatch Error:", error instanceof Error ? error.message : error);
   }
@@ -1380,11 +1373,11 @@ function createServer(router) {
 }
 
 // lib/modules/apex/middlewares/favicon.ts
-import fs5 from "fs";
+import fs4 from "fs";
 function favicon(iconPath) {
   return (req, res, next) => {
     if (req.url === "/favicon.ico" && iconPath) {
-      fs5.stat(iconPath, (err, stats) => {
+      fs4.stat(iconPath, (err, stats) => {
         if (err || !stats.isFile()) {
           res.status(404).send("Favicon not found");
         } else {
@@ -1457,7 +1450,7 @@ function rateLimit(options = {}) {
 }
 
 // lib/modules/apex/middlewares/static.ts
-import fs6 from "fs";
+import fs5 from "fs";
 import path2 from "path";
 
 // lib/modules/apex/utils.ts
@@ -1505,7 +1498,7 @@ function serveStatic(prefix, staticPath) {
     }
     const relativePath = pathname.slice(prefix.length);
     const filePath = path2.join(staticPath, relativePath);
-    fs6.stat(filePath, (err, stats) => {
+    fs5.stat(filePath, (err, stats) => {
       if (err || !stats.isFile()) {
         next();
       } else {
@@ -1535,7 +1528,7 @@ function useFlash() {
 }
 
 // lib/modules/apex/router.ts
-import fs7 from "fs";
+import fs6 from "fs";
 import path3 from "path";
 import tls from "tls";
 
@@ -2052,7 +2045,7 @@ var Router = class {
     if (key === "view engine") {
       if (value === "ejs") {
         this.viewEngine = (filePath, data, callback) => {
-          fs7.readFile(filePath, "utf8", (err, template) => {
+          fs6.readFile(filePath, "utf8", (err, template) => {
             if (err)
               return callback(err);
             const rendered = template.replace(/<%=\s*(.*?)\s*%>/g, (_, key2) => data[key2] || "");
@@ -2238,7 +2231,7 @@ var Router = class {
     resMethod.sendFile = function(filePath) {
       const extname = path3.extname(filePath).toLowerCase();
       const contentType = mime.get(extname) || "application/octet-stream";
-      const stream = fs7.createReadStream(filePath);
+      const stream = fs6.createReadStream(filePath);
       stream.on("error", (err) => {
         if (err.code === "ENOENT") {
           this.status(404).send("File Not Found");
@@ -2759,10 +2752,10 @@ function hasMXRecords(host) {
 
 // lib/modules/https.ts
 import https from "https";
-import fs8 from "fs";
+import fs7 from "fs";
 function downloadFile(url2, destination) {
   return new Promise((resolve2, reject) => {
-    const file = fs8.createWriteStream(destination);
+    const file = fs7.createWriteStream(destination);
     https.get(url2, (res) => {
       res.pipe(file);
       file.on("finish", () => {
@@ -2771,7 +2764,7 @@ function downloadFile(url2, destination) {
       });
     }).on("error", (err) => {
       console.error(err);
-      fs8.unlink(destination, () => reject(err));
+      fs7.unlink(destination, () => reject(err));
     });
   });
 }
