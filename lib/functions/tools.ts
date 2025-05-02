@@ -188,22 +188,16 @@ export const getDate = (date?: Date | string | number | { format?: string; utc?:
   switch (format) {
     case "DD-MM-YYYY":
       return `${day}-${month}-${year}`;
-
     case "MM-DD-YYYY":
       return `${month}-${day}-${year}`;
-
     case "YYYY-MM-DD":
       return `${year}-${month}-${day}`;
-
     case "DD/MM/YYYY":
       return `${day}/${month}/${year}`;
-
     case "MM/DD/YYYY":
       return `${month}/${day}/${year}`;
-
     case "YYYY/MM/DD":
       return `${year}/${month}/${day}`;
-
     default:
       return `${year}-${month}-${day}`;
   }
@@ -306,11 +300,12 @@ export async function getFileSize(path: string | Buffer): Promise<string> {
   }
 }
 
-export function ensurePackage(packageName: string, packageManager: "npm" | "yarn" | "pnpm" = "npm", shouldInstall: boolean = true): any {
+export function ensurePackage(packageName: string, packageManager: "npm" | "yarn" | "pnpm" | "bun" = "npm", shouldInstall: boolean = true): any {
   try {
     return require(packageName);
   } catch (e) {
-    console.log(`Package "${packageName}" is not installed.`);
+    console.warn(`Package "${packageName}" is not installed.`);
+    console.error(e);
 
     if (!shouldInstall) {
       return null;
@@ -319,7 +314,7 @@ export function ensurePackage(packageName: string, packageManager: "npm" | "yarn
     console.log(`Installing "${packageName}" using ${packageManager}...`);
 
     try {
-      const installCommand = packageManager === "yarn" ? `yarn add ${packageName}` : packageManager === "pnpm" ? `pnpm install ${packageName}` : `npm install ${packageName}`;
+      const installCommand = packageManager === "yarn" ? `yarn add ${packageName}` : packageManager === "pnpm" ? `pnpm add ${packageName}` : packageManager === "bun" ? `bun add ${packageName}` : `npm install ${packageName}`;
 
       execSync(installCommand, { stdio: "inherit" });
       console.log(`Successfully installed "${packageName}".`);
