@@ -213,6 +213,55 @@ export function getTimeZone(): string | null {
   }
 }
 
+export function clockString(seconds: number, showHours: boolean = true): string {
+  if (isNaN(seconds)) return "--:--:--";
+
+  const h: number = showHours ? Math.floor(seconds / 3600) : 0;
+  const remaining: number = seconds % 3600;
+  const m: number = Math.floor(remaining / 60);
+  const s: number = Math.floor(remaining % 60);
+
+  const parts: number[] = showHours ? [h, m, s] : [m, s];
+  return parts.map((v: number) => v.toString().padStart(2, "0")).join(":");
+}
+
+export function formatISODate(n: string | number | Date, locale: string = "en", timezone?: string): string {
+  interface DateTimeFormatOptions {
+    day?: "2-digit" | "numeric";
+    month?: "2-digit" | "numeric" | "long" | "short" | "narrow";
+    year?: "numeric" | "2-digit";
+    hour?: "2-digit" | "numeric";
+    minute?: "2-digit" | "numeric";
+    second?: "2-digit" | "numeric";
+    hour12?: boolean;
+    timeZone?: string;
+  }
+
+  if (typeof n === "string") {
+    n = n.replace(/−/g, "-");
+  }
+
+  const d = new Date(n);
+  if (isNaN(d.getTime())) return "Invalid Date";
+
+  const dateOptions: DateTimeFormatOptions = {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: timezone,
+  };
+
+  const timeOptions: DateTimeFormatOptions = {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+    timeZone: timezone,
+  };
+
+  return d.toLocaleString(locale, dateOptions) + ", " + d.toLocaleString(locale, timeOptions);
+}
+
 export const formatJSON = (data: unknown, spaces: number = 2): string | null => {
   try {
     return JSON.stringify(data, null, spaces);

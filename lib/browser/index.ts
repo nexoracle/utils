@@ -1,5 +1,5 @@
 // Utilities
-export { getRandom, randomizeArray, ReadMore, sleep, randomInt, truncate, timeAgo, uniqueArray, flattenArray, randomElement, toQueryString, randomHexColor, formatBytes, formatNumber, getTime, getDate, getTimeZone, formatJSON, runtime } from "../functions/tools";
+export { getRandom, randomizeArray, ReadMore, sleep, randomInt, truncate, timeAgo, uniqueArray, flattenArray, randomElement, toQueryString, randomHexColor, formatBytes, formatNumber, getTime, getDate, getTimeZone, clockString, formatISODate, formatJSON, runtime } from "../functions/tools";
 
 // Validators
 export { urlValidator, toBool, isEmail, isGmail, isNumber, isObject, isEmptyObject, isEqualObj, isArray, isString, isBool, isFunction, isBigInt, isUndefined, isSymbol, isNull, hasEmoji } from "../functions/validation";

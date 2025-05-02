@@ -22,10 +22,12 @@ var browser_exports = {};
 __export(browser_exports, {
   ReadMore: () => ReadMore,
   axium: () => axium_default,
+  clockString: () => clockString,
   console: () => Console,
   emojiApi: () => emoji_default,
   flattenArray: () => flattenArray,
   formatBytes: () => formatBytes,
+  formatISODate: () => formatISODate,
   formatJSON: () => formatJSON,
   formatNumber: () => formatNumber,
   getDate: () => getDate,
@@ -688,6 +690,38 @@ function getTimeZone() {
     console.error("Error detecting timezone:", error);
     return null;
   }
+}
+function clockString(seconds, showHours = true) {
+  if (isNaN(seconds))
+    return "--:--:--";
+  const h = showHours ? Math.floor(seconds / 3600) : 0;
+  const remaining = seconds % 3600;
+  const m = Math.floor(remaining / 60);
+  const s = Math.floor(remaining % 60);
+  const parts = showHours ? [h, m, s] : [m, s];
+  return parts.map((v) => v.toString().padStart(2, "0")).join(":");
+}
+function formatISODate(n, locale = "en", timezone) {
+  if (typeof n === "string") {
+    n = n.replace(/−/g, "-");
+  }
+  const d = new Date(n);
+  if (isNaN(d.getTime()))
+    return "Invalid Date";
+  const dateOptions = {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: timezone
+  };
+  const timeOptions = {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+    timeZone: timezone
+  };
+  return d.toLocaleString(locale, dateOptions) + ", " + d.toLocaleString(locale, timeOptions);
 }
 var formatJSON = (data, spaces2 = 2) => {
   try {
@@ -1838,10 +1872,12 @@ var mime = { all: () => mimes, get };
 0 && (module.exports = {
   ReadMore,
   axium,
+  clockString,
   console,
   emojiApi,
   flattenArray,
   formatBytes,
+  formatISODate,
   formatJSON,
   formatNumber,
   getDate,
