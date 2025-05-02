@@ -26,7 +26,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "clean": "rm -rf dist .tsbuildinfo",
-    "release": "npm run build && npm version patch && npm publish"
+    "release": "npm version patch && npm publish"
   },
   "repository": {
     "type": "git",

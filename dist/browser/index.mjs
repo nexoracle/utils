@@ -686,7 +686,7 @@ var getDate = (date, options) => {
     case "YYYY/MM/DD":
       return `${year}/${month}/${day}`;
     default:
-      return `${year}-${month}-${day}`;
+      return `${day}-${month}-${year}`;
   }
 };
 function getTimeZone() {
