@@ -6,7 +6,7 @@ export interface FetchOptions extends RequestInit {
   onDownloadProgress?: (progress: ProgressEvent) => void;
   onUploadProgress?: (progress: ProgressEvent) => void;
   signal?: AbortSignal;
-  responseType?: "arraybuffer" | "blob" | "json" | "text";
+  responseType?: "arraybuffer" | "blob" | "json" | "text" | "buffer" | "stream";
 }
 
 // Define Interceptor type

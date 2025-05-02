@@ -122,6 +122,13 @@ export class RequestHandler {
               case "text":
                 data = await interceptedResponse.text();
                 break;
+              case "buffer":
+                data = await interceptedResponse.arrayBuffer();
+                data = Buffer.from(data);
+                break;
+              case "stream":
+                data = interceptedResponse.body;
+                break;
               default:
                 data = await interceptedResponse.arrayBuffer();
                 data = Buffer.from(data);
@@ -140,6 +147,15 @@ export class RequestHandler {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else if (contentType?.includes("application/octet-stream")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("audio/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("video/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("application/zip")) {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else {
@@ -178,6 +194,13 @@ export class RequestHandler {
               case "text":
                 data = await interceptedResponse.text();
                 break;
+              case "buffer":
+                data = await interceptedResponse.arrayBuffer();
+                data = Buffer.from(data);
+                break;
+              case "stream":
+                data = interceptedResponse.body;
+                break;
               default:
                 data = await interceptedResponse.arrayBuffer();
                 data = Buffer.from(data);
@@ -196,6 +219,15 @@ export class RequestHandler {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else if (contentType?.includes("application/octet-stream")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("audio/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("video/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("application/zip")) {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else {

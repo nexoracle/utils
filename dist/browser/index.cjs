@@ -1,7 +1,9 @@
 "use strict";
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -15,6 +17,14 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // lib/browser/index.ts
@@ -395,6 +405,13 @@ var RequestHandler = class {
               case "text":
                 data = await interceptedResponse.text();
                 break;
+              case "buffer":
+                data = await interceptedResponse.arrayBuffer();
+                data = Buffer.from(data);
+                break;
+              case "stream":
+                data = interceptedResponse.body;
+                break;
               default:
                 data = await interceptedResponse.arrayBuffer();
                 data = Buffer.from(data);
@@ -412,6 +429,15 @@ var RequestHandler = class {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else if (contentType?.includes("application/octet-stream")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("audio/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("video/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("application/zip")) {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else {
@@ -445,6 +471,13 @@ var RequestHandler = class {
               case "text":
                 data = await interceptedResponse.text();
                 break;
+              case "buffer":
+                data = await interceptedResponse.arrayBuffer();
+                data = Buffer.from(data);
+                break;
+              case "stream":
+                data = interceptedResponse.body;
+                break;
               default:
                 data = await interceptedResponse.arrayBuffer();
                 data = Buffer.from(data);
@@ -462,6 +495,15 @@ var RequestHandler = class {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else if (contentType?.includes("application/octet-stream")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("audio/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("video/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("application/zip")) {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else {
@@ -496,6 +538,7 @@ var RequestHandler = class {
 };
 
 // lib/modules/axium/axium.ts
+var import_fs = __toESM(require("fs"), 1);
 var Axium = class extends RequestHandler {
   constructor(defaults) {
     super({
@@ -549,9 +592,58 @@ var Axium = class extends RequestHandler {
   all(requests) {
     return Promise.all(requests);
   }
-  // Get buffer
-  getBuffer(url, options = {}) {
-    return this.request(url, { ...options, method: "GET" });
+  // getBuffer method
+  async getBuffer(url, options = {}, method = "GET") {
+    try {
+      if (Buffer.isBuffer(url)) {
+        return url;
+      }
+      if (urlValidator.isURL(url)) {
+        const response = await fetch(url, {
+          method,
+          headers: {
+            DNT: "1",
+            "Upgrade-Insecure-Request": "1",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36",
+            ...options.headers
+          },
+          ...options
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      } else {
+        if (import_fs.default.existsSync(url)) {
+          return import_fs.default.readFileSync(url);
+        } else {
+          return url;
+        }
+      }
+    } catch (e) {
+      console.error("Error while getting buffer:\n", e);
+      return false;
+    }
+  }
+  // fetchJson method
+  async fetchJson(url, options = {}, method = "GET") {
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36",
+          ...options.headers
+        },
+        ...options
+      });
+      if (!response.ok) {
+        throw new Error(`Fetch error! Status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (e) {
+      console.error("Error while fetching json:\n ", e);
+    }
   }
   // Head request
   head(url, options = {}) {

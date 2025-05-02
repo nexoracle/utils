@@ -327,6 +327,13 @@ var RequestHandler = class {
               case "text":
                 data = await interceptedResponse.text();
                 break;
+              case "buffer":
+                data = await interceptedResponse.arrayBuffer();
+                data = Buffer.from(data);
+                break;
+              case "stream":
+                data = interceptedResponse.body;
+                break;
               default:
                 data = await interceptedResponse.arrayBuffer();
                 data = Buffer.from(data);
@@ -344,6 +351,15 @@ var RequestHandler = class {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else if (contentType?.includes("application/octet-stream")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("audio/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("video/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("application/zip")) {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else {
@@ -377,6 +393,13 @@ var RequestHandler = class {
               case "text":
                 data = await interceptedResponse.text();
                 break;
+              case "buffer":
+                data = await interceptedResponse.arrayBuffer();
+                data = Buffer.from(data);
+                break;
+              case "stream":
+                data = interceptedResponse.body;
+                break;
               default:
                 data = await interceptedResponse.arrayBuffer();
                 data = Buffer.from(data);
@@ -394,6 +417,15 @@ var RequestHandler = class {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else if (contentType?.includes("application/octet-stream")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("audio/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("video/")) {
+              data = await interceptedResponse.arrayBuffer();
+              data = Buffer.from(data);
+            } else if (contentType?.includes("application/zip")) {
               data = await interceptedResponse.arrayBuffer();
               data = Buffer.from(data);
             } else {
@@ -428,6 +460,7 @@ var RequestHandler = class {
 };
 
 // lib/modules/axium/axium.ts
+import fs from "fs";
 var Axium = class extends RequestHandler {
   constructor(defaults) {
     super({
@@ -481,9 +514,58 @@ var Axium = class extends RequestHandler {
   all(requests) {
     return Promise.all(requests);
   }
-  // Get buffer
-  getBuffer(url, options = {}) {
-    return this.request(url, { ...options, method: "GET" });
+  // getBuffer method
+  async getBuffer(url, options = {}, method = "GET") {
+    try {
+      if (Buffer.isBuffer(url)) {
+        return url;
+      }
+      if (urlValidator.isURL(url)) {
+        const response = await fetch(url, {
+          method,
+          headers: {
+            DNT: "1",
+            "Upgrade-Insecure-Request": "1",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36",
+            ...options.headers
+          },
+          ...options
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      } else {
+        if (fs.existsSync(url)) {
+          return fs.readFileSync(url);
+        } else {
+          return url;
+        }
+      }
+    } catch (e) {
+      console.error("Error while getting buffer:\n", e);
+      return false;
+    }
+  }
+  // fetchJson method
+  async fetchJson(url, options = {}, method = "GET") {
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36",
+          ...options.headers
+        },
+        ...options
+      });
+      if (!response.ok) {
+        throw new Error(`Fetch error! Status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (e) {
+      console.error("Error while fetching json:\n ", e);
+    }
   }
   // Head request
   head(url, options = {}) {

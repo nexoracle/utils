@@ -126,7 +126,7 @@ interface FetchOptions extends RequestInit {
     onDownloadProgress?: (progress: ProgressEvent) => void;
     onUploadProgress?: (progress: ProgressEvent) => void;
     signal?: AbortSignal;
-    responseType?: "arraybuffer" | "blob" | "json" | "text";
+    responseType?: "arraybuffer" | "blob" | "json" | "text" | "buffer" | "stream";
 }
 type Interceptor<T> = (value: T) => T | Promise<T>;
 declare class ProgressEvent {
@@ -158,7 +158,8 @@ declare class Axium extends RequestHandler {
     postFormData(url: string, data: FormData, options?: FetchOptions): Promise<any>;
     postUrlEncoded(url: string, data: Record<string, string>, options?: FetchOptions): Promise<any>;
     all(requests: Promise<any>[]): Promise<any[]>;
-    getBuffer(url: string, options?: FetchOptions): Promise<any>;
+    getBuffer(url: string, options?: FetchOptions, method?: string): Promise<string | false | Buffer<ArrayBuffer>>;
+    fetchJson(url: string, options?: FetchOptions, method?: string): Promise<any>;
     head(url: string, options?: FetchOptions): Promise<any>;
 }
 declare const axium: Axium;
