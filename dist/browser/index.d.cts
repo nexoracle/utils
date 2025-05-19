@@ -43,6 +43,7 @@ declare function clockString(seconds: number, showHours?: boolean): string;
 declare function formatISODate(n: string | number | Date, locale?: string, timezone?: string): string;
 declare const formatJSON: (data: unknown, spaces?: number) => string | null;
 declare function runtime(seconds: number, capitalize?: boolean, day?: string, hour?: string, minute?: string, second?: string): string;
+declare const escapeHTML: (str: string) => string;
 
 declare const urlValidator: {
     isURL(url: string): boolean;
@@ -340,4 +341,4 @@ declare const mime: {
     get: typeof get;
 };
 
-export { ReadMore, axium, clockString, Console as console, emojiApi, flattenArray, formatBytes, formatISODate, formatJSON, formatNumber, getDate, getRandom, getTime, getTimeZone, hasEmoji, isArray, isBigInt, isBool, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isNull, isNumber, isObject, isString, isSymbol, isUndefined, mime, passwordValidator, randomElement, randomHexColor, randomInt, randomizeArray, runtime, sleep, timeAgo, toBool, toQueryString, truncate, uniqueArray, urlValidator };
+export { ReadMore, axium, clockString, Console as console, emojiApi, escapeHTML, flattenArray, formatBytes, formatISODate, formatJSON, formatNumber, getDate, getRandom, getTime, getTimeZone, hasEmoji, isArray, isBigInt, isBool, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isNull, isNumber, isObject, isString, isSymbol, isUndefined, mime, passwordValidator, randomElement, randomHexColor, randomInt, randomizeArray, runtime, sleep, timeAgo, toBool, toQueryString, truncate, uniqueArray, urlValidator };

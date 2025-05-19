@@ -13,6 +13,7 @@ import { Readable } from "stream";
 // lib/functions/validation.ts
 import { request as httpRequest } from "http";
 import { request as httpsRequest } from "https";
+import { isIP } from "net";
 import { URL as URL2 } from "url";
 var urlValidator = {
   isURL(url2) {
@@ -198,6 +199,7 @@ var isSymbol = (input) => {
 var isNull = (input) => {
   return input === null;
 };
+var isValidIP = (ip) => isIP(ip) !== 0;
 var isImageURL = async (url2) => {
   try {
     const parsedUrl = new URL2(url2);
@@ -912,6 +914,9 @@ function ensurePackage(packageName, packageManager = "npm", shouldInstall = true
     }
   }
 }
+var escapeHTML = (str) => {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/\//g, "&#x2F;");
+};
 
 // lib/modules/crypto.ts
 import * as Crypto from "crypto";
@@ -3859,6 +3864,7 @@ export {
   emoji_default as emojiApi,
   ensurePackage,
   env,
+  escapeHTML,
   fileExists,
   flattenArray,
   formatBytes,
@@ -3905,6 +3911,7 @@ export {
   isTLSValid,
   isURLAccessible,
   isUndefined,
+  isValidIP,
   jsontoBuffer,
   killProcess,
   listFiles,

@@ -51,6 +51,7 @@ __export(lib_exports, {
   emojiApi: () => emoji_default,
   ensurePackage: () => ensurePackage,
   env: () => env,
+  escapeHTML: () => escapeHTML,
   fileExists: () => fileExists,
   flattenArray: () => flattenArray,
   formatBytes: () => formatBytes,
@@ -97,6 +98,7 @@ __export(lib_exports, {
   isTLSValid: () => isTLSValid,
   isURLAccessible: () => isURLAccessible,
   isUndefined: () => isUndefined,
+  isValidIP: () => isValidIP,
   jsontoBuffer: () => jsontoBuffer,
   killProcess: () => killProcess,
   listFiles: () => listFiles,
@@ -142,6 +144,7 @@ var import_stream = require("stream");
 // lib/functions/validation.ts
 var import_http = require("http");
 var import_https = require("https");
+var import_net = require("net");
 var import_url = require("url");
 var urlValidator = {
   isURL(url2) {
@@ -327,6 +330,7 @@ var isSymbol = (input) => {
 var isNull = (input) => {
   return input === null;
 };
+var isValidIP = (ip) => (0, import_net.isIP)(ip) !== 0;
 var isImageURL = async (url2) => {
   try {
     const parsedUrl = new import_url.URL(url2);
@@ -1041,6 +1045,9 @@ function ensurePackage(packageName, packageManager = "npm", shouldInstall = true
     }
   }
 }
+var escapeHTML = (str) => {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/\//g, "&#x2F;");
+};
 
 // lib/modules/crypto.ts
 var Crypto = __toESM(require("crypto"), 1);
@@ -3990,6 +3997,7 @@ var env = {
   emojiApi,
   ensurePackage,
   env,
+  escapeHTML,
   fileExists,
   flattenArray,
   formatBytes,
@@ -4036,6 +4044,7 @@ var env = {
   isTLSValid,
   isURLAccessible,
   isUndefined,
+  isValidIP,
   jsontoBuffer,
   killProcess,
   listFiles,

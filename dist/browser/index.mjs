@@ -754,6 +754,9 @@ function runtime(seconds, capitalize = false, day = "day", hour = "hour", minute
   }
   return result;
 }
+var escapeHTML = (str) => {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/\//g, "&#x2F;");
+};
 
 // lib/modules/emoji-api/emoji.ts
 var emojiList;
@@ -1881,6 +1884,7 @@ export {
   clockString,
   Console as console,
   emoji_default as emojiApi,
+  escapeHTML,
   flattenArray,
   formatBytes,
   formatISODate,

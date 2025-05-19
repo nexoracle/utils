@@ -61,6 +61,7 @@ declare const formatJSON: (data: unknown, spaces?: number) => string | null;
 declare function runtime(seconds: number, capitalize?: boolean, day?: string, hour?: string, minute?: string, second?: string): string;
 declare function getFileSize(path: string | Buffer): Promise<string>;
 declare function ensurePackage(packageName: string, packageManager?: "npm" | "yarn" | "pnpm" | "bun", shouldInstall?: boolean): any;
+declare const escapeHTML: (str: string) => string;
 
 declare const urlValidator: {
     isURL(url: string): boolean;
@@ -115,6 +116,7 @@ declare const isBigInt: (input: unknown) => input is bigint;
 declare const isUndefined: (input: unknown) => input is undefined;
 declare const isSymbol: (input: unknown) => input is symbol;
 declare const isNull: (input: unknown) => input is null;
+declare const isValidIP: (ip: string) => boolean;
 declare const isImageURL: (url: string) => Promise<boolean>;
 declare const hasEmoji: (str: string) => boolean;
 
@@ -709,4 +711,4 @@ interface EnvLoader {
 }
 declare const env: EnvLoader;
 
-export { Axium, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkCommandExists, checkTLSHandshake, clockString, Console as console, copyFile, createDirectory, cron, crypto, deleteFile, downloadFile, emojiApi, ensurePackage, env, fileExists, flattenArray, formatBytes, formatISODate, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getAllIPs, getBufferFromStream, getCpuLoad, getDate, getFileSize, getFileStats, getIPAddress, getNetworkInterfaces, getProcessPriority, getRandom, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTempDirectory, getTime, getTimeZone, getUptime, getUserInfo, hasEmoji, hasMXRecords, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, jsontoBuffer, killProcess, listFiles, mime, parseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, removeDirectory, renameFile, resolveDNS, reverseLookup, runCommand, runCommandDetached, runCommandInteractive, runCommandSync, runSpawn, runtime, setProcessPriority, sleep, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, unwatchFile, urlValidator, watchFile, writeFile };
+export { Axium, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkCommandExists, checkTLSHandshake, clockString, Console as console, copyFile, createDirectory, cron, crypto, deleteFile, downloadFile, emojiApi, ensurePackage, env, escapeHTML, fileExists, flattenArray, formatBytes, formatISODate, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getAllIPs, getBufferFromStream, getCpuLoad, getDate, getFileSize, getFileStats, getIPAddress, getNetworkInterfaces, getProcessPriority, getRandom, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTempDirectory, getTime, getTimeZone, getUptime, getUserInfo, hasEmoji, hasMXRecords, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, isValidIP, jsontoBuffer, killProcess, listFiles, mime, parseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, removeDirectory, renameFile, resolveDNS, reverseLookup, runCommand, runCommandDetached, runCommandInteractive, runCommandSync, runSpawn, runtime, setProcessPriority, sleep, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, unwatchFile, urlValidator, watchFile, writeFile };

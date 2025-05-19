@@ -25,6 +25,7 @@ __export(browser_exports, {
   clockString: () => clockString,
   console: () => Console,
   emojiApi: () => emoji_default,
+  escapeHTML: () => escapeHTML,
   flattenArray: () => flattenArray,
   formatBytes: () => formatBytes,
   formatISODate: () => formatISODate,
@@ -822,6 +823,9 @@ function runtime(seconds, capitalize = false, day = "day", hour = "hour", minute
   }
   return result;
 }
+var escapeHTML = (str) => {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/\//g, "&#x2F;");
+};
 
 // lib/modules/emoji-api/emoji.ts
 var emojiList;
@@ -1950,6 +1954,7 @@ var mime = { all: () => mimes, get };
   clockString,
   console,
   emojiApi,
+  escapeHTML,
   flattenArray,
   formatBytes,
   formatISODate,
