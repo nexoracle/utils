@@ -1,5 +1,6 @@
 import { RequestOptions, request as httpRequest } from "http";
 import { request as httpsRequest } from "https";
+import { isIP } from "net";
 import { URL } from "url";
 
 export const urlValidator = {
@@ -230,6 +231,8 @@ export const isSymbol = (input: unknown): input is symbol => {
 export const isNull = (input: unknown): input is null => {
   return input === null;
 };
+
+export const isValidIP = (ip: string): boolean => isIP(ip) !== 0;
 
 export const isImageURL = async (url: string): Promise<boolean> => {
   try {
