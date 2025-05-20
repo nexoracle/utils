@@ -8,7 +8,7 @@
 [![GitHub repo size](https://img.shields.io/github/repo-size/nexoracle/utils)](https://github.com/nexoracle/utils)
 
 <p align="center">
-  <h4>A comprehensive utility library containing a wide range of helpers, functions, modules, an HTTP client, and a lightweight web framework — all in one package.</h4>
+  <h4>A comprehensive utility library containing a wide range of helpers, functions, modules, an HTTP client, a Task Scheduler, and a lightweight web framework — all in one package.</h4>
 </p>
 
 </div>
@@ -66,7 +66,7 @@
   - [Introduction](https://utils.nexoracle.com/doc/web-framework/introduction)
   - [Router](https://utils.nexoracle.com/doc/web-framework/router)
   - [Middleware](https://utils.nexoracle.com/doc/web-framework/middleware)
-  - [Serving Statis](https://utils.nexoracle.com/doc/web-framework/serving-static)
+  - [Serving Static](https://utils.nexoracle.com/doc/web-framework/serving-static)
   - [Response Object](https://utils.nexoracle.com/doc/web-framework/response-object)
   - [Request Object](https://utils.nexoracle.com/doc/web-framework/request-object)
   - [Views And Rendering](https://utils.nexoracle.com/doc/web-framework/views-and-rendering)
