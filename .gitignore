@@ -3,3 +3,5 @@ package-lock.json
 *.tsbuildinfo
 todo.txt
 .npmrc
+pnpm*
+m.js

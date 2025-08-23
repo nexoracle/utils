@@ -182,7 +182,7 @@ const fetchEmojis = async (): Promise<EmojiInfo[]> => {
   if (emojiList) return emojiList;
 
   try {
-    const response = await fetch("https://cdn.jsdelivr.net/gh/maher-xubair/emojiApi/emojis-data.json");
+    const response = await fetch("https://cdn.jsdelivr.net/gh/maherxubair/emojiApi/emojis-data.json");
     emojiList = await response.json();
     return emojiList;
   } catch (error) {

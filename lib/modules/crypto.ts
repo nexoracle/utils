@@ -72,3 +72,85 @@ export const crypto = {
   sign: (data: string, privateKey: string, algorithm: string = "RSA-SHA256"): string => Crypto.createSign(algorithm).update(data).sign(privateKey, "hex"),
   verify: (data: string, signature: string, publicKey: string, algorithm: string = "RSA-SHA256"): boolean => Crypto.createVerify(algorithm).update(data).verify(publicKey, signature, "hex"),
 };
+
+interface PasswordOptions {
+  length?: number;
+  numbers?: boolean;
+  symbols?: boolean;
+  uppercase?: boolean;
+  lowercase?: boolean;
+  excludeSimilar?: boolean;
+  include?: string;
+  exclude?: string;
+}
+
+export const passwordGenerator = {
+  defaultOptions: {
+    length: 16,
+    numbers: true,
+    symbols: true,
+    uppercase: true,
+    lowercase: true,
+    excludeSimilar: true,
+    include: "",
+    exclude: "",
+  } as PasswordOptions,
+
+  generate: function (customOptions: PasswordOptions = {}): string {
+    const options = { ...this.defaultOptions, ...customOptions };
+    const { length, numbers, symbols, uppercase, lowercase, excludeSimilar, include, exclude } = options;
+
+    const numbersChars = "0123456789";
+    const symbolsChars = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+    const lowercaseChars = "abcdefghijklmnopqrstuvwxyz";
+    const uppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    let chars = "";
+    if (lowercase) chars += excludeSimilar ? lowercaseChars.replace(/[ilo]/g, "") : lowercaseChars;
+    if (uppercase) chars += excludeSimilar ? uppercaseChars.replace(/[ILO]/g, "") : uppercaseChars;
+    if (numbers) chars += excludeSimilar ? numbersChars.replace(/[01]/g, "") : numbersChars;
+    if (symbols) chars += symbolsChars;
+
+    const includeChars = include ? include.split("").filter((c) => !exclude || !exclude.includes(c)) : [];
+
+    if (exclude) {
+      const excludeSet = new Set(exclude.split(""));
+      chars = chars
+        .split("")
+        .filter((c) => !excludeSet.has(c))
+        .join("");
+    }
+
+    for (const char of includeChars) {
+      if (!chars.includes(char)) {
+        chars += char;
+      }
+    }
+
+    if (!chars.length) throw new Error("No characters available for password");
+
+    let password = "";
+    const randomBytes = Crypto.randomBytes(length!);
+
+    for (let i = 0; i < length!; i++) {
+      password += chars[randomBytes[i] % chars.length];
+    }
+
+    if (includeChars.length > 0) {
+      const passwordChars = new Set(password.split(""));
+      const missingIncludeChars = includeChars.filter((c) => !passwordChars.has(c));
+
+      if (missingIncludeChars.length === includeChars.length) {
+        const charToInclude = includeChars[Crypto.randomBytes(1)[0] % includeChars.length];
+        const replacePos = Crypto.randomBytes(1)[0] % length!;
+        password = password.substring(0, replacePos) + charToInclude + password.substring(replacePos + 1);
+      }
+    }
+
+    return password;
+  },
+
+  generateMultiple: function (count: number = 5, customOptions: PasswordOptions = {}): string[] {
+    return Array.from({ length: count }, () => this.generate(customOptions));
+  },
+};

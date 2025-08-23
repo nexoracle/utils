@@ -183,6 +183,21 @@ declare const crypto: {
     sign: (data: string, privateKey: string, algorithm?: string) => string;
     verify: (data: string, signature: string, publicKey: string, algorithm?: string) => boolean;
 };
+interface PasswordOptions {
+    length?: number;
+    numbers?: boolean;
+    symbols?: boolean;
+    uppercase?: boolean;
+    lowercase?: boolean;
+    excludeSimilar?: boolean;
+    include?: string;
+    exclude?: string;
+}
+declare const passwordGenerator: {
+    defaultOptions: PasswordOptions;
+    generate: (customOptions?: PasswordOptions) => string;
+    generateMultiple: (count?: number, customOptions?: PasswordOptions) => string[];
+};
 
 declare const readFile: (filePath: string) => string | null;
 declare const writeFile: (filePath: string, data: string) => void;
@@ -711,4 +726,4 @@ interface EnvLoader {
 }
 declare const env: EnvLoader;
 
-export { Axium, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkCommandExists, checkTLSHandshake, clockString, Console as console, copyFile, createDirectory, cron, crypto, deleteFile, downloadFile, emojiApi, ensurePackage, env, escapeHTML, fileExists, flattenArray, formatBytes, formatISODate, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getAllIPs, getBufferFromStream, getCpuLoad, getDate, getFileSize, getFileStats, getIPAddress, getNetworkInterfaces, getProcessPriority, getRandom, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTempDirectory, getTime, getTimeZone, getUptime, getUserInfo, hasEmoji, hasMXRecords, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, isValidIP, jsontoBuffer, killProcess, listFiles, mime, parseURL, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, removeDirectory, renameFile, resolveDNS, reverseLookup, runCommand, runCommandDetached, runCommandInteractive, runCommandSync, runSpawn, runtime, setProcessPriority, sleep, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, unwatchFile, urlValidator, watchFile, writeFile };
+export { Axium, ReadMore, apex, appendToFile, axium, bufferToFile, buffertoJson, buildUrl, checkCommandExists, checkTLSHandshake, clockString, Console as console, copyFile, createDirectory, cron, crypto, deleteFile, downloadFile, emojiApi, ensurePackage, env, escapeHTML, fileExists, flattenArray, formatBytes, formatISODate, formatJSON, formatNumber, generateApiKey, getAbsolutePath, getAllIPs, getBufferFromStream, getCpuLoad, getDate, getFileSize, getFileStats, getIPAddress, getNetworkInterfaces, getProcessPriority, getRandom, getSSLCertificate, getStreamFromBuffer, getSystemInfo, getTempDirectory, getTime, getTimeZone, getUptime, getUserInfo, hasEmoji, hasMXRecords, isArray, isBigInt, isBool, isDomainReachable, isEmail, isEmptyObject, isEqualObj, isFunction, isGmail, isImageURL, isNull, isNumber, isObject, isString, isSymbol, isTLSValid, isURLAccessible, isUndefined, isValidIP, jsontoBuffer, killProcess, listFiles, mime, parseURL, passwordGenerator, passwordValidator, perf_hooks, randomElement, randomHexColor, randomInt, randomizeArray, readFile, removeDirectory, renameFile, resolveDNS, reverseLookup, runCommand, runCommandDetached, runCommandInteractive, runCommandSync, runSpawn, runtime, setProcessPriority, sleep, timeAgo, toBool, toBuffer, toQueryString, transformBuffer, truncate, uniqueArray, unwatchFile, urlValidator, watchFile, writeFile };

@@ -1,6 +1,9 @@
 node_modules/
 tsconfig.json
+package-lock.json
 tsup.config.ts
 todo.txt
 .npmrc
 .github/
+pnpm*
+m.js

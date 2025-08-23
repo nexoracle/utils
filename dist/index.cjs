@@ -104,6 +104,7 @@ __export(lib_exports, {
   listFiles: () => listFiles,
   mime: () => mime,
   parseURL: () => parseURL,
+  passwordGenerator: () => passwordGenerator,
   passwordValidator: () => passwordValidator_default,
   perf_hooks: () => perf_hooks,
   randomElement: () => randomElement,
@@ -1109,6 +1110,65 @@ var crypto = {
   decryptRSA: (encrypted, privateKey) => Crypto.privateDecrypt(privateKey, Buffer.from(encrypted, "base64")).toString("utf8"),
   sign: (data, privateKey, algorithm = "RSA-SHA256") => Crypto.createSign(algorithm).update(data).sign(privateKey, "hex"),
   verify: (data, signature, publicKey, algorithm = "RSA-SHA256") => Crypto.createVerify(algorithm).update(data).verify(publicKey, signature, "hex")
+};
+var passwordGenerator = {
+  defaultOptions: {
+    length: 16,
+    numbers: true,
+    symbols: true,
+    uppercase: true,
+    lowercase: true,
+    excludeSimilar: true,
+    include: "",
+    exclude: ""
+  },
+  generate: function(customOptions = {}) {
+    const options = { ...this.defaultOptions, ...customOptions };
+    const { length, numbers, symbols: symbols2, uppercase: uppercase2, lowercase: lowercase2, excludeSimilar, include, exclude } = options;
+    const numbersChars = "0123456789";
+    const symbolsChars = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+    const lowercaseChars = "abcdefghijklmnopqrstuvwxyz";
+    const uppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let chars = "";
+    if (lowercase2)
+      chars += excludeSimilar ? lowercaseChars.replace(/[ilo]/g, "") : lowercaseChars;
+    if (uppercase2)
+      chars += excludeSimilar ? uppercaseChars.replace(/[ILO]/g, "") : uppercaseChars;
+    if (numbers)
+      chars += excludeSimilar ? numbersChars.replace(/[01]/g, "") : numbersChars;
+    if (symbols2)
+      chars += symbolsChars;
+    const includeChars = include ? include.split("").filter((c) => !exclude || !exclude.includes(c)) : [];
+    if (exclude) {
+      const excludeSet = new Set(exclude.split(""));
+      chars = chars.split("").filter((c) => !excludeSet.has(c)).join("");
+    }
+    for (const char of includeChars) {
+      if (!chars.includes(char)) {
+        chars += char;
+      }
+    }
+    if (!chars.length)
+      throw new Error("No characters available for password");
+    let password = "";
+    const randomBytes3 = Crypto.randomBytes(length);
+    for (let i = 0; i < length; i++) {
+      password += chars[randomBytes3[i] % chars.length];
+    }
+    if (includeChars.length > 0) {
+      const passwordChars = new Set(password.split(""));
+      const missingIncludeChars = includeChars.filter((c) => !passwordChars.has(c));
+      if (missingIncludeChars.length === includeChars.length) {
+        const charToInclude = includeChars[Crypto.randomBytes(1)[0] % includeChars.length];
+        const replacePos = Crypto.randomBytes(1)[0] % length;
+        password = password.substring(0, replacePos) + charToInclude + password.substring(replacePos + 1);
+      }
+    }
+    return password;
+  },
+  generateMultiple: function(count = 5, customOptions = {}) {
+    return Array.from({ length: count }, () => this.generate(customOptions));
+  }
 };
 
 // lib/modules/fs.ts
@@ -3286,7 +3346,7 @@ var fetchEmojis = async () => {
   if (emojiList)
     return emojiList;
   try {
-    const response = await fetch("https://cdn.jsdelivr.net/gh/maher-xubair/emojiApi/emojis-data.json");
+    const response = await fetch("https://cdn.jsdelivr.net/gh/maherxubair/emojiApi/emojis-data.json");
     emojiList = await response.json();
     return emojiList;
   } catch (error) {
@@ -4050,6 +4110,7 @@ var env = {
   listFiles,
   mime,
   parseURL,
+  passwordGenerator,
   passwordValidator,
   perf_hooks,
   randomElement,
