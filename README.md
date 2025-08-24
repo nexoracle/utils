@@ -18,6 +18,7 @@
 - [Introduction](https://utils.nexoracle.com/doc/introduction)
 - [Emoji API](https://utils.nexoracle.com/doc/emoji-api)
 - [Password Validator](https://utils.nexoracle.com/doc/password-validator)
+- [Password Generator](https://utils.nexoracle.com/doc/password-generator)
 - [ApiKey Generator](https://utils.nexoracle.com/doc/apikey-generator)
 
 - [Utilities](https://utils.nexoracle.com/doc/category/utilities)
