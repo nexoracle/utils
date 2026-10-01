@@ -19,9 +19,11 @@ export const env: EnvLoader = {
 
     try {
       const content = readFileSync(envPath, "utf8");
+      let loaded = 0;
 
       content.split(/\r?\n/).forEach((line) => {
         line = line.trim();
+
         if (!line || line.startsWith("#")) return;
 
         let inQuotes = false;
@@ -30,6 +32,7 @@ export const env: EnvLoader = {
 
         for (let i = 0; i < line.length; i++) {
           const char = line[i];
+
           if ((char === '"' || char === "'") && (i === 0 || line[i - 1] !== "\\")) {
             if (!inQuotes) {
               inQuotes = true;
@@ -48,6 +51,7 @@ export const env: EnvLoader = {
         }
 
         const firstEqualIndex = line.indexOf("=");
+
         if (firstEqualIndex === -1) return;
 
         const key = line.slice(0, firstEqualIndex).trim();
@@ -57,12 +61,16 @@ export const env: EnvLoader = {
           value = value.slice(1, -1);
         }
 
-        if (key) {
-          process.env[key.trim()] = unescapeValue(value);
-        }
+        if (!key) return;
+        if (process.env[key] !== undefined) return;
+
+        process.env[key] = unescapeValue(value);
+        loaded++;
       });
+
+      console.log(`[ENV] Loaded ${loaded} variables from ${envPath}`);
     } catch (err) {
-      console.error(`[ENV] Failed to load:`, err);
+      console.error("[ENV] Failed to load:", err);
     }
   },
 };

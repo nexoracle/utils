@@ -169,8 +169,20 @@ export const urlValidator = {
   },
 };
 
-export function toBool(input: string, returnBool: boolean = true): string | boolean {
-  return /true|yes|ok|act|sure|enable/gi.test(input) ? (returnBool ? true : "true") : returnBool ? false : "false";
+export function toBool(input: string, returnBool: boolean = true): string | boolean | undefined {
+  const value = input?.trim().toLowerCase();
+
+  if (!value) return undefined;
+
+  if (/^(true|yes|act|enable|on)$/.test(value)) {
+    return returnBool ? true : "true";
+  }
+
+  if (/^(false|no|deact|disable|off)$/.test(value)) {
+    return returnBool ? false : "false";
+  }
+
+  return undefined;
 }
 
 export const isEmail = (email: string): boolean => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);

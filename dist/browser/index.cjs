@@ -205,7 +205,16 @@ var urlValidator = {
   }
 };
 function toBool(input, returnBool = true) {
-  return /true|yes|ok|act|sure|enable/gi.test(input) ? returnBool ? true : "true" : returnBool ? false : "false";
+  const value = input?.trim().toLowerCase();
+  if (!value)
+    return void 0;
+  if (/^(true|yes|act|enable|on)$/.test(value)) {
+    return returnBool ? true : "true";
+  }
+  if (/^(false|no|deact|disable|off)$/.test(value)) {
+    return returnBool ? false : "false";
+  }
+  return void 0;
 }
 var isEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
 var isGmail = (email) => {

@@ -101,7 +101,7 @@ declare const urlValidator: {
     isWithinLength(url: string, maxLength: number): boolean;
     hasValidCharacters(url: string): boolean;
 };
-declare function toBool(input: string, returnBool?: boolean): string | boolean;
+declare function toBool(input: string, returnBool?: boolean): string | boolean | undefined;
 declare const isEmail: (email: string) => boolean;
 declare const isGmail: (email: string) => boolean;
 declare const isNumber: (input: unknown) => boolean;

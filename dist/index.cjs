@@ -284,7 +284,16 @@ var urlValidator = {
   }
 };
 function toBool(input, returnBool = true) {
-  return /true|yes|ok|act|sure|enable/gi.test(input) ? returnBool ? true : "true" : returnBool ? false : "false";
+  const value = input?.trim().toLowerCase();
+  if (!value)
+    return void 0;
+  if (/^(true|yes|act|enable|on)$/.test(value)) {
+    return returnBool ? true : "true";
+  }
+  if (/^(false|no|deact|disable|off)$/.test(value)) {
+    return returnBool ? false : "false";
+  }
+  return void 0;
 }
 var isEmail = (email) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
 var isGmail = (email) => {
@@ -3993,6 +4002,7 @@ var env = {
     }
     try {
       const content = (0, import_fs8.readFileSync)(envPath, "utf8");
+      let loaded = 0;
       content.split(/\r?\n/).forEach((line) => {
         line = line.trim();
         if (!line || line.startsWith("#"))
@@ -4025,12 +4035,16 @@ var env = {
         if (value.startsWith('"') && value.endsWith('"') || value.startsWith("'") && value.endsWith("'")) {
           value = value.slice(1, -1);
         }
-        if (key) {
-          process.env[key.trim()] = unescapeValue(value);
-        }
+        if (!key)
+          return;
+        if (process.env[key] !== void 0)
+          return;
+        process.env[key] = unescapeValue(value);
+        loaded++;
       });
+      console.log(`[ENV] Loaded ${loaded} variables from ${envPath}`);
     } catch (err) {
-      console.error(`[ENV] Failed to load:`, err);
+      console.error("[ENV] Failed to load:", err);
     }
   }
 };
